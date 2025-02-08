@@ -67,18 +67,20 @@ export const AppSidebar = () => {
   return (
     <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
-        <div className="flex items-center gap-3 space-x-3">
+        <div className="flex items-center gap-3 space-x-6">
           <Image
-            src="/Logo.png"
+            src="/logo_cropped.png"
             alt="Synthia Logo"
-            width={43}
-            height={40}
-            className="ml-2 shadow-sm"
+            width={53}
+            height={53}
+            className="rounded-lg shadow-sm"
           />
           {open && (
             <div className="flex flex-col space-y-1">
-              <div className="text-lg font-bold text-purple-800">Synthia</div>
-              <div className="text-[10px] font-medium leading-tight text-gray-400">
+              <div className="text-2xl font-bold text-indigo-400 underline">
+                SYNTHIA
+              </div>
+              <div className="text-[9px] font-medium leading-tight text-gray-400">
                 - "Bringing Intelligence <br />
                 to Your Workflow."
               </div>
@@ -139,18 +141,20 @@ export const AppSidebar = () => {
               })}
 
               <div className="h-4"></div>
-              <SidebarMenuItem>
-                <Link href={"/create-project"}>
-                  <Button
-                    className="w-fit bg-inherit"
-                    variant={"outline"}
-                    size="sm"
-                  >
-                    <Plus className="ml-2" />
-                    Create New Project
-                  </Button>
-                </Link>
-              </SidebarMenuItem>
+              {open && (
+                <SidebarMenuItem>
+                  <Link href={"/create-project"}>
+                    <Button
+                      className="w-fit bg-inherit"
+                      variant={"outline"}
+                      size="sm"
+                    >
+                      <Plus className="ml-2" />
+                      Create New Project
+                    </Button>
+                  </Link>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
