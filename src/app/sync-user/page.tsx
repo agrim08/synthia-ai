@@ -27,7 +27,7 @@ const SyncUser = async () => {
       lastName: user.lastName,
     },
     create: {
-      id: uuidv4(), // Generate a UUID for the id field
+      id: userId, // Generate a UUID for the id field
       emailAddress: userEmail,
       imageUrl: user.imageUrl,
       firstName: user.firstName,

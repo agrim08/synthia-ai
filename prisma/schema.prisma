@@ -23,6 +23,8 @@ model user {
   emailAddress String @unique
 
   credits Int @default(150)
+
+  userToProjects UserToProject[]
 }
 
 model Project {
@@ -35,4 +37,20 @@ model Project {
   updatedAt DateTime? @updatedAt
 
   deletedAt DateTime?
+
+  userToProjects UserToProject[]
+}
+
+model UserToProject{
+  id          String @id @default(uuid())
+  userId       String
+  projectId   String
+
+  user         user @relation(fields: [userId], references: [id])
+  project     Project @relation(fields: [projectId], references: [id])
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([userId, projectId])
 }

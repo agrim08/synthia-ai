@@ -2,9 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { api } from "@/trpc/react";
 import { FolderGit2, Github, KeyRound } from "lucide-react";
 import React from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type FormFields = {
   repoUrl: string;
@@ -14,9 +17,23 @@ type FormFields = {
 
 const page = () => {
   const { register, handleSubmit, reset } = useForm<FormFields>();
+  const createProject = api.project.createProject.useMutation();
   const onSubmit = (data: FormFields) => {
-    console.log(data);
-    window.alert(JSON.stringify(data, null, 2));
+    createProject.mutate(
+      {
+        githubUrl: data.repoUrl,
+        name: data.projectName,
+        githubToken: data.githubToken,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Project created successfully");
+        },
+        onError: () => {
+          toast.error("Failed to create project");
+        },
+      },
+    );
     reset();
     return true;
   };
@@ -24,14 +41,14 @@ const page = () => {
   return (
     <div className="flex h-full items-center justify-center gap-12">
       <img
-        src={"/create-project.png"}
+        src={"/vector.webp"}
         alt="image"
         className="h-56 w-auto rounded-md"
       />
       <div>
         <div>
           <h1 className="text-2xl font-semibold">
-            Link your GitHub Repository
+            Link your Github Repository
           </h1>
           <p className="text-sm text-muted-foreground">
             Enter the URL to link your repository with Synthia
@@ -70,8 +87,10 @@ const page = () => {
               />
             </div>
             <div>
+              {createProject.isPending && <Progress value={33} />}
               <Button
                 type="submit"
+                disabled={createProject.isPending}
                 className="bg-indigo-700 hover:bg-indigo-500"
               >
                 Create Project
