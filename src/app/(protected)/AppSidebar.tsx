@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import useProject from "@/hooks/useProject";
 import { cn } from "@/lib/utils";
 import {
   Bot,
@@ -28,6 +29,7 @@ import { usePathname } from "next/navigation";
 export const AppSidebar = () => {
   const pathname = usePathname();
   const { open } = useSidebar();
+  const { projects, projectId, setProjectId } = useProject();
 
   const items = [
     {
@@ -49,18 +51,6 @@ export const AppSidebar = () => {
       title: "Billings",
       url: "/billing",
       icon: CreditCard,
-    },
-  ];
-
-  const projects = [
-    {
-      title: "Project 1",
-    },
-    {
-      title: "Project 2",
-    },
-    {
-      title: "Project 3",
     },
   ];
 
@@ -118,22 +108,27 @@ export const AppSidebar = () => {
           <SidebarGroupLabel>Your Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {projects.map((project) => {
+              {projects?.map((project) => {
                 return (
-                  <SidebarMenuItem key={project.title}>
+                  <SidebarMenuItem key={project.name}>
                     <SidebarMenuButton asChild>
-                      <div>
+                      <div
+                        onClick={() => {
+                          setProjectId(project.id);
+                        }}
+                        className="cursor-pointer"
+                      >
                         <div
                           className={cn(
                             "flex size-6 items-center justify-center rounded-sm border bg-black text-sm text-primary",
                             {
-                              "bg-primary text-black": true,
+                              "bg-primary text-black": project.id === projectId,
                             },
                           )}
                         >
-                          {project.title[0]}
+                          {project.name[0]}
                         </div>
-                        <div className="ml-2">{project.title}</div>
+                        <span className="ml-2">{project.name}</span>
                       </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

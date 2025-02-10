@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import useRefetch from "@/hooks/useRefetch";
 import { api } from "@/trpc/react";
 import { FolderGit2, Github, KeyRound } from "lucide-react";
 import React from "react";
@@ -18,6 +19,7 @@ type FormFields = {
 const page = () => {
   const { register, handleSubmit, reset } = useForm<FormFields>();
   const createProject = api.project.createProject.useMutation();
+  const refetch = useRefetch();
   const onSubmit = (data: FormFields) => {
     createProject.mutate(
       {
@@ -28,13 +30,15 @@ const page = () => {
       {
         onSuccess: () => {
           toast.success("Project created successfully");
+          refetch();
+          reset();
         },
         onError: () => {
           toast.error("Failed to create project");
         },
       },
     );
-    reset();
+
     return true;
   };
 
@@ -87,7 +91,6 @@ const page = () => {
               />
             </div>
             <div>
-              {createProject.isPending && <Progress value={33} />}
               <Button
                 type="submit"
                 disabled={createProject.isPending}

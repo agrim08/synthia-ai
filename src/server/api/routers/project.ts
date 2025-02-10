@@ -15,25 +15,34 @@ export const projectRouter = createTRPCRouter({
       const existingUser = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId! },
       });
-
       if (!existingUser) {
         throw new Error("User not found");
       }
-
       const project = await ctx.db.project.create({
         data: {
           githubUrl: input.githubUrl,
           name: input.name,
         },
       });
-
       await ctx.db.userToProject.create({
         data: {
           userId: ctx.user.userId!,
           projectId: project.id,
         },
       });
-
       return project;
     }),
+
+  getProjects: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.db.project.findMany({
+      where: {
+        userToProjects: {
+          some: {
+            userId: ctx.user.userId!,
+          },
+        },
+        deletedAt: null,
+      },
+    });
+  }),
 });
