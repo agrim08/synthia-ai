@@ -17,13 +17,13 @@ const page = () => {
             <Github className="size-6 text-white" />
             <div className="m1-2">
               {/* {ToDo hide link} */}
-              <p className="text-sm font-semibold text-white">
-                This project is linked to {project?.name}{" "}
+              <p className="text-sm font-medium text-white/80">
+                This project is linked to{" "}
                 <Link
                   href={project?.githubUrl ?? ""}
-                  className="inline-flex items-center text-white/80 hover:underline"
+                  className="text-md inline-flex items-center font-bold text-white hover:underline"
                 >
-                  {project?.githubUrl}
+                  {project?.name}
                   <ExternalLink className="ml-1 size-4" />
                 </Link>
               </p>
