@@ -15,7 +15,7 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "Synthia",
   description: "Bringing Intelligence to Your Workflow.",
-  icons: [{ rel: "icon", url: "/logo_cropped.png" }],
+  icons: [{ rel: "icon", url: "/image.png" }],
 };
 
 export default function RootLayout({
