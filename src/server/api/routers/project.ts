@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/server/db";
 import { pollCommits } from "@/lib/github";
+import { indexGithubRepo } from "@/lib/githubRepoLoader";
 
 export const projectRouter = createTRPCRouter({
   createProject: protectedProcedure
@@ -33,8 +34,6 @@ export const projectRouter = createTRPCRouter({
             name: input.name,
           },
         });
-
-        // Associate the project with the user.
         await ctx.db.userToProject.create({
           data: {
             userId: ctx.user.userId!,
@@ -42,6 +41,7 @@ export const projectRouter = createTRPCRouter({
           },
         });
 
+        await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
         await pollCommits(project.id);
         return project;
       } catch (error) {

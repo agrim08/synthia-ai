@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Document } from "@langchain/core/documents";
 
 const genAi = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAi.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
 });
 
 export const summarizeCommit = async (diff: string) => {
@@ -41,3 +42,34 @@ It is given only as an example of appropriate comments.`,
 
   return response.response.text();
 };
+
+export const summariseCode = async (doc: Document) => {
+  try {
+    console.log("getting summary of ", doc.metadata.source);
+    const code = doc.pageContent.slice(0, 10000);
+    const response = await model.generateContent([
+      `You are an expert senior software engineer who specializes in onboarding junior software engineers onto projects`,
+      `You are onboarding a junior software engineer and explaining to them the purpose of the ${doc.metadata.source} file
+        Here is the code:
+        ---
+        ${code}
+        ---
+        Give a summary no more than 100 words for the code above
+      `,
+    ]);
+    return response.response.text();
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export async function loadEmbedding(summary: string) {
+  const model = genAi.getGenerativeModel({
+    model: "text-embedding-004",
+  });
+  const result = await model.embedContent(summary);
+  const embedding = result.embedding;
+  return embedding.values;
+}
+
+// console.log(await loadEmbedding("Hello world!"));
