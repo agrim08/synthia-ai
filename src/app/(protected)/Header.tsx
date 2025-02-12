@@ -12,7 +12,10 @@ export default function Header() {
     <header className="border-b border-sidebar-border bg-sidebar shadow-md dark:bg-sidebar">
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-4">
-          <Link href="/" className="text-2xl font-bold text-indigo-400">
+          <Link
+            href="/"
+            className="text-2xl font-bold text-indigo-400 hover:text-indigo-700"
+          >
             SYNTHIA
           </Link>
           <nav className="hidden gap-6 md:flex">
