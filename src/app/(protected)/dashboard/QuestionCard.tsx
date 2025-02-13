@@ -1,5 +1,6 @@
 "use client";
 
+import MDEditor from "@uiw/react-md-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,21 +19,23 @@ const QuestionCard = () => {
   const { project } = useProject();
   const [question, setQuestion] = useState("");
   const [open, setOpen] = useState(false);
-  const [laoding, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [filesReferences, setFilesReferences] =
     useState<{ fileName: string; sourceCode: string; summary: string }[]>();
   const [answer, setAnswer] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    setAnswer("");
+    setFilesReferences([]);
     if (!project?.id) return;
     e.preventDefault();
     setLoading(true);
-    setOpen(true);
 
     const { output, filesReferences } = await askQuestion(
       question,
       project?.id,
     );
+    setOpen(true);
     setFilesReferences(filesReferences);
 
     for await (const delta of readStreamableValue(output)) {
@@ -40,12 +43,13 @@ const QuestionCard = () => {
         setAnswer((ans) => ans + delta);
       }
     }
+    setLoading(false);
   };
 
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[70vw]">
           <DialogHeader>
             <DialogTitle>
               <div className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-4">
@@ -56,6 +60,18 @@ const QuestionCard = () => {
               </div>
             </DialogTitle>
           </DialogHeader>
+          <MDEditor.Markdown
+            source={answer}
+            className="maqx-w-[70vw] !h-full max-h-[40vh] overflow-scroll"
+          />
+          <Button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+            }}
+          >
+            Close
+          </Button>
         </DialogContent>
       </Dialog>
       <Card className="relative col-span-3">
@@ -70,7 +86,7 @@ const QuestionCard = () => {
               onChange={(e) => setQuestion(e.target.value)}
             ></Textarea>
             <div className="h-4"></div>
-            <Button type="submit" className="bg-indigo-700">
+            <Button type="submit" className="bg-indigo-700" disabled={loading}>
               Ask Synthia
             </Button>
           </form>

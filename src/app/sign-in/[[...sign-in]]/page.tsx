@@ -42,7 +42,6 @@ export default function Page() {
                 "bg-gray-800 border-gray-700 focus:border-indigo-500 transition-all duration-200",
               formButtonPrimary:
                 "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200",
-
               footer: {
                 display: "none",
               },

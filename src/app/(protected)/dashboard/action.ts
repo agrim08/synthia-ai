@@ -59,28 +59,32 @@ export async function askQuestion(question: string, projectId: string) {
 
   const queryVector = await loadEmbedding(question);
   const vectorQuery = `[${queryVector.join(",")}]`;
+  console.log("Vector Query:", vectorQuery);
+  console.log("Vector Length:", queryVector.length);
 
   const result = (await db.$queryRaw`
     SELECT "fileName","sourceCode","summary",
-    1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector)  AS cosineSimilarity
+    1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector)  AS similarity
     FROM "SourceCodeEmbeddings"
-    WHERE 1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector) > 0.5
+    WHERE 1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector) > .2
     AND "projectId" = ${projectId}
-    ORDER BY cosineSimilarity DESC
-    LIMIT 10;
+    ORDER BY similarity DESC
+      LIMIT 10
   `) as { fileName: string; sourceCode: string; summary: string }[];
+
+  console.log("Query Result:", result);
 
   let context = "";
 
   for (const doc of result) {
-    context += `source: ${doc.fileName}\ncodeContent:\n${doc.sourceCode}\nsummary of file:${doc.summary}\n\n`;
+    context += `source: ${doc?.fileName}\ncodeContent:\n${doc?.sourceCode}\nsummary of file: ${doc?.summary}\n\n`;
   }
+  console.log("Constructed Context Block:\n", context);
 
   (async () => {
     const { textStream } = await streamText({
       model: google("gemini-1.5-flash"),
       prompt: `
-
     You are an AI code assistant who answers questions about the codebase. Your target audience is a technical intern.
     The AI assistant is a brand new, powerful, human-like artificial intelligence.
     The traits of AI include expert knowledge, helpfulness, cleverness, and articulateness.
