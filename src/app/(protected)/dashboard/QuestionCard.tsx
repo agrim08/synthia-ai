@@ -14,9 +14,13 @@ import useProject from "@/hooks/useProject";
 import React, { useState } from "react";
 import { askQuestion } from "./action";
 import { readStreamableValue } from "ai/rsc";
+import FileReference from "./FileReference";
+import { api } from "@/trpc/react";
+import { toast } from "sonner";
 
 const QuestionCard = () => {
-  const { project } = useProject();
+  const { projectId } = useProject();
+  const saveAnswer = api.project.saveAnswer.useMutation();
   const [question, setQuestion] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,14 +31,13 @@ const QuestionCard = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setAnswer("");
     setFilesReferences([]);
-    if (!project?.id) return;
+    console.log(projectId);
+
+    if (!projectId) return;
     e.preventDefault();
     setLoading(true);
 
-    const { output, filesReferences } = await askQuestion(
-      question,
-      project?.id,
-    );
+    const { output, filesReferences } = await askQuestion(question, projectId);
     setOpen(true);
     setFilesReferences(filesReferences);
 
@@ -51,19 +54,47 @@ const QuestionCard = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[70vw]">
           <DialogHeader>
-            <DialogTitle>
-              <div className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-4">
-                <div className="text-xs">SYNTHIA</div>
-                <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white">
-                  AI
+            <div className="flex items-center gap-2 space-x-3">
+              <DialogTitle>
+                <div className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-4">
+                  <div className="text-xs">SYNTHIA</div>
+                  <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white">
+                    AI
+                  </div>
                 </div>
-              </div>
-            </DialogTitle>
+              </DialogTitle>
+              <Button
+                disabled={saveAnswer.isPending}
+                variant={"secondary"}
+                onClick={() => {
+                  saveAnswer.mutate(
+                    {
+                      projectId,
+                      answer,
+                      filesReferences: filesReferences,
+                      question,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast.success("Answer saved successfully!");
+                      },
+                      onError: () => {
+                        toast.error("Failed to save answer!");
+                      },
+                    },
+                  );
+                }}
+              >
+                Save Answer
+              </Button>
+            </div>
           </DialogHeader>
           <MDEditor.Markdown
             source={answer}
-            className="maqx-w-[70vw] !h-full max-h-[40vh] overflow-scroll"
+            className="h-full max-h-[40vh] max-w-[70vw] overflow-scroll"
           />
+          <div className="h-4"></div>
+          <FileReference filesReferences={filesReferences || []} />
           <Button
             type="button"
             onClick={() => {

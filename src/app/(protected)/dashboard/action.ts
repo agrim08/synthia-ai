@@ -61,6 +61,9 @@ export async function askQuestion(question: string, projectId: string) {
   const vectorQuery = `[${queryVector.join(",")}]`;
   console.log("Vector Query:", vectorQuery);
   console.log("Vector Length:", queryVector.length);
+  console.log("Project ID:", typeof projectId);
+
+  // const project_id = "7ff69471-ea7f-4e2a-a077-65af8f2ef063";
 
   const result = (await db.$queryRaw`
     SELECT "fileName","sourceCode","summary",
@@ -79,7 +82,7 @@ export async function askQuestion(question: string, projectId: string) {
   for (const doc of result) {
     context += `source: ${doc?.fileName}\ncodeContent:\n${doc?.sourceCode}\nsummary of file: ${doc?.summary}\n\n`;
   }
-  console.log("Constructed Context Block:\n", context);
+  // console.log("Constructed Context Block:\n", context);
 
   (async () => {
     const { textStream } = await streamText({

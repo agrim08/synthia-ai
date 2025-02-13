@@ -27,6 +27,7 @@ model user {
   credits Int @default(150)
 
   userToProjects UserToProject[]
+  questionAsked  Question[]
 }
 
 model Project {
@@ -44,6 +45,8 @@ model Project {
   commit         GitCommit[]
 
   sourceCodeEmbeddings SourceCodeEmbeddings[]
+
+  savedQuestions Question[]
 }
 
 model UserToProject {
@@ -87,4 +90,21 @@ model SourceCodeEmbeddings {
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
+}
+
+model Question {
+  id        String    @id @default(uuid())
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  question String
+  answer   String
+
+  userId String
+  user   user   @relation(fields: [userId], references: [id])
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  filesReferences Json?
 }

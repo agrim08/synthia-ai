@@ -100,4 +100,24 @@ export const projectRouter = createTRPCRouter({
         });
       }
     }),
+  saveAnswer: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        question: z.string(),
+        filesReferences: z.any(),
+        answer: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.question.create({
+        data: {
+          projectId: input.projectId,
+          question: input.question,
+          filesReferences: input.filesReferences,
+          userId: ctx.user.userId,
+          answer: input.answer,
+        },
+      });
+    }),
 });
