@@ -22,7 +22,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignOutUrl="/sign-in">
       <html lang="en" className={`${GeistSans.variable} ${roboto.variable}`}>
         <body>
           <TRPCReactProvider>{children}</TRPCReactProvider>

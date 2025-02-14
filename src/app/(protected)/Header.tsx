@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 export default function Header() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,7 +44,11 @@ export default function Header() {
             >
               Billings
             </Link>
-            <UserButton />
+            <UserButton
+              appearance={{
+                baseTheme: dark,
+              }}
+            />
           </nav>
           {/* Mobile Navigation Menu */}
           <Button
