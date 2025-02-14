@@ -7,10 +7,21 @@ import { uploadFile } from "@/lib/firebase";
 import { Presentation, Upload } from "lucide-react";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { api } from "@/trpc/react";
+import useProject from "@/hooks/useProject";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const MeetingCard = () => {
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  const router = useRouter();
+
+  const { project } = useProject();
+
+  const uploadMeeting = api.project.uploadMeeting.useMutation();
+
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       "audio/*": [".mp3", ".wav", ".m4a"],
@@ -19,17 +30,42 @@ const MeetingCard = () => {
     maxSize: 50_000_000, //50mb
     onDrop: async (acceptedFiles) => {
       setIsUploading(true);
-      console.log(acceptedFiles);
       const file = acceptedFiles[0];
-      const downloadUrl = await uploadFile(file as File, setProgress);
-      window.alert(downloadUrl);
+
+      if (!project) return;
+      if (!file) return;
+
+      const downloadUrl = (await uploadFile(
+        file as File,
+        setProgress,
+      )) as string;
+
+      uploadMeeting.mutate(
+        {
+          meetingUrl: downloadUrl,
+          projectId: project?.id,
+          name: file.name,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Meeting uploaded successfully");
+            setTimeout(() => {
+              router.push("/meetings");
+            }, 300);
+          },
+          onError: (error) => {
+            toast.error("Failed to upload meeting");
+            console.error(error);
+          },
+        },
+      );
       setIsUploading(false);
     },
   });
 
   return (
     <Card
-      className="col-span-2 flex flex-col items-center justify-center"
+      className="col-span-2 flex flex-col items-center justify-center py-4"
       {...getRootProps()}
     >
       {!isUploading && (

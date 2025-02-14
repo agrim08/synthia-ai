@@ -134,4 +134,33 @@ export const projectRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
     }),
+
+  uploadMeeting: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        meetingUrl: z.string(),
+        name: z.string()!,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const meeting = await db.meeting.create({
+        data: {
+          projectId: input.projectId,
+          meetingUrl: input.meetingUrl,
+          name: input.name,
+          status: "PROCESSING",
+        },
+      });
+    }),
+  getMeetings: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(({ ctx, input }) => {
+      return db.meeting.findMany({
+        where: {
+          projectId: input.projectId,
+        },
+        include: { issues: true },
+      });
+    }),
 });

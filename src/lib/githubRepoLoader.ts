@@ -59,7 +59,7 @@ export const indexGithubRepo = async (
 
   await Promise.allSettled(
     allEmbeddings.map(async (embedding, index) => {
-      console.log(`processing ${index} of ${allEmbeddings.length}`);
+      // console.log(`processing ${index} of ${allEmbeddings.length}`);
       if (!embedding) return;
 
       const sourceCodeEmbedding = await db.sourceCodeEmbeddings.create({

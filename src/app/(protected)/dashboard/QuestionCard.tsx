@@ -33,7 +33,6 @@ const QuestionCard = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setAnswer("");
     setFilesReferences([]);
-    console.log(projectId);
 
     if (!projectId) return;
     e.preventDefault();

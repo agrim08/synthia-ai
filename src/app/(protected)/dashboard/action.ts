@@ -59,9 +59,6 @@ export async function askQuestion(question: string, projectId: string) {
 
   const queryVector = await loadEmbedding(question);
   const vectorQuery = `[${queryVector.join(",")}]`;
-  console.log("Vector Query:", vectorQuery);
-  console.log("Vector Length:", queryVector.length);
-  console.log("Project ID:", typeof projectId);
 
   // const project_id = "7ff69471-ea7f-4e2a-a077-65af8f2ef063";
 
@@ -75,7 +72,7 @@ export async function askQuestion(question: string, projectId: string) {
       LIMIT 10
   `) as { fileName: string; sourceCode: string; summary: string }[];
 
-  console.log("Query Result:", result);
+  // console.log("Query Result:", result);
 
   let context = "";
 

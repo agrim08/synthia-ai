@@ -45,7 +45,7 @@ It is given only as an example of appropriate comments.`,
 
 export const summariseCode = async (doc: Document) => {
   try {
-    console.log("getting summary of ", doc.metadata.source);
+    // console.log("getting summary of ", doc.metadata.source);
     const code = doc.pageContent.slice(0, 10000);
     const response = await model.generateContent([
       `You are an expert senior software engineer who specializes in onboarding junior software engineers onto projects`,
