@@ -6,6 +6,7 @@ import Link from "next/link";
 import React from "react";
 import CommitLogs from "./CommitLogs";
 import QuestionCard from "./QuestionCard";
+import MeetingCard from "./MeetingCard";
 
 const page = () => {
   const { project } = useProject();
@@ -40,6 +41,7 @@ const page = () => {
       <div className="mt-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
           <QuestionCard />
+          <MeetingCard />
         </div>
       </div>
 
