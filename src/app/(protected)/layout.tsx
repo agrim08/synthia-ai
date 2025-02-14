@@ -22,7 +22,7 @@ const SidebarLayout = ({ children }: Props) => {
             />
           </div>
         </div>
-        <div className="h-full rounded-md border border-sidebar-border bg-sidebar p-4 shadow">
+        <div className="h-full overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-4 shadow">
           {children}
         </div>
       </main>

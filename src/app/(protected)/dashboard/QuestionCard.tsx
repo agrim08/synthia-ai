@@ -17,6 +17,7 @@ import { readStreamableValue } from "ai/rsc";
 import FileReference from "./FileReference";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import useRefetch from "@/hooks/useRefetch";
 
 const QuestionCard = () => {
   const { projectId } = useProject();
@@ -27,6 +28,7 @@ const QuestionCard = () => {
   const [filesReferences, setFilesReferences] =
     useState<{ fileName: string; sourceCode: string; summary: string }[]>();
   const [answer, setAnswer] = useState("");
+  const refetch = useRefetch();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setAnswer("");
@@ -52,13 +54,15 @@ const QuestionCard = () => {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[70vw]">
+        <DialogContent className="max-h-[80vh] w-full overflow-y-auto p-4 sm:max-w-[75vw] sm:p-6">
           <DialogHeader>
-            <div className="flex items-center gap-2 space-x-3">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
               <DialogTitle>
-                <div className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-4">
-                  <div className="text-xs">SYNTHIA</div>
-                  <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white">
+                <div className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-2 sm:h-16 sm:w-16 sm:p-4">
+                  <div className="text-[10px] text-white sm:text-xs">
+                    SYNTHIA
+                  </div>
+                  <div className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white sm:h-6 sm:w-6 sm:text-sm">
                     AI
                   </div>
                 </div>
@@ -66,6 +70,7 @@ const QuestionCard = () => {
               <Button
                 disabled={saveAnswer.isPending}
                 variant={"secondary"}
+                className="w-full sm:w-auto"
                 onClick={() => {
                   saveAnswer.mutate(
                     {
@@ -77,6 +82,7 @@ const QuestionCard = () => {
                     {
                       onSuccess: () => {
                         toast.success("Answer saved successfully!");
+                        refetch();
                       },
                       onError: () => {
                         toast.error("Failed to save answer!");
@@ -89,36 +95,36 @@ const QuestionCard = () => {
               </Button>
             </div>
           </DialogHeader>
-          <MDEditor.Markdown
-            source={answer}
-            className="h-full max-h-[40vh] max-w-[70vw] overflow-scroll"
-          />
-          <div className="h-4"></div>
-          <FileReference filesReferences={filesReferences || []} />
-          <Button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-            }}
-          >
-            Close
-          </Button>
+          <div className="mt-4 sm:mt-6">
+            <MDEditor.Markdown
+              source={answer}
+              className="prose prose-sm sm:prose-base max-h-[40vh] max-w-none overflow-auto rounded-lg bg-gray-50 p-4"
+            />
+          </div>
+          <div className="mt-6">
+            <FileReference filesReferences={filesReferences || []} />
+          </div>
         </DialogContent>
       </Dialog>
-      <Card className="relative col-span-3">
+      <Card className="relative col-span-3 mx-auto w-full sm:max-w-[80vw]">
         <CardHeader>
-          <CardTitle>Ask a Question</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Ask a Question</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-3">
             <Textarea
               placeholder="Which file should I edit to change the home page?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-            ></Textarea>
-            <div className="h-4"></div>
-            <Button type="submit" className="bg-indigo-700" disabled={loading}>
-              Ask Synthia
+              className="max-h-[80px] sm:text-lg"
+              rows={4}
+            />
+            <Button
+              type="submit"
+              className="w-full bg-indigo-700 transition-colors hover:bg-indigo-800 sm:w-auto"
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Ask Synthia"}
             </Button>
           </form>
         </CardContent>

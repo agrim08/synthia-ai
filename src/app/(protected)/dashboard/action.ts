@@ -69,7 +69,7 @@ export async function askQuestion(question: string, projectId: string) {
     SELECT "fileName","sourceCode","summary",
     1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector)  AS similarity
     FROM "SourceCodeEmbeddings"
-    WHERE 1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector) > .2
+    WHERE 1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector) > .5
     AND "projectId" = ${projectId}
     ORDER BY similarity DESC
       LIMIT 10
