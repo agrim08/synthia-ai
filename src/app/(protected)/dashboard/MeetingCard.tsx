@@ -11,6 +11,8 @@ import { api } from "@/trpc/react";
 import useProject from "@/hooks/useProject";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
 const MeetingCard = () => {
   const [progress, setProgress] = useState(0);
@@ -21,6 +23,21 @@ const MeetingCard = () => {
   const { project } = useProject();
 
   const uploadMeeting = api.project.uploadMeeting.useMutation();
+  const processMeeting = useMutation({
+    mutationFn: async (data: {
+      meetingUrl: string;
+      meetingId: string;
+      projectId: string;
+    }) => {
+      const { meetingUrl, meetingId, projectId } = data;
+      const response = await axios.post("/api/process-meeting", {
+        meetingUrl,
+        meetingId,
+        projectId,
+      });
+      return response.data;
+    },
+  });
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -47,11 +64,14 @@ const MeetingCard = () => {
           name: file.name,
         },
         {
-          onSuccess: () => {
+          onSuccess: (meeting) => {
             toast.success("Meeting uploaded successfully");
-            setTimeout(() => {
-              router.push("/meetings");
-            }, 300);
+            router.push("/meetings");
+            processMeeting.mutateAsync({
+              meetingUrl: downloadUrl,
+              projectId: project?.id,
+              meetingId: meeting!.id,
+            });
           },
           onError: (error) => {
             toast.error("Failed to upload meeting");
