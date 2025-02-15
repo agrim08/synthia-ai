@@ -48,7 +48,7 @@ export async function uploadFile(
               console.log("Upload is paused.");
               break;
             case "running":
-              console.log(`Upload is running. ${progress}%`);
+              // console.log(`Upload is running. ${progress}%`);
               break;
           }
         },

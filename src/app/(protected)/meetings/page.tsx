@@ -10,6 +10,17 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import useRefetch from "@/hooks/useRefetch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const MeetingsPage = () => {
   const { project } = useProject();
@@ -81,26 +92,48 @@ const MeetingsPage = () => {
                   View <BookOpen />
                 </Button>
               </Link>
-              <Button
-                variant={"destructive"}
-                disabled={deleteMeeting.isPending}
-                onClick={() =>
-                  deleteMeeting.mutate(
-                    { meetingId: meeting.id },
-                    {
-                      onSuccess: () => {
-                        toast.success("Meeting deleted successfully");
-                        refetch();
-                      },
-                      onError: () => {
-                        toast.error("Failed to delete meeting");
-                      },
-                    },
-                  )
-                }
-              >
-                <Trash2 size={"6"} />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant={"destructive"}
+                    disabled={deleteMeeting.isPending}
+                  >
+                    <Trash2 size={"6"} />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Are you absolutely sure?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the meeting.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        deleteMeeting.mutate(
+                          { meetingId: meeting.id },
+                          {
+                            onSuccess: () => {
+                              toast.success("Meeting deleted successfully");
+                              refetch();
+                            },
+                            onError: () => {
+                              toast.error("Failed to delete meeting");
+                            },
+                          },
+                        )
+                      }
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </li>
         ))}

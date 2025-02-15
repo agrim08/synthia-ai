@@ -44,7 +44,7 @@ const MeetingCard = () => {
       "audio/*": [".mp3", ".wav", ".m4a"],
     },
     multiple: false,
-    maxSize: 50_000_000, //50mb
+    maxSize: 50000000, //50mb
     onDrop: async (acceptedFiles) => {
       setIsUploading(true);
       const file = acceptedFiles[0];
