@@ -100,7 +100,10 @@ const MeetingCard = () => {
             Powered by AI.
           </p>
           <div className="mt-6">
-            <Button disabled={isUploading}>
+            <Button
+              disabled={isUploading}
+              className="bg-indigo-700 hover:bg-indigo-800"
+            >
               <Upload className="-ml-0.5 mr-1.5 h-5 w-5" area-hidden="true" />
               Upload Meeting
               <input className="hidden" {...getInputProps()} />

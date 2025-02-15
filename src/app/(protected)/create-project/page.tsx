@@ -94,7 +94,7 @@ const page = () => {
               <Button
                 type="submit"
                 disabled={createProject.isPending}
-                className="bg-indigo-700 hover:bg-indigo-500"
+                className="bg-indigo-700 hover:bg-indigo-800"
               >
                 Create Project
               </Button>
