@@ -27,6 +27,7 @@ import { db } from "@/server/db";
 import { Octokit } from "octokit";
 import axios from "axios";
 import { summarizeCommit } from "./gemini";
+import Bottleneck from "bottleneck";
 
 const githubUrl = "https://github.com/agrim08/synthia-ai";
 
@@ -77,7 +78,8 @@ export const pollCommits = async (projectId: string) => {
   );
   const summaryResponses = await Promise.allSettled(
     unprocessedCommits.map((commit) => {
-      return summarizeCommitFunc(githubUrl, commit.commitHash);
+      // Use the throttled version of the summarize commit function
+      return throttledSummarizeCommitFunc(githubUrl, commit.commitHash);
     }),
   );
   const summaries = summaryResponses.map((response) => {
@@ -90,7 +92,6 @@ export const pollCommits = async (projectId: string) => {
   });
   const commits = await db.gitCommit.createMany({
     data: summaries.map((summary, index) => {
-      // console.log(`Created ${summary} as ${index}`);
       return {
         commitSummary: summary,
         projectId: projectId,
@@ -113,6 +114,16 @@ const summarizeCommitFunc = async (githubUrl: string, commitHash: string) => {
   });
   return (await summarizeCommit(data)) || "";
 };
+
+// Initialize Bottleneck for throttling.
+// Adjust maxConcurrent and minTime as needed to match API rate limits.
+const limiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 500, // At least 500ms delay between calls (~2 calls per second)
+});
+
+// Wrap the summarizeCommitFunc with the limiter.
+const throttledSummarizeCommitFunc = limiter.wrap(summarizeCommitFunc);
 
 const fetchProjectGithubUrl = async (projectId: string) => {
   const project = await db.project.findUnique({

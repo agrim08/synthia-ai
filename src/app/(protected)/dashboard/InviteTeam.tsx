@@ -35,7 +35,7 @@ const InviteTeam = () => {
             <Input
               className="mt-4"
               readOnly
-              onCopy={() => {
+              onClick={() => {
                 navigator.clipboard.writeText(inviteLink);
                 toast.success("Copied to clipboard!");
               }}
