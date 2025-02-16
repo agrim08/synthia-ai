@@ -5,8 +5,6 @@
 
 **AI-Powered GitHub Assistant** that understands your codebase, analyzes commits, and answers technical questions through natural language.
 
-![Synthia AI Preview](https://via.placeholder.com/800x400.png?text=Synthia+AI+Interface+Preview)
-
 ## ✨ Features
 
 - **AI Code Analysis** - Automatic summaries of last 15 commits  
