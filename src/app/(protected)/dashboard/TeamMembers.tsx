@@ -11,7 +11,7 @@ const TeamMembers = () => {
     projectId: projectId,
   });
   return (
-    <div>
+    <div className="flex">
       {members?.map((member) => (
         <Image
           src={member.user.imageUrl as string}
