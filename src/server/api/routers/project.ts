@@ -15,11 +15,11 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Verify the user exists
       const existingUser = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId! },
         select: { credits: true },
       });
-
       if (!existingUser) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -27,9 +27,9 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
+      // Check if user has enough credits
       const fileCount = await checkCredits(input.githubUrl, input.githubToken);
       const currentCredits = existingUser.credits || 0;
-
       if (fileCount > currentCredits) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -37,7 +37,7 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
-      // Create the project.
+      // Create the project in the database
       const project = await ctx.db.project.create({
         data: {
           githubUrl: input.githubUrl,
@@ -45,6 +45,7 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
+      // Associate the user with the project
       await ctx.db.userToProject.create({
         data: {
           userId: ctx.user.userId!,
@@ -52,9 +53,16 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
-      await pollCommits(project.id);
+      // Execute external GitHub operations in background
+      indexGithubRepo(project.id, input.githubUrl, input.githubToken).catch(
+        (err) =>
+          console.error("indexGithubRepo failed for project", project.id, err),
+      );
+      pollCommits(project.id).catch((err) =>
+        console.error("pollCommits failed for project", project.id, err),
+      );
 
+      // Update user credits
       await ctx.db.user.update({
         where: { id: ctx.user.userId! },
         data: {
