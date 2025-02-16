@@ -52,15 +52,21 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
-      await pollCommits(project.id);
-
+      // Decrement user credits.
       await ctx.db.user.update({
         where: { id: ctx.user.userId! },
         data: {
           credits: { decrement: fileCount },
         },
       });
+
+      // Fire-and-forget heavy operations.
+      indexGithubRepo(project.id, input.githubUrl, input.githubToken).catch(
+        (err) => console.error("indexGithubRepo error:", err),
+      );
+      pollCommits(project.id).catch((err) =>
+        console.error("pollCommits error:", err),
+      );
 
       return project;
     }),
@@ -85,6 +91,7 @@ export const projectRouter = createTRPCRouter({
       });
     }
   }),
+
   getCommits: protectedProcedure
     .input(
       z.object({
@@ -93,7 +100,8 @@ export const projectRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        pollCommits(input.projectId).then().catch(console.error);
+        // Optionally, refresh commits in the background.
+        pollCommits(input.projectId).catch(console.error);
         return await ctx.db.gitCommit.findMany({
           where: {
             projectId: input.projectId,
@@ -107,6 +115,7 @@ export const projectRouter = createTRPCRouter({
         });
       }
     }),
+
   saveAnswer: protectedProcedure
     .input(
       z.object({
@@ -147,7 +156,7 @@ export const projectRouter = createTRPCRouter({
       z.object({
         projectId: z.string(),
         meetingUrl: z.string(),
-        name: z.string()!,
+        name: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -161,6 +170,7 @@ export const projectRouter = createTRPCRouter({
       });
       return meeting;
     }),
+
   getMeetings: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(({ ctx, input }) => {
@@ -171,6 +181,7 @@ export const projectRouter = createTRPCRouter({
         include: { issues: true },
       });
     }),
+
   deleteMeeting: protectedProcedure
     .input(z.object({ meetingId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -206,12 +217,13 @@ export const projectRouter = createTRPCRouter({
       });
     }),
 
-  getMyCredits: protectedProcedure.query(async ({ ctx, input }) => {
+  getMyCredits: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findUnique({
       where: { id: ctx.user.userId },
       select: { credits: true },
     });
   }),
+
   checkCreditNeeded: protectedProcedure
     .input(
       z.object({ githubUrl: z.string(), githubToken: z.string().optional() }),
