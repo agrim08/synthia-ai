@@ -50,8 +50,8 @@ export const gitCommitHash = async (githubUrl: string): Promise<Response[]> => {
   }
 
   const { data } = await octokit.rest.repos.listCommits({
-    owner: owner,
-    repo: repo,
+    owner,
+    repo,
   });
 
   const sortedCommits = data.sort(
@@ -69,6 +69,40 @@ export const gitCommitHash = async (githubUrl: string): Promise<Response[]> => {
   }));
 };
 
+/**
+ * Create a limiter for GitHub API calls.
+ * Adjust the minTime (and maxConcurrent) as needed.
+ */
+const githubLimiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 200, // At least 200ms between GitHub requests
+});
+
+/**
+ * Create a limiter for Gemini summarization calls.
+ * Adjust the minTime (and maxConcurrent) as needed.
+ */
+const geminiLimiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 500, // At least 500ms between summarization calls
+});
+
+/**
+ * Retrieves the diff for a commit from GitHub and passes it to the summarization service.
+ * Each external call is scheduled on its own limiter.
+ */
+const summarizeCommitFunc = async (githubUrl: string, commitHash: string) => {
+  // Throttle the GitHub diff request
+  const { data } = await githubLimiter.schedule(() =>
+    axios.get(`${githubUrl}/commit/${commitHash}.diff`, {
+      headers: { Accept: "application/vnd.github.v3.diff" },
+    }),
+  );
+
+  // Throttle the summarization call
+  return (await geminiLimiter.schedule(() => summarizeCommit(data))) || "";
+};
+
 export const pollCommits = async (projectId: string) => {
   const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
   const commitHashes = await gitCommitHash(githubUrl);
@@ -76,54 +110,37 @@ export const pollCommits = async (projectId: string) => {
     projectId,
     commitHashes,
   );
+
   const summaryResponses = await Promise.allSettled(
-    unprocessedCommits.map((commit) => {
-      // Use the throttled version of the summarize commit function
-      return throttledSummarizeCommitFunc(githubUrl, commit.commitHash);
-    }),
+    unprocessedCommits.map((commit) =>
+      // Directly call summarizeCommitFunc (which now handles its own throttling)
+      summarizeCommitFunc(githubUrl, commit.commitHash),
+    ),
   );
+
   const summaries = summaryResponses.map((response) => {
     if (response.status === "fulfilled") {
       return response.value as string;
     } else {
-      console.error(`Failed to summarize commit for`, response.reason);
+      console.error(`Failed to summarize commit:`, response.reason);
       return "";
     }
   });
+
   const commits = await db.gitCommit.createMany({
-    data: summaries.map((summary, index) => {
-      return {
-        commitSummary: summary,
-        projectId: projectId,
-        commitHash: unprocessedCommits[index]?.commitHash ?? "",
-        commitMessage: unprocessedCommits[index]?.commitMessage ?? "",
-        commitAuthorName: unprocessedCommits[index]?.commitAuthorName ?? "",
-        commitAuthorAvatar: unprocessedCommits[index]?.commitAuthorAvatar ?? "",
-        commitDate: unprocessedCommits[index]?.commitDate ?? "",
-      };
-    }),
+    data: summaries.map((summary, index) => ({
+      commitSummary: summary,
+      projectId,
+      commitHash: unprocessedCommits[index]?.commitHash ?? "",
+      commitMessage: unprocessedCommits[index]?.commitMessage ?? "",
+      commitAuthorName: unprocessedCommits[index]?.commitAuthorName ?? "",
+      commitAuthorAvatar: unprocessedCommits[index]?.commitAuthorAvatar ?? "",
+      commitDate: unprocessedCommits[index]?.commitDate ?? "",
+    })),
   });
+
   return commits;
 };
-
-const summarizeCommitFunc = async (githubUrl: string, commitHash: string) => {
-  const { data } = await axios.get(`${githubUrl}/commit/${commitHash}.diff`, {
-    headers: {
-      Accept: "application/vnd.github.v3.diff",
-    },
-  });
-  return (await summarizeCommit(data)) || "";
-};
-
-// Initialize Bottleneck for throttling.
-// Adjust maxConcurrent and minTime as needed to match API rate limits.
-const limiter = new Bottleneck({
-  maxConcurrent: 1,
-  minTime: 500, // At least 500ms delay between calls (~2 calls per second)
-});
-
-// Wrap the summarizeCommitFunc with the limiter.
-const throttledSummarizeCommitFunc = limiter.wrap(summarizeCommitFunc);
 
 const fetchProjectGithubUrl = async (projectId: string) => {
   const project = await db.project.findUnique({
@@ -142,15 +159,12 @@ const filterUnprocessedCommits = async (
   commitHashes: Response[],
 ) => {
   const processedCommits = await db.gitCommit.findMany({
-    where: {
-      projectId,
-    },
+    where: { projectId },
   });
-  const unprocesedCommits = commitHashes.filter(
+  return commitHashes.filter(
     (commit) =>
       !processedCommits.some(
         (processedCommit) => processedCommit.commitHash === commit.commitHash,
       ),
   );
-  return unprocesedCommits;
 };
