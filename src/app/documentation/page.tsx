@@ -6,26 +6,14 @@ import { Card } from "@/components/ui/card";
 import { motion } from "motion/react";
 import {
   Github,
-  FileCode,
-  MessageSquare,
   Mic,
-  Users,
   CreditCard,
   Zap,
   ChevronRight,
   ExternalLink,
-  Clock,
-  Shield,
-  Database,
-  Workflow,
   Brain,
   Code,
-  FileSearch,
-  Calendar,
-  Building,
   Rocket as RocketLaunch,
-  ArrowBigLeft,
-  ArrowLeft,
   ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
@@ -66,14 +54,19 @@ export default function Home() {
                 Get Started <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link href={"/https://github.com/agrim08/synthia-ai"}>
-              <Button
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+            <Button
+              asChild
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              <a
+                href="https://github.com/agrim08/synthia-ai"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 View on GitHub <Github className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </a>
+            </Button>
           </div>
         </div>
 
