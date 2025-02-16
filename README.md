@@ -52,5 +52,6 @@ Team Ready - Collaborative workspace with access controls
 Pre-configured for:
 
 Vercel
+<br/>
 ⭐ Star us if this makes your developer life easier!
 
