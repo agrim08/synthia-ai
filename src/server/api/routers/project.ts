@@ -15,63 +15,54 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const existingUser = await ctx.db.user.findUnique({
-          where: { id: ctx.user.userId! },
-          select: { credits: true },
-        });
-        if (!existingUser) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
+      const existingUser = await ctx.db.user.findUnique({
+        where: { id: ctx.user.userId! },
+        select: { credits: true },
+      });
 
-        const fileCount = await checkCredits(
-          input.githubUrl,
-          input.githubToken,
-        );
-        const currentCredits = existingUser.credits || 0;
-
-        if (fileCount > currentCredits) {
-          throw new Error("Insufficient credits");
-        }
-
-        // Create the project.
-        const project = await ctx.db.project.create({
-          data: {
-            githubUrl: input.githubUrl,
-            name: input.name,
-          },
-        });
-        await ctx.db.userToProject.create({
-          data: {
-            userId: ctx.user.userId!,
-            projectId: project.id,
-          },
-        });
-
-        await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
-        await pollCommits(project.id);
-        await ctx.db.user.update({
-          where: { id: ctx.user.userId! },
-          data: {
-            credits: { decrement: fileCount },
-          },
-        });
-        return project;
-      } catch (error) {
-        // If the error is already a TRPCError, rethrow it.
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        // Otherwise, wrap it in an INTERNAL_SERVER_ERROR.
+      if (!existingUser) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Error creating project",
-          cause: error,
+          code: "NOT_FOUND",
+          message: "User not found",
         });
       }
+
+      const fileCount = await checkCredits(input.githubUrl, input.githubToken);
+      const currentCredits = existingUser.credits || 0;
+
+      if (fileCount > currentCredits) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Insufficient credits",
+        });
+      }
+
+      // Create the project.
+      const project = await ctx.db.project.create({
+        data: {
+          githubUrl: input.githubUrl,
+          name: input.name,
+        },
+      });
+
+      await ctx.db.userToProject.create({
+        data: {
+          userId: ctx.user.userId!,
+          projectId: project.id,
+        },
+      });
+
+      await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
+      await pollCommits(project.id);
+
+      await ctx.db.user.update({
+        where: { id: ctx.user.userId! },
+        data: {
+          credits: { decrement: fileCount },
+        },
+      });
+
+      return project;
     }),
 
   getProjects: protectedProcedure.query(async ({ ctx }) => {
