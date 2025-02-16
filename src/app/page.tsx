@@ -38,10 +38,14 @@ export default async function Home() {
   ];
 
   const stats = [
-    { number: "10M+", label: "Lines of Code Analyzed" },
-    { number: "50K+", label: "Active Developers" },
-    { number: "100K+", label: "Repositories Processed" },
-    { number: "99.9%", label: "Accuracy Rate" },
+    { title: "Time Saved", value: "70%", desc: "in code review" },
+    { title: "Projects Analyzed", value: "500+", desc: "and counting" },
+    { title: "Meeting Hours", value: "1000+", desc: "summarized" },
+    {
+      title: "Developer Hours",
+      value: "200+",
+      desc: "saved per month",
+    },
   ];
 
   return (
@@ -105,11 +109,12 @@ export default async function Home() {
                   className="cursor-default rounded-xl border border-gray-800 bg-black/50 p-6 backdrop-blur hover:border-blue-500/50"
                 >
                   <div className="cursor-default text-3xl font-bold text-white">
-                    {stat.number}
+                    {stat.value}
                   </div>
                   <div className="mt-2 cursor-default text-sm text-gray-400">
-                    {stat.label}
+                    {stat.title}
                   </div>
+                  <p className="text-sm text-white/60">{stat.desc}</p>
                 </div>
               ))}
             </div>

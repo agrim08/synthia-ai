@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { TabsContent } from "@radix-ui/react-tabs";
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { lucario } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 type Props = {
   filesReferences: { fileName: string; sourceCode: string; summary: string }[];
@@ -45,7 +45,7 @@ const FileReference = ({ filesReferences }: Props) => {
               <div className="relative w-full">
                 <SyntaxHighlighter
                   language="typescript"
-                  style={lucario}
+                  style={vscDarkPlus}
                   customStyle={{
                     margin: 0,
                     borderRadius: "0.375rem",
