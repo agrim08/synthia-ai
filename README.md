@@ -49,9 +49,8 @@ Context-Aware - Understands project-specific patterns
 Zero Hallucination - Grounded in your actual codebase
 Team Ready - Collaborative workspace with access controls
 📦 Deployment
-Pre-configured for:
-
-Vercel
+Pre-configured for Vercel
 <br/>
+
 ⭐ Star us if this makes your developer life easier!
 
