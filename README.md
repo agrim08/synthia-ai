@@ -1,29 +1,55 @@
-# Create T3 App
+# 🧠 Synthia AI - Intelligent Code Companion  
+[![T3 Stack](https://img.shields.io/badge/stack-T3%20Stack-blue.svg)](https://create.t3.gg/)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+**AI-Powered GitHub Assistant** that understands your codebase, analyzes commits, and answers technical questions through natural language.  
 
-## What's next? How do I make an app with this?
+![Synthia AI Preview](https://via.placeholder.com/800x400.png?text=Synthia+AI+Interface+Preview)  
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+## ✨ Features  
+- **AI Code Analysis** - Automatic summaries of last 15 commits  
+- **Precision Q&A** - RAG pipeline powered by Gemini API & Langchain.js  
+- **Meeting Intelligence** - Audio processing with AssemblyAI  
+- **Multi-Project Management** - Team collaboration via Clerk  
+- **Credit System** - Pay-as-you-go analysis (₹1/file)  
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## 🛠 Tech Stack  
+**Core Stack**  
+| **Frontend**         | **Backend**    | **Database**       | **AI**            |  
+|-----------------------|----------------|--------------------|-------------------|  
+| Next.js 14            | tRPC           | PostgreSQL         | Gemini            |  
+| Shadcn/ui             | Prisma         | Neon DB            | Langchain         |  
+| Tailwind CSS          | Clerk          | Redis              | AssemblyAI        |  
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## 🚀 Quick Start  
+1. Clone repo  
+```bash  
+git clone https://github.com/yourusername/synthia-ai.git
+  
+2. Install dependencies
+```bash
+npm install  
 
-## Learn More
+3. set up .env variables
+```bash
+cp .env.example .env  
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+4. run dev server
+```bash
+npm run dev
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+🌟 Why Synthia AI?
+"Developers spend 35% of their time understanding code rather than writing it.
+Synthia flips this ratio." - Project Philosophy
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+Context-Aware - Understands project-specific patterns
 
-## How do I deploy this?
+Zero Hallucination - Grounded in your actual codebase
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Team Ready - Collaborative workspace with access controls
+
+📦 Deployment
+Pre-configured for:
+Vercel
+
+⭐ Star us if this makes your developer life easier!
