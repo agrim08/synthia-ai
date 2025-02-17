@@ -7,7 +7,7 @@
 
 ## ✨ Features
 
-- **AI Code Analysis** - Automatic summaries of last 15 commits  
+- **AI Code Analysis** - Automatic summaries of latest 15 commits  
 - **Precision Q&A** - RAG pipeline powered by Gemini API & Langchain.js  
 - **Meeting Intelligence** - Audio processing with AssemblyAI  
 - **Multi-Project Management** - Team collaboration via Clerk  
