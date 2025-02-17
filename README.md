@@ -21,7 +21,7 @@
 |---------------|-------------|--------------|--------------|
 | Next.js 14    | tRPC        | PostgreSQL   | Gemini       |
 | Shadcn/ui     | Prisma      | Neon DB      | Langchain    |
-| Tailwind CSS  | Clerk       | Redis        | AssemblyAI   |
+| Tailwind CSS  | Clerk       | FireStore    | AssemblyAI   |
 
 ## 🚀 Quick Start
 
