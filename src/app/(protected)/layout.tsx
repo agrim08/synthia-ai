@@ -1,23 +1,32 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SIDEBAR_COOKIE_NAME } from "@/components/ui/sidebar";
 import React from "react";
 import { AppSidebar } from "./AppSidebar";
 import Header from "./Header";
+import { cookies } from "next/headers";
 
 type Props = {
   children: React.ReactNode;
 };
 
-const SidebarLayout = ({ children }: Props) => {
+export const dynamic = "force-dynamic";
+
+const SidebarLayout = async ({ children }: Props) => {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(SIDEBAR_COOKIE_NAME);
+  // Default to open (true) if no cookie, otherwise check if value is "true"
+  const defaultOpen = cookie ? cookie.value === "true" : true;
+
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="m-2 w-full">
-        <Header />
-        <div className="mt-4"></div>
-        <div className="h-full overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-4 shadow">
-          {children}
-        </div>
-      </main>
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <div className="flex min-h-screen w-full bg-[#f0f2f7]">
+        <AppSidebar />
+        <main className="flex-1">
+          <Header />
+          <div className="min-h-[calc(100vh-80px)]">
+            {children}
+          </div>
+        </main>
+      </div>
     </SidebarProvider>
   );
 };

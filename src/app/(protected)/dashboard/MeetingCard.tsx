@@ -2,9 +2,9 @@
 
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { uploadFile } from "@/lib/firebase";
-import { Presentation, Upload } from "lucide-react";
+import { AudioLines, Mic, Sparkles, Video } from "lucide-react";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { api } from "@/trpc/react";
@@ -13,13 +13,12 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { cn } from "@/lib/utils";
 
 const MeetingCard = () => {
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-
   const router = useRouter();
-
   const { project } = useProject();
 
   const uploadMeeting = api.project.uploadMeeting.useMutation();
@@ -39,7 +38,7 @@ const MeetingCard = () => {
     },
   });
 
-  const { getRootProps, getInputProps } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "audio/*": [".mp3", ".wav", ".m4a"],
     },
@@ -52,84 +51,110 @@ const MeetingCard = () => {
       if (!project) return;
       if (!file) return;
 
-      const downloadUrl = (await uploadFile(
-        file as File,
-        setProgress,
-      )) as string;
+      try {
+        const downloadUrl = (await uploadFile(
+          file as File,
+          setProgress,
+        )) as string;
 
-      uploadMeeting.mutate(
-        {
-          meetingUrl: downloadUrl,
-          projectId: project?.id,
-          name: file.name,
-        },
-        {
-          onSuccess: (meeting) => {
-            toast.success("Meeting uploaded successfully");
-            router.push("/meetings");
-            processMeeting.mutateAsync({
-              meetingUrl: downloadUrl,
-              projectId: project?.id,
-              meetingId: meeting!.id,
-            });
+        uploadMeeting.mutate(
+          {
+            meetingUrl: downloadUrl,
+            projectId: project?.id,
+            name: file.name,
           },
-          onError: (error) => {
-            toast.error("Failed to upload meeting");
-            console.error(error);
+          {
+            onSuccess: (meeting) => {
+              toast.success("Meeting uploaded! Analysis starting...");
+              router.push("/meetings");
+              processMeeting.mutateAsync({
+                meetingUrl: downloadUrl,
+                projectId: project?.id,
+                meetingId: meeting!.id,
+              });
+            },
+            onError: (error) => {
+              toast.error("Failed to upload recording");
+              console.error(error);
+            },
           },
-        },
-      );
-      setIsUploading(false);
+        );
+      } catch (error) {
+        toast.error("Cloud storage error");
+      } finally {
+        setIsUploading(false);
+      }
     },
   });
 
   return (
     <Card
-      className="col-span-2 flex flex-col items-center justify-center py-4"
+      className={cn(
+        "group h-full flex flex-col items-center justify-center border border-slate-200 rounded-[40px] bg-white transition-all duration-300 relative overflow-hidden",
+        isDragActive ? "border-indigo-400 bg-indigo-50/50 scale-[0.98]" : "hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-100/40 cursor-pointer hover:translate-y-[-4px] active:translate-y-0",
+        isUploading && "pointer-events-none opacity-90 cursor-wait"
+      )}
       {...getRootProps()}
     >
-      {!isUploading && (
-        <>
-          <Presentation className="w-l0 h-10 animate-bounce" />
-          <h3 className="mt-2 text-sm font-semibold text-white">
-            Create a new meeting
-          </h3>
-          <p className="mt-1 text-center text-sm text-gray-400">
-            Analyse your meeting with Synthia.
-            <br />
-            Powered by AI.
-          </p>
-          <div className="mt-6">
-            <Button
-              disabled={isUploading}
-              className="bg-indigo-700 hover:bg-indigo-800"
-            >
-              <Upload className="-ml-0.5 mr-1.5 h-5 w-5" area-hidden="true" />
-              Upload Meeting
-              <input className="hidden" {...getInputProps()} />
-            </Button>
+      <input {...getInputProps()} />
+      
+      {!isUploading ? (
+        <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 size-16 rounded-2xl bg-indigo-50 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex size-16 items-center justify-center rounded-[20px] bg-slate-50 text-slate-400 border border-slate-100 group-hover:bg-indigo-700 group-hover:text-white group-hover:border-indigo-700 transition-all duration-500 shadow-sm">
+              <AudioLines className="size-8" />
+            </div>
+            <div className="absolute -right-3 -top-3 flex size-6 items-center justify-center rounded-full bg-indigo-700 text-white shadow-lg ring-4 ring-white group-hover:scale-110 transition-transform">
+               <Mic className="size-3" />
+            </div>
           </div>
-        </>
-      )}
-      {isUploading && (
-        <div>
-          <div className="h-20 w-20">
+
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none transition-colors">
+              Meeting Analyst
+            </h3>
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.08em] block mt-1.5">Transcription & Analysis</span>
+          </div>
+
+          <div className="mt-8">
+            <Button
+              className="rounded-full h-11 bg-indigo-700 text-white px-8 font-black text-sm transition-all hover:bg-indigo-800 active:scale-95 shadow-lg shadow-indigo-100/50"
+              asChild
+            >
+              <span>Browse Recording</span>
+            </Button>
+            <div className="mt-4 flex items-center justify-center gap-1.5 opacity-40">
+               <Sparkles className="size-3 text-indigo-400" />
+               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900">Supported AI Engine v2</span>
+            </div>
+          </div>
+        </CardContent>
+      ) : (
+        <CardContent className="flex flex-col items-center justify-center p-10 animate-in fade-in zoom-in-95 duration-300">
+          <div className="size-36 relative mb-8">
             <CircularProgressbar
               value={progress}
-              text={`${progress}%`}
+              text={`${Math.round(progress)}%`}
+              strokeWidth={10}
               styles={buildStyles({
-                pathColor: "#6366F1",
-                trailColor: "#4338CA",
-                textColor: "#ffffff",
+                pathColor: "#4338ca",
+                trailColor: "#f1f5f9",
+                textColor: "#0f172a",
+                textSize: "20px",
+                strokeLinecap: "round",
+                pathTransitionDuration: 0.5,
               })}
             />
           </div>
-          <p className="text-center text-sm font-medium text-gray-500">
-            Uploading a meeting...
-          </p>
-        </div>
+          <div className="space-y-2 text-center">
+            <p className="text-xl font-black text-slate-900">Syncing Media...</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Do not refresh your session</p>
+          </div>
+        </CardContent>
       )}
     </Card>
   );
 };
+
 export default MeetingCard;
