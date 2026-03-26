@@ -1,21 +1,19 @@
 import "@/styles/globals.css";
-import { GeistSans } from "geist/font/sans";
-import { Roboto } from "next/font/google";
+import { Inter } from "next/font/google";
 import { type Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 
-const roboto = Roboto({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-roboto",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
   title: "Synthia",
   description: "Bringing Intelligence to Your Workflow.",
-  icons: [{ rel: "icon", url: "/image.png" }],
+  icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
 export default function RootLayout({
@@ -23,8 +21,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider afterSignOutUrl="/sign-in">
-      <html lang="en" className={`${GeistSans.variable} ${roboto.variable}`}>
-        <body>
+      <html lang="en" className={`${inter.variable}`}>
+        <body className="antialiased font-sans">
           <TRPCReactProvider>{children}</TRPCReactProvider>
           <Toaster richColors />
         </body>
