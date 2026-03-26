@@ -3,7 +3,7 @@ import { Document } from "@langchain/core/documents";
 
 const genAi = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAi.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-2.5-flash",
 });
 
 export const summarizeCommit = async (diff: string) => {
