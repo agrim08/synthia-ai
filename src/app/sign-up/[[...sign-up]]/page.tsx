@@ -1,11 +1,13 @@
-import { SignIn, SignUp } from "@clerk/nextjs";
+import { SignUp } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 export default function Page() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-black to-gray-900 px-4 py-8">
-      <div className="mb-12 space-y-3 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-indigo-700 p-4">
+      <div className="mb-12 flex flex-col items-center space-y-4 text-center">
+        <Logo width={64} height={76} />
         <h1 className="text-5xl font-extrabold tracking-tight text-white">
           <span className="bg-gradient-to-r from-indigo-500 to-indigo-400 bg-clip-text text-transparent">
             Synthia

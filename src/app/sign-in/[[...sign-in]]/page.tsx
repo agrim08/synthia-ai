@@ -1,11 +1,13 @@
 import { SignIn } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 export default function Page() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-black to-gray-900 px-4 py-8">
-      <div className="mb-8 space-y-2 text-center">
+      <div className="mb-8 flex flex-col items-center space-y-4 text-center">
+        <Logo width={64} height={76} />
         <h1 className="text-5xl font-extrabold tracking-tight text-white">
           <span className="bg-gradient-to-r from-indigo-500 to-indigo-400 bg-clip-text text-transparent">
             Synthia
@@ -20,7 +22,7 @@ export default function Page() {
         <SignIn
           appearance={{
             variables: {
-              colorPrimary: "#6366f1",
+              colorPrimary: "#4338ca",
               colorText: "#ffffff",
               colorTextSecondary: "#9ca3af",
               colorBackground: "#111827",
@@ -41,7 +43,7 @@ export default function Page() {
               formFieldInput:
                 "bg-gray-800 border-gray-700 focus:border-indigo-500 transition-all duration-200",
               formButtonPrimary:
-                "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200",
+                "bg-indigo-700 hover:bg-indigo-800 text-white font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200",
               footer: {
                 display: "none",
               },
