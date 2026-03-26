@@ -6,12 +6,14 @@ import { api } from "@/trpc/react";
 import React from "react";
 import { toast } from "sonner";
 
-const ArchiveProject = () => {
+const ArchiveProject = ({ id }: { id?: string }) => {
   const archive = api.project.archiveProject.useMutation();
   const { projectId } = useProject();
   const refetch = useRefetch();
+  
   return (
     <Button
+      id={id}
       disabled={archive.isPending}
       size="sm"
       className="bg-red-600 text-white hover:bg-red-800"
