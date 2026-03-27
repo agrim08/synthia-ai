@@ -84,7 +84,7 @@ const CommitLogs = () => {
       {(!commits || commits.length === 0) && (
          <div className="flex flex-col items-center justify-center p-10 text-center opacity-40">
             <GitCommit className="size-10 text-slate-200 mb-3" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">No sync events found for this session</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Link your first project</p>
          </div>
       )}
     </div>

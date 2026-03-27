@@ -154,7 +154,6 @@ const QuestionCard = () => {
                 </div>
                 <div>
                    <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none mb-2">Ask Synthia</h3>
-                   <span className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.08em]">Intelligent codebase query</span>
                 </div>
              </div>
           </div>

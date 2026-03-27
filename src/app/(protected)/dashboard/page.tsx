@@ -22,7 +22,7 @@ const DashboardPage = () => {
   const { project } = useProject();
   
   return (
-    <div className="min-h-screen bg-[#f0f2f7] font-sans">
+    <div className="max-w-7xl mx-auto space-y-10">
       {/* 1. Slim Sticky Context Bar (56px) */}
       <div className="sticky top-20 z-40 bg-[#f0f2f7]/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 flex items-center justify-between h-14">
         <div className="flex items-center gap-4">

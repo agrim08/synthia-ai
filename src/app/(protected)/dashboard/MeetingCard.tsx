@@ -124,10 +124,6 @@ const MeetingCard = () => {
             >
               <span>Browse Recording</span>
             </Button>
-            <div className="mt-4 flex items-center justify-center gap-1.5 opacity-40">
-               <Sparkles className="size-3 text-indigo-400" />
-               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900">Supported AI Engine v2</span>
-            </div>
           </div>
         </CardContent>
       ) : (

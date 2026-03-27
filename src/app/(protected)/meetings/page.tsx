@@ -37,9 +37,9 @@ const MeetingsPage = () => {
   const deleteMeeting = api.project.deleteMeeting.useMutation();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-20">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
       {/* Upload/Create Section with Header Context */}
-      <section className="space-y-10">
+      <section className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-2 gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -199,13 +199,10 @@ const MeetingsPage = () => {
 
             {!meetings?.length && !isLoading && (
               <div className="flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-100 bg-slate-50/30 py-24 text-center">
-                <div className="rounded-3xl bg-slate-100 p-8 mb-6 shadow-inner ring-1 ring-slate-200/50">
-                  <Video className="size-16 text-slate-200" />
+                <div className="rounded-xl bg-slate-100 p-3 mb-6 shadow-inner ring-1 ring-slate-200/50">
+                  <Video className="size-6 text-slate-200" />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Transcription Desk Ready</h3>
-                <p className="text-xs font-bold text-slate-500 max-w-[400px] mt-2 uppercase tracking-widest leading-relaxed">
-                   Synchronize recordings via the interface above to begin automated analysis
-                </p>
+                <h3 className="text-xl text-slate-900 tracking-tight">Transcription Desk Ready</h3>
               </div>
             )}
           </div>

@@ -39,8 +39,7 @@ const BillingPage = () => {
   const estimatedRepos = Math.floor(creditsToBuyAmount / 80);
 
   return (
-    <div className="min-h-screen bg-slate-50/60 px-6 py-10">
-      <div className="mx-auto max-w-4xl space-y-8">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
 
         {/* ── Page Header ── */}
         <div className="space-y-1">
@@ -318,7 +317,6 @@ const BillingPage = () => {
         </div>
 
       </div>
-    </div>
   );
 };
 

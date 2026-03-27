@@ -62,12 +62,11 @@ const AskSynthiaHero = () => {
 
   return (
     <>
-      <div className="w-full space-y-3">
+      <div className="w-full space-y-2">
         <div className="flex items-center gap-2 group cursor-default ml-1">
           <Sparkles className="size-4 text-indigo-500" />
           <div className="flex flex-col">
             <h3 className="text-sm font-bold text-slate-900 leading-none">Ask Synthia</h3>
-            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Intelligent codebase query</span>
           </div>
         </div>
 

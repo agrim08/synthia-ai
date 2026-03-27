@@ -26,7 +26,7 @@ export default function Header() {
                 Project Name
               </span>
               <span className="text-sm font-black text-slate-900 truncate max-w-[180px] tracking-tight">
-                {project?.name || "Initializing..."}
+                {project?.name || ""}
               </span>
            </div>
         </div>
@@ -46,10 +46,6 @@ export default function Header() {
         
         {/* Notifications & Action Bar */}
         <div className="flex items-center gap-2 pl-4 border-l border-slate-100">
-           <button className="relative group size-11 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 transition-all hover:bg-indigo-700 hover:text-white hover:shadow-xl hover:shadow-slate-200 hover:border-indigo-700 active:scale-95">
-             <Bell className="size-5" />
-             <div className="absolute right-3.5 top-3.5 size-1.5 rounded-full bg-indigo-700 ring-2 ring-white group-hover:ring-indigo-700 transition-all" />
-           </button>
 
            <div className="px-2">
              <UserButton

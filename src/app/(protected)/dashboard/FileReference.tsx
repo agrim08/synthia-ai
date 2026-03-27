@@ -55,19 +55,15 @@ const FileReference = ({ filesReferences }: Props) => {
             >
               <div className="group relative overflow-hidden rounded-[32px] border border-slate-100 bg-slate-50/30 p-2 shadow-inner ring-1 ring-slate-200/20">
                 {/* Header for code block */}
-                <div className="flex items-center justify-between px-6 py-4 bg-white/60 backdrop-blur-md rounded-t-[24px] border-b border-slate-100/50">
+                <div className="flex items-center justify-between px-6 py-4 bg-white rounded-t-[24px] border-b border-slate-100/50">
                    <div className="flex items-center gap-3">
                       <Code2 className="size-4 text-indigo-500" />
                       <span className="text-sm font-black text-slate-900 tracking-tight">{file.fileName}</span>
                    </div>
-                   <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-[10px] font-black uppercase tracking-widest text-emerald-600 shadow-sm border border-emerald-100">
-                      <Sparkles className="size-2.5" />
-                      Contextual Block
-                   </div>
                 </div>
                 
                 {/* Syntax Highlighter with Light Theme */}
-                <div className="max-h-[50vh] overflow-auto scroll-smooth p-4 custom-scrollbar bg-white rounded-b-[24px]">
+                <div className="p-4 bg-white rounded-b-[24px]">
                   <SyntaxHighlighter
                     language="typescript"
                     style={materialLight}

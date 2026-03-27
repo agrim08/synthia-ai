@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
 export const AppSidebar = () => {
   const pathname = usePathname();
@@ -108,12 +109,14 @@ export const AppSidebar = () => {
                 Connected Projects
               </SidebarGroupLabel>
             )}
-            <Link href="/create-project" className={cn(
-              "p-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200",
-              !open && "hidden"
-            )}>
-               <Plus className="size-3.5 text-slate-400" />
-            </Link>
+            <CreateProjectDialog>
+              <button className={cn(
+                "p-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200 focus:outline-none",
+                !open && "hidden"
+              )}>
+                 <Plus className="size-3.5 text-slate-400" />
+              </button>
+            </CreateProjectDialog>
             {!open && (
                <div className="h-px w-6 bg-slate-100" />
             )}
@@ -154,18 +157,12 @@ export const AppSidebar = () => {
                 )}
               </button>
             ))}
-
-            {(!projects || projects.length === 0) && open && (
-               <div className="px-6 py-8 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 mx-2">
-                  <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-loose italic">Initializing Engines...</span>
-               </div>
-            )}
           </div>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className={cn("p-4 mb-4", !open && "p-2 mb-0 flex items-center justify-center")}>
-        <Link href="/create-project" className="w-full h-full flex items-center justify-center">
+        <CreateProjectDialog>
           <Button
             className={cn(
                "w-full h-8 rounded-2xl bg-indigo-700 text-white transition-all hover:bg-indigo-800 hover:scale-[1.02] shadow-2xl shadow-indigo-100/40",
@@ -182,7 +179,7 @@ export const AppSidebar = () => {
               <Plus className="size-6" />
             )}
           </Button>
-        </Link>
+        </CreateProjectDialog>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
