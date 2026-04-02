@@ -1,24 +1,12 @@
 /**
- * This module handles the process of loading a GitHub repository's source code,
- * generating embeddings from code summaries, and storing the processed data in a database.
+ * githubRepoLoader.ts
  *
- * The flow of the code is as follows:
- *
- * 1. Loading Repository Content:
- *    - `loadGithubRepo`: Uses the `GithubRepoLoader` to fetch the contents of a GitHub repository.
- *      It supports recursive loading, excludes certain files (e.g., lock files, package manifests),
- *      and allows specifying a branch and concurrency settings.
- *
- * 2. Generating and Indexing Embeddings:
- *    - `indexGithubRepo`: Orchestrates the process by first calling `loadGithubRepo` to obtain the documents.
- *      It then processes each document to generate embeddings and summaries via the `generateEmbeddings` function.
- *      Each embedding, along with its summary, source code, and file metadata, is stored in the database.
- *      A raw SQL query is used to update the vector field for embeddings since Prisma doesn't natively support vector types.
- *
- * 3. Processing Documents for Embeddings:
- *    - `generateEmbeddings`: For each document, this function generates a summary using `summariseCode`
- *      and then computes an embedding with `loadEmbedding`. It returns an object containing the summary,
- *      embedding, source code, and file name for further processing.
+ * Handles loading a GitHub repository, generating embeddings, and storing them.
+ * Supports:
+ * - Comprehensive file filtering (ignores build artefacts, lockfiles, media, etc.)
+ * - Exponential backoff when hitting Gemini rate limits (429)
+ * - Checkpoint / resume: skips files already indexed for this project
+ * - Progress tracking in DB so the UI can show a live progress bar
  */
 
 import { GithubRepoLoader } from "@langchain/community/document_loaders/web/github";
@@ -28,47 +16,251 @@ import { db } from "@/server/db";
 import { Octokit } from "octokit";
 import Bottleneck from "bottleneck";
 
-// Create a limiter for GitHub API requests
-const githubLimiter = new Bottleneck({
-  maxConcurrent: 1,
-  minTime: 300, // Adjust based on your rate limit
-});
+// ---------------------------------------------------------------------------
+// File-extension / filename filter
+// ---------------------------------------------------------------------------
+
+/**
+ * Extensions we never want to embed – these add noise with zero semantic value
+ * and burn API quota fast.
+ */
+const IGNORED_EXTENSIONS = new Set([
+  // Lockfiles / package managers
+  ".lock",
+  ".lockb",
+  // Compiled / binary output
+  ".exe",
+  ".dll",
+  ".so",
+  ".dylib",
+  ".bin",
+  ".wasm",
+  ".pyc",
+  ".pyo",
+  // Images & media
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".ico",
+  ".webp",
+  ".bmp",
+  ".tiff",
+  ".mp4",
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".avi",
+  ".mov",
+  ".webm",
+  // Fonts
+  ".ttf",
+  ".otf",
+  ".woff",
+  ".woff2",
+  ".eot",
+  // Archives
+  ".zip",
+  ".tar",
+  ".gz",
+  ".rar",
+  ".7z",
+  // Documents
+  ".pdf",
+  ".docx",
+  ".xlsx",
+  ".pptx",
+  // Certificates / keys
+  ".pem",
+  ".key",
+  ".crt",
+  ".p12",
+  // Database dumps / migrations that are just data
+  ".sql",
+  // Source maps
+  ".map",
+  // Minified output
+  ".min.js",
+  ".min.css",
+]);
+
+/**
+ * Exact filenames (case-sensitive) that are always irrelevant.
+ */
+const IGNORED_FILENAMES = new Set([
+  "package.json",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  "bun.lockb",
+  "composer.lock",
+  "Gemfile.lock",
+  "Cargo.lock",
+  ".env",
+  ".env.local",
+  ".env.example",
+  ".env.development",
+  ".env.production",
+  ".gitignore",
+  ".gitattributes",
+  ".eslintignore",
+  ".prettierignore",
+  ".dockerignore",
+  "Dockerfile",
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  ".editorconfig",
+  "CHANGELOG.md",
+  "LICENCE",
+  "LICENSE",
+  "LICENSE.md",
+  "CONTRIBUTING.md",
+  "CODE_OF_CONDUCT.md",
+  "SECURITY.md",
+  ".nvmrc",
+  ".node-version",
+]);
+
+/**
+ * Directory segments that are always noise when found anywhere in the path.
+ */
+const IGNORED_PATH_SEGMENTS = new Set([
+  "node_modules",
+  ".git",
+  ".github",
+  "dist",
+  "build",
+  "out",
+  ".next",
+  ".nuxt",
+  "__pycache__",
+  ".pytest_cache",
+  ".mypy_cache",
+  "coverage",
+  ".nyc_output",
+  "vendor",
+  "venv",
+  ".venv",
+  "env",
+  "target", // Rust / Java build output
+  ".turbo",
+  ".vercel",
+  ".cache",
+  "tmp",
+  "temp",
+  ".idea",
+  ".vscode",
+  ".DS_Store",
+  "storybook-static",
+  "public/static", // pre-built static assets
+]);
+
+/** Max source code characters we send to the AI per file (keeps tokens sane) */
+const MAX_CODE_CHARS = 8_000;
+
+/** After this many chars of source we skip embedding entirely (file too large to summarise meaningfully) */
+const SKIP_EMBEDDING_ABOVE_CHARS = 80_000;
+
+export function shouldIgnoreFile(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  const segments = lower.replace(/\\/g, "/").split("/");
+
+  // Check path segments
+  for (const seg of segments) {
+    if (IGNORED_PATH_SEGMENTS.has(seg)) return true;
+  }
+
+  // Check exact filename
+  const filename = segments[segments.length - 1] ?? "";
+  if (IGNORED_FILENAMES.has(filename)) return true;
+
+  // Check extension(s) – handle double extensions like ".min.js"
+  const dotParts = filename.split(".");
+  if (dotParts.length >= 3) {
+    // e.g. "foo.min.js" → check ".min.js"
+    const doubleExt = `.${dotParts.slice(-2).join(".")}`;
+    if (IGNORED_EXTENSIONS.has(doubleExt)) return true;
+  }
+  if (dotParts.length >= 2) {
+    const ext = `.${dotParts[dotParts.length - 1]}`;
+    if (IGNORED_EXTENSIONS.has(ext)) return true;
+  }
+
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Rate-limit-aware Gemini caller with exponential backoff
+// ---------------------------------------------------------------------------
+
+const MAX_RETRIES = 6;
+const BASE_DELAY_MS = 5_000; // 5 s initial wait on 429
+
+async function withRateLimitRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const is429 =
+        err?.status === 429 ||
+        (err?.message ?? "").includes("429") ||
+        (err?.message ?? "").toLowerCase().includes("quota");
+
+      if (is429 && attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(
+          `[rateLimitRetry] 429 on "${label}" — waiting ${delay / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        attempt++;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GitHub file-count helper (used for credit calc)
+// ---------------------------------------------------------------------------
+
+const githubLimiter = new Bottleneck({ maxConcurrent: 1, minTime: 300 });
 
 const getFileCount = async (
   path: string,
-  ocktokit: Octokit,
+  octokit: Octokit,
   githubOwner: string,
   githubRepo: string,
   acc: number = 0,
 ): Promise<number> => {
-  // Use the limiter to schedule the API call
-  const { data } = await githubLimiter.schedule(() =>
-    ocktokit.rest.repos.getContent({
+  const response = await githubLimiter.schedule(() =>
+    octokit.rest.repos.getContent({
       owner: githubOwner,
       repo: githubRepo,
       path,
     }),
   );
+  const data = response.data as any;
 
-  // Base case: it's a file
-  if (!Array.isArray(data) && data.type === "file") {
-    return acc + 1;
-  }
+  if (!Array.isArray(data) && data.type === "file") return acc + 1;
 
-  // It's a directory
   if (Array.isArray(data)) {
     let fileCount = 0;
     const directories: string[] = [];
     for (const item of data) {
-      if (item.type === "dir") {
-        directories.push(item.path);
-      }
-      fileCount++;
+      if (item.type === "dir") directories.push(item.path);
+      // Only count files we would actually embed
+      if (item.type === "file" && !shouldIgnoreFile(item.path)) fileCount++;
     }
     if (directories.length > 0) {
       const dirCounts = await Promise.all(
         directories.map((dirPath) =>
-          getFileCount(dirPath, ocktokit, githubOwner, githubRepo, 0),
+          getFileCount(dirPath, octokit, githubOwner, githubRepo, 0),
         ),
       );
       fileCount += dirCounts.reduce((sum, count) => sum + count, 0);
@@ -79,21 +271,16 @@ const getFileCount = async (
 };
 
 export const checkCredits = async (githubUrl: string, githubToken?: string) => {
-  const ocktokit = new Octokit({ auth: githubToken });
+  const octokit = new Octokit({ auth: githubToken });
   const githubOwner = githubUrl.split("/")[3];
   const githubRepo = githubUrl.split("/")[4];
-
   if (!githubOwner || !githubRepo) return 0;
-
-  const fileCount = await getFileCount(
-    "",
-    ocktokit,
-    githubOwner,
-    githubRepo,
-    0,
-  );
-  return fileCount;
+  return getFileCount("", octokit, githubOwner, githubRepo, 0);
 };
+
+// ---------------------------------------------------------------------------
+// Repo loader
+// ---------------------------------------------------------------------------
 
 export const loadGithubRepo = async (
   githubUrl: string,
@@ -103,73 +290,220 @@ export const loadGithubRepo = async (
     accessToken: githubToken || "",
     branch: "main",
     ignoreFiles: [
+      // pass a coarse list; the shouldIgnoreFile fn handles the rest
       "package.json",
       "package-lock.json",
+      "*.lock",
       "yarn.lock",
       "pnpm-lock.yaml",
       "bun.lockb",
     ],
     recursive: true,
     unknown: "warn",
-    maxConcurrency: 5, // Defaults to 2
+    maxConcurrency: 3,
   });
-  const docs = await loader.load();
-  return docs;
+
+  const allDocs = await loader.load();
+  // Apply our fine-grained filter
+  const filtered = allDocs.filter(
+    (doc) => !shouldIgnoreFile(doc.metadata.source as string),
+  );
+  console.log(
+    `[loadGithubRepo] Loaded ${allDocs.length} docs, kept ${filtered.length} after filtering`,
+  );
+  return filtered;
 };
+
+// ---------------------------------------------------------------------------
+// Main indexing function  (checkpoint/resume aware)
+// ---------------------------------------------------------------------------
+
+/**
+ * Single Bottleneck limiter used for ALL Gemini calls.
+ * maxConcurrent=1 + minTime=2000ms ≈ 30 req/min – safely under free-tier limits.
+ */
+const geminiLimiter = new Bottleneck({ maxConcurrent: 1, minTime: 2_000 });
 
 export const indexGithubRepo = async (
   projectId: string,
   githubUrl: string,
   githubToken?: string,
 ) => {
-  const docs = await loadGithubRepo(githubUrl, githubToken);
-  const allEmbeddings = await generateEmbeddings(docs);
+  console.log(`[indexGithubRepo] START project=${projectId}`);
 
-  await Promise.allSettled(
-    allEmbeddings.map(async (embedding, index) => {
-      // console.log(`processing ${index} of ${allEmbeddings.length}`);
-      if (!embedding) return;
+  // Mark project as INDEXING
+  await (db.project as any).update({
+    where: { id: projectId },
+    data: { indexingStatus: "INDEXING", indexingError: null },
+  });
 
-      const sourceCodeEmbedding = await db.sourceCodeEmbeddings.create({
-        data: {
-          summary: embedding.summary || "",
-          sourceCode: embedding.sourceCode,
-          fileName: embedding.fileName,
-          projectId,
-        },
+  try {
+    const docs = await loadGithubRepo(githubUrl, githubToken);
+
+    // ---- Checkpoint: find files already embedded for this project ----
+    const alreadyIndexed = await db.sourceCodeEmbeddings.findMany({
+      where: { projectId },
+      select: { fileName: true },
+    });
+    const alreadyIndexedSet = new Set(alreadyIndexed.map((r) => r.fileName));
+
+    const pendingDocs = docs.filter(
+      (doc) => !alreadyIndexedSet.has(doc.metadata.source as string),
+    );
+
+    const totalFiles = alreadyIndexed.length + pendingDocs.length;
+    let processed = alreadyIndexed.length;
+
+    console.log(
+      `[indexGithubRepo] ${alreadyIndexed.length} already done, ${pendingDocs.length} pending, ${totalFiles} total`,
+    );
+
+    // Update totals
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: { indexingTotal: totalFiles, indexingProgress: processed },
+    });
+
+    if (pendingDocs.length === 0) {
+      console.log(`[indexGithubRepo] Nothing new to index, marking COMPLETED`);
+      await (db.project as any).update({
+        where: { id: projectId },
+        data: { indexingStatus: "COMPLETED", indexedAt: new Date() },
       });
+      return;
+    }
 
-      //we need to write raw sql query as prisma does not provide for vector
-      await db.$executeRaw`
-      UPDATE "SourceCodeEmbeddings"
-      SET "summaryEmbeddings" = ${embedding.embedding} :: vector
-      WHERE "id" = ${sourceCodeEmbedding.id}
-    `;
-    }),
-  );
+    let hadRateLimitError = false;
+
+    // Process sequentially via the limiter to respect rate limits
+    for (const doc of pendingDocs) {
+      const source = doc.metadata.source as string;
+      const code = doc.pageContent;
+
+      // Skip very large files
+      if (code.length > SKIP_EMBEDDING_ABOVE_CHARS) {
+        console.warn(
+          `[indexGithubRepo] Skipping oversized file (${code.length} chars): ${source}`,
+        );
+        processed++;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingProgress: processed },
+        });
+        continue;
+      }
+
+      try {
+        const truncatedCode = code.slice(0, MAX_CODE_CHARS);
+
+        // Summarise
+        const summary = await geminiLimiter.schedule(() =>
+          withRateLimitRetry(
+            () =>
+              summariseCode(
+                new Document({
+                  pageContent: truncatedCode,
+                  metadata: doc.metadata,
+                }),
+              ),
+            `summariseCode:${source}`,
+          ),
+        );
+
+        // Embed
+        const embeddingValues = await geminiLimiter.schedule(() =>
+          withRateLimitRetry(
+            () => loadEmbedding(summary ?? ""),
+            `loadEmbedding:${source}`,
+          ),
+        );
+
+        // Persist
+        const record = await db.sourceCodeEmbeddings.create({
+          data: {
+            summary: summary ?? "",
+            sourceCode: JSON.parse(JSON.stringify(truncatedCode)),
+            fileName: source,
+            projectId,
+          },
+        });
+
+        await db.$executeRawUnsafe(
+          `UPDATE "SourceCodeEmbeddings" SET "summaryEmbeddings" = $1::vector WHERE "id" = $2`,
+          `[${embeddingValues.join(",")}]`,
+          record.id,
+        );
+
+        processed++;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingProgress: processed },
+        });
+
+        console.log(
+          `[indexGithubRepo] [${processed}/${totalFiles}] Indexed: ${source}`,
+        );
+      } catch (err: any) {
+        const is429 =
+          err?.status === 429 ||
+          (err?.message ?? "").includes("429") ||
+          (err?.message ?? "").toLowerCase().includes("quota");
+
+        if (is429) {
+          hadRateLimitError = true;
+          console.error(
+            `[indexGithubRepo] Exhausted retries on rate limit for ${source} — stopping and saving checkpoint`,
+          );
+          await (db.project as any).update({
+            where: { id: projectId },
+            data: {
+              indexingStatus: "PARTIAL",
+              indexingProgress: processed,
+              indexingError: `Rate limit hit after processing ${processed}/${totalFiles} files. Re-run to resume.`,
+            },
+          });
+          return; // Exit early; next run will skip already-processed files
+        }
+
+        // Non-rate-limit error: log and continue with next file
+        console.error(
+          `[indexGithubRepo] Non-fatal error on ${source}:`,
+          err?.message ?? err,
+        );
+        processed++;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingProgress: processed },
+        });
+      }
+    }
+
+    // All done
+    const finalStatus = hadRateLimitError ? "PARTIAL" : "COMPLETED";
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: {
+        indexingStatus: finalStatus,
+        indexingProgress: processed,
+        indexedAt: new Date(),
+        indexingError: hadRateLimitError
+          ? "Some files were skipped due to rate limits. Re-run indexing to complete."
+          : null,
+      },
+    });
+
+    console.log(
+      `[indexGithubRepo] DONE — status=${finalStatus}, processed=${processed}/${totalFiles}`,
+    );
+  } catch (err: any) {
+    console.error(`[indexGithubRepo] Fatal error:`, err);
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: {
+        indexingStatus: "FAILED",
+        indexingError: err?.message ?? String(err),
+      },
+    });
+    throw err;
+  }
 };
-
-const limiter = new Bottleneck({
-  maxConcurrent: 1, // Only one concurrent call at a time
-  minTime: 200, // Wait at least 200ms between calls (adjust as needed)
-});
-
-const generateEmbeddings = async (docs: Document[]) => {
-  return await Promise.all(
-    docs.map(async (doc) => {
-      // Throttle calls to summariseCode and loadEmbedding
-      const summary = await limiter.schedule(() => summariseCode(doc));
-      const embedding = await limiter.schedule(() =>
-        loadEmbedding(summary || ""),
-      );
-      return {
-        summary,
-        embedding,
-        sourceCode: JSON.parse(JSON.stringify(doc.pageContent)),
-        fileName: doc.metadata.source,
-      };
-    }),
-  );
-};
-
-// console.log(await loadGithubRepo("https://github.com/agrim08/Food-Mania"));

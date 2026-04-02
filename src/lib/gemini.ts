@@ -7,8 +7,12 @@ const model = genAi.getGenerativeModel({
 });
 
 export const summarizeCommit = async (diff: string) => {
-  const response = await model.generateContent([
-    `You are an expert programmer, and you are trying to summarize a git diff.
+  console.log(
+    `[summarizeCommit] Calling gemini-2.5-flash, diff size: ${diff.length} chars`,
+  );
+  try {
+    const response = await model.generateContent([
+      `You are an expert programmer, and you are trying to summarize a git diff.
 Reminders about the git diff format:
 For every file, there are a few metadata lines, like (for example) :
 \`\`\`
@@ -37,16 +41,27 @@ The last comment does not include the file names ,
 Because there were more than two relevant files in the hypothetical commit .
 To not include parts of the example 'in your summary .
 It is given only as an example of appropriate comments.`,
-    `Please summarise the following diff file: \n\n${diff}`,
-  ]);
-
-  return response.response.text();
+      `Please summarise the following diff file: \n\n${diff}`,
+    ]);
+    const text = response.response.text();
+    console.log(`[summarizeCommit] OK — summary length: ${text.length} chars`);
+    return text;
+  } catch (err) {
+    console.error(`[summarizeCommit] FAILED:`, err);
+    throw err;
+  }
 };
 
 export const summariseCode = async (doc: Document) => {
+  console.log(`[summariseCode] Summarising: ${doc.metadata.source}`);
   try {
-    // console.log("getting summary of ", doc.metadata.source);
     const code = doc.pageContent.slice(0, 10000);
+    if (!code || code.trim().length === 0) {
+      console.warn(
+        `[summariseCode] Skipping empty/whitespace-only file: ${doc.metadata.source}`,
+      );
+      return "Empty file";
+    }
     const response = await model.generateContent([
       `You are an expert senior software engineer who specializes in onboarding junior software engineers onto projects`,
       `You are onboarding a junior software engineer and explaining to them the purpose of the ${doc.metadata.source} file
@@ -57,19 +72,37 @@ export const summariseCode = async (doc: Document) => {
         Give a summary no more than 100 words for the code above
       `,
     ]);
-    return response.response.text();
+    const text = response.response.text();
+    console.log(`[summariseCode] OK: ${doc.metadata.source}`);
+    return text || "No summary generated";
   } catch (err) {
-    console.log(err);
+    console.error(`[summariseCode] FAILED for ${doc.metadata.source}:`, err);
+    throw err;
   }
 };
 
 export async function loadEmbedding(summary: string) {
-  const model = genAi.getGenerativeModel({
-    model: "text-embedding-004",
-  });
-  const result = await model.embedContent(summary);
-  const embedding = result.embedding;
-  return embedding.values;
+  if (!summary || summary.trim().length === 0) {
+    console.warn(
+      `[loadEmbedding] Called with empty text, returning zero vector`,
+    );
+    return new Array(768).fill(0);
+  }
+  console.log(`[loadEmbedding] Embedding text of length: ${summary.length}`);
+  try {
+    const embeddingModel = genAi.getGenerativeModel({
+      model: "gemini-embedding-001",
+    });
+    // SDK v0.21 doesn't support outputDimensionality, so we truncate to 768
+    // to match the existing vector(768) Postgres column
+    const result = await embeddingModel.embedContent(summary);
+    const values = result.embedding.values.slice(0, 768);
+    console.log(`[loadEmbedding] OK — ${values.length} dims`);
+    return values;
+  } catch (err) {
+    console.error(`[loadEmbedding] FAILED:`, err);
+    throw err;
+  }
 }
 
 // console.log(await loadEmbedding("Hello world!"));

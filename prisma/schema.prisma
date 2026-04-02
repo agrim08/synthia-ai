@@ -42,6 +42,13 @@ model Project {
 
   deletedAt DateTime?
 
+  // Background indexing state
+  indexingStatus   IndexingStatus @default(PENDING)
+  indexingProgress Int            @default(0) // files processed so far
+  indexingTotal    Int            @default(0) // total files to process
+  indexingError    String?        // last error message if FAILED
+  indexedAt        DateTime?      // when indexing completed
+
   userToProjects UserToProject[]
   commit         GitCommit[]
 
@@ -50,6 +57,14 @@ model Project {
   savedQuestions Question[]
 
   meetings Meeting[]
+}
+
+enum IndexingStatus {
+  PENDING
+  INDEXING
+  COMPLETED
+  FAILED
+  PARTIAL // completed with some files skipped due to rate limits
 }
 
 model UserToProject {

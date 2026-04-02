@@ -10,6 +10,7 @@ import AudioUploadBtn from "./AudioUploadBtn";
 import ArchiveProject from "./ArchiveProject";
 import InviteTeam from "./InviteTeam";
 import TeamMembers from "./TeamMembers";
+import IndexingStatusBanner from "./IndexingStatusBanner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -79,6 +80,9 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Indexing status banner — polls until COMPLETED */}
+      {project?.id && <IndexingStatusBanner projectId={project.id} />}
 
       <div className="w-full mx-auto px-6 py-8 space-y-10">
         {/* 2. Ask Synthia Hero */}

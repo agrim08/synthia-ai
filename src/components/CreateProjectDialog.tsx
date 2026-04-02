@@ -72,6 +72,10 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
       <DialogTrigger asChild>{children}</DialogTrigger>
 
       <DialogContent className="max-w-[680px] w-full rounded-2xl border border-slate-200/80 p-0 overflow-hidden bg-white gap-0">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Connect a repository</DialogTitle>
+          <DialogDescription>Link a GitHub repo to Synthia.</DialogDescription>
+        </DialogHeader>
 
         {/* ── Left accent strip + header (horizontal layout) ── */}
         <div className="flex">
@@ -104,12 +108,6 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                 </DialogDescription>
               </DialogHeader>
             </div>
-
-            {/* Hidden on desktop (keeps dialog accessible) */}
-            <DialogHeader className="sr-only">
-              <DialogTitle>Connect a repository</DialogTitle>
-              <DialogDescription>Link a GitHub repo to Synthia.</DialogDescription>
-            </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 p-6">
 

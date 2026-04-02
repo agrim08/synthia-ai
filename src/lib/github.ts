@@ -29,6 +29,37 @@ import axios from "axios";
 import { summarizeCommit } from "./gemini";
 import Bottleneck from "bottleneck";
 
+const MAX_RETRIES = 6;
+const BASE_DELAY_MS = 5_000;
+
+async function withRateLimitRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const is429 =
+        err?.status === 429 ||
+        (err?.message ?? "").includes("429") ||
+        (err?.message ?? "").toLowerCase().includes("quota");
+
+      if (is429 && attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(
+          `[rateLimitRetry] 429 on "${label}" — waiting ${delay / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        attempt++;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 const githubUrl = "https://github.com/agrim08/synthia-ai";
 
 type Response = {
@@ -92,37 +123,53 @@ const geminiLimiter = new Bottleneck({
  * Each external call is scheduled on its own limiter.
  */
 const summarizeCommitFunc = async (githubUrl: string, commitHash: string) => {
-  // Throttle the GitHub diff request
-  const { data } = await githubLimiter.schedule(() =>
-    axios.get(`${githubUrl}/commit/${commitHash}.diff`, {
-      headers: { Accept: "application/vnd.github.v3.diff" },
-    }),
-  );
-
-  // Throttle the summarization call
-  return (await geminiLimiter.schedule(() => summarizeCommit(data))) || "";
+  console.log(`[summarizeCommitFunc] Fetching diff for commit: ${commitHash.slice(0, 7)}`);
+  try {
+    const { data } = await githubLimiter.schedule(() =>
+      axios.get(`${githubUrl}/commit/${commitHash}.diff`, {
+        headers: { Accept: "application/vnd.github.v3.diff" },
+      }),
+    );
+    console.log(`[summarizeCommitFunc] Diff fetched (${String(data).length} chars), summarising...`);
+    const summary = (await geminiLimiter.schedule(() => 
+      withRateLimitRetry(() => summarizeCommit(data), `summarizeCommit:${commitHash}`)
+    )) || "";
+    console.log(`[summarizeCommitFunc] Summary OK for commit: ${commitHash.slice(0, 7)}`);
+    return summary;
+  } catch (err) {
+    console.error(`[summarizeCommitFunc] FAILED for commit ${commitHash.slice(0, 7)}:`, err);
+    throw err;
+  }
 };
 
 export const pollCommits = async (projectId: string) => {
   const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
+  console.log(`[pollCommits] Fetching commits for: ${githubUrl}`);
   const commitHashes = await gitCommitHash(githubUrl);
   const unprocessedCommits = await filterUnprocessedCommits(
     projectId,
     commitHashes,
   );
+  console.log(`[pollCommits] ${unprocessedCommits.length} unprocessed commits to summarise`);
+
+  if (unprocessedCommits.length === 0) {
+    console.log(`[pollCommits] Nothing to process, skipping.`);
+    return;
+  }
 
   const summaryResponses = await Promise.allSettled(
-    unprocessedCommits.map((commit) =>
-      // Directly call summarizeCommitFunc (which now handles its own throttling)
-      summarizeCommitFunc(githubUrl, commit.commitHash),
-    ),
+    unprocessedCommits.map((commit, index) => {
+      console.log(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] Summarising commit: ${commit.commitHash.slice(0, 7)} — "${commit.commitMessage.slice(0, 60)}"`);
+      return summarizeCommitFunc(githubUrl, commit.commitHash);
+    }),
   );
 
-  const summaries = summaryResponses.map((response) => {
+  const summaries = summaryResponses.map((response, index) => {
     if (response.status === "fulfilled") {
+      console.log(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] Commit summary OK: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`);
       return response.value as string;
     } else {
-      console.error(`Failed to summarize commit:`, response.reason);
+      console.error(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] FAILED commit: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`, response.reason);
       return "";
     }
   });
@@ -138,6 +185,7 @@ export const pollCommits = async (projectId: string) => {
       commitDate: unprocessedCommits[index]?.commitDate ?? "",
     })),
   });
+  console.log(`[pollCommits] Saved ${commits.count} commits to DB ✓`);
 
   return commits;
 };

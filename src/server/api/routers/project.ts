@@ -2,8 +2,52 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/server/db";
+import { checkCredits } from "@/lib/githubRepoLoader";
+
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
+const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+import { indexGithubRepo } from "@/lib/githubRepoLoader";
 import { pollCommits } from "@/lib/github";
-import { checkCredits, indexGithubRepo } from "@/lib/githubRepoLoader";
+
+/** Fire-and-forget indexing */
+async function triggerBackgroundIndexing(
+  projectId: string,
+  githubUrl: string,
+  githubToken?: string,
+) {
+  console.log(`[triggerIndexing] Starting background indexing for project=${projectId}`);
+  
+  // Set status immediately so polling finds something
+  await (db.project as any).update({
+    where: { id: projectId },
+    data: { indexingStatus: "INDEXING", indexingError: null },
+  }).catch(e => console.error("Status update failed", e));
+
+  // Run in background (do NOT await)
+  void (async () => {
+    try {
+      // 1. Commits
+      await pollCommits(projectId).catch(err => {
+        console.warn(`[triggerIndexing] pollCommits non-fatal error:`, err);
+      });
+
+      // 2. Code indexing
+      await indexGithubRepo(projectId, githubUrl, githubToken);
+      
+      console.log(`[triggerIndexing] DONE project=${projectId}`);
+    } catch (err: any) {
+      console.error(`[triggerIndexing] FATAL error for project=${projectId}:`, err);
+      await (db.project as any).update({
+        where: { id: projectId },
+        data: { 
+          indexingStatus: "FAILED", 
+          indexingError: err?.message ?? String(err) 
+        },
+      }).catch(() => {});
+    }
+  })();
+}
 
 export const projectRouter = createTRPCRouter({
   createProject: protectedProcedure
@@ -15,20 +59,21 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      console.log(`[createProject] START — name: "${input.name}", url: ${input.githubUrl}`);
+
       const existingUser = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId! },
         select: { credits: true },
       });
 
       if (!existingUser) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
 
+      console.log(`[createProject] Checking credits for repo...`);
       const fileCount = await checkCredits(input.githubUrl, input.githubToken);
       const currentCredits = existingUser.credits || 0;
+      console.log(`[createProject] fileCount=${fileCount}, userCredits=${currentCredits}`);
 
       if (fileCount > currentCredits) {
         throw new TRPCError({
@@ -37,13 +82,15 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
-      // Create the project.
+      // Create project immediately (so user can navigate to it)
       const project = await ctx.db.project.create({
         data: {
           githubUrl: input.githubUrl,
           name: input.name,
-        },
+          indexingStatus: "INDEXING", // Start in INDEXING mode right away
+        } as any,
       });
+      console.log(`[createProject] Project created — id: ${project.id}`);
 
       await ctx.db.userToProject.create({
         data: {
@@ -52,28 +99,83 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
-      await pollCommits(project.id);
-
+      // Deduct credits right away (before indexing, so no exploit window)
       await ctx.db.user.update({
         where: { id: ctx.user.userId! },
-        data: {
-          credits: { decrement: fileCount },
-        },
+        data: { credits: { decrement: fileCount } },
       });
+      console.log(`[createProject] Credits decremented by ${fileCount}`);
 
+      // Kick off background indexing – does NOT block the response
+      void triggerBackgroundIndexing(project.id, input.githubUrl, input.githubToken);
+
+      console.log(`[createProject] Background indexing scheduled. Returning project immediately.`);
       return project;
     }),
 
+  // ------------------------------------------------------------------
+  // Status polling – used by the UI to show the indexing progress bar
+  // ------------------------------------------------------------------
+  getProjectStatus: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const project = await ctx.db.project.findUnique({
+        where: { id: input.projectId },
+        select: {
+          indexingStatus: true,
+          indexingProgress: true,
+          indexingTotal: true,
+          indexingError: true,
+          indexedAt: true,
+        } as any,
+      });
+      if (!project) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+      return project;
+    }),
+
+  // ------------------------------------------------------------------
+  // Re-trigger indexing (resume from checkpoint after a PARTIAL/FAILED run)
+  // ------------------------------------------------------------------
+  retriggerIndexing: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify the user owns this project
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+        include: { project: true },
+      });
+
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
+      const { indexingStatus, githubUrl } = link.project as any;
+      if (indexingStatus === "INDEXING") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Indexing is already in progress",
+        });
+      }
+
+      void triggerBackgroundIndexing(input.projectId, githubUrl);
+      return { scheduled: true };
+    }),
+
+  // ------------------------------------------------------------------
+  // Existing procedures (unchanged)
+  // ------------------------------------------------------------------
   getProjects: protectedProcedure.query(async ({ ctx }) => {
     try {
       return await ctx.db.project.findMany({
         where: {
-          userToProjects: {
-            some: {
-              userId: ctx.user.userId!,
-            },
-          },
+          userToProjects: { some: { userId: ctx.user.userId! } },
           deletedAt: null,
         },
       });
@@ -85,19 +187,13 @@ export const projectRouter = createTRPCRouter({
       });
     }
   }),
+
   getCommits: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-      }),
-    )
+    .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        pollCommits(input.projectId).then().catch(console.error);
         return await ctx.db.gitCommit.findMany({
-          where: {
-            projectId: input.projectId,
-          },
+          where: { projectId: input.projectId },
         });
       } catch (error) {
         throw new TRPCError({
@@ -107,6 +203,7 @@ export const projectRouter = createTRPCRouter({
         });
       }
     }),
+
   saveAnswer: protectedProcedure
     .input(
       z.object({
@@ -132,12 +229,8 @@ export const projectRouter = createTRPCRouter({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.question.findMany({
-        where: {
-          projectId: input.projectId,
-        },
-        include: {
-          user: true,
-        },
+        where: { projectId: input.projectId },
+        include: { user: true },
         orderBy: { createdAt: "desc" },
       });
     }),
@@ -147,11 +240,11 @@ export const projectRouter = createTRPCRouter({
       z.object({
         projectId: z.string(),
         meetingUrl: z.string(),
-        name: z.string()!,
+        name: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const meeting = await db.meeting.create({
+      return await db.meeting.create({
         data: {
           projectId: input.projectId,
           meetingUrl: input.meetingUrl,
@@ -159,24 +252,21 @@ export const projectRouter = createTRPCRouter({
           status: "PROCESSING",
         },
       });
-      return meeting;
     }),
+
   getMeetings: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(({ ctx, input }) => {
       return db.meeting.findMany({
-        where: {
-          projectId: input.projectId,
-        },
+        where: { projectId: input.projectId },
         include: { issues: true },
       });
     }),
+
   deleteMeeting: protectedProcedure
     .input(z.object({ meetingId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.meeting.delete({
-        where: { id: input.meetingId },
-      });
+      return await ctx.db.meeting.delete({ where: { id: input.meetingId } });
     }),
 
   getMeetingById: protectedProcedure
@@ -206,12 +296,13 @@ export const projectRouter = createTRPCRouter({
       });
     }),
 
-  getMyCredits: protectedProcedure.query(async ({ ctx, input }) => {
+  getMyCredits: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findUnique({
       where: { id: ctx.user.userId },
       select: { credits: true },
     });
   }),
+
   checkCreditNeeded: protectedProcedure
     .input(
       z.object({ githubUrl: z.string(), githubToken: z.string().optional() }),
