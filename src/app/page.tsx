@@ -641,45 +641,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ── CTA Banner ────────────────────────────────────── */}
-        <section className="px-6 pb-24">
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] bg-indigo-600 px-8 py-20 text-center md:px-16 relative">
-            {/* Glossy overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="mb-8 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                <Sparkles className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="mb-6 max-w-2xl text-[clamp(2rem,5vw,3.2rem)] font-extrabold leading-[1.1] tracking-[-0.03em] text-white">
-                Experience the future of code intelligence.
-              </h2>
-              <p className="mx-auto mb-10 max-w-md text-[16px] leading-relaxed text-indigo-100 opacity-90">
-                Join 10,000+ engineers from high-performing teams. Start for free and scale as you grow.
-              </p>
-              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Link href="/dashboard">
-                  <Button
-                    size="lg"
-                    className="h-14 rounded-2xl bg-white px-10 text-[16px] font-bold text-indigo-700 shadow-xl shadow-black/10 hover:bg-indigo-50 transition-all hover:scale-105 active:scale-95"
-                  >
-                    Start for free
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/documentation">
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="h-14 rounded-2xl px-10 text-[16px] font-semibold text-white hover:bg-white/10 transition-colors border border-white/20"
-                  >
-                    Read the documentation
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* ── Footer ────────────────────────────────────────── */}
         <footer className="border-t border-slate-100 bg-white pt-20 pb-10 px-6">

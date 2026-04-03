@@ -49,13 +49,15 @@ model Project {
   indexingError    String?        // last error message if FAILED
   indexedAt        DateTime?      // when indexing completed
 
+  skipUiComponents Boolean @default(false)
+  
   userToProjects UserToProject[]
   commit         GitCommit[]
-
+  
   sourceCodeEmbeddings SourceCodeEmbeddings[]
-
+  
   savedQuestions Question[]
-
+  
   meetings Meeting[]
 }
 

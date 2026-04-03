@@ -97,6 +97,10 @@ const IGNORED_FILENAMES = new Set([
   "composer.lock",
   "Gemfile.lock",
   "Cargo.lock",
+  "postcss.config.js",
+  "postcss.config.mjs",
+  "tsconfig.json",
+  "tsconfig.node.json",
   ".env",
   ".env.local",
   ".env.example",
@@ -156,26 +160,29 @@ const IGNORED_PATH_SEGMENTS = new Set([
   "public/static", // pre-built static assets
 ]);
 
-/** Max source code characters we send to the AI per file (keeps tokens sane) */
-const MAX_CODE_CHARS = 8_000;
+const UI_BOILERPLATE_PATTERN = /\b(card|button|charts|sidebar|footer|header|sheet|input)\b/i;
 
-/** After this many chars of source we skip embedding entirely (file too large to summarise meaningfully) */
-const SKIP_EMBEDDING_ABOVE_CHARS = 80_000;
-
-export function shouldIgnoreFile(filePath: string): boolean {
+export function shouldIgnoreFile(filePath: string, skipUi = false): boolean {
   const lower = filePath.toLowerCase();
   const segments = lower.replace(/\\/g, "/").split("/");
 
-  // Check path segments
+  // 1. Check folder segments
   for (const seg of segments) {
     if (IGNORED_PATH_SEGMENTS.has(seg)) return true;
+    if (skipUi && seg === "ui") return true; // Skip 'ui' folders
   }
 
-  // Check exact filename
+  // 2. Check UI boilerplate names in JSX/TSX
+  if (skipUi && (lower.endsWith(".jsx") || lower.endsWith(".tsx"))) {
+    const filename = segments[segments.length - 1] ?? "";
+    if (UI_BOILERPLATE_PATTERN.test(filename)) return true;
+  }
+
+  // 3. Check exact filename
   const filename = segments[segments.length - 1] ?? "";
   if (IGNORED_FILENAMES.has(filename)) return true;
 
-  // Check extension(s) – handle double extensions like ".min.js"
+  // 4. Check extension(s) – handle double extensions like ".min.js"
   const dotParts = filename.split(".");
   if (dotParts.length >= 3) {
     // e.g. "foo.min.js" → check ".min.js"
@@ -189,6 +196,13 @@ export function shouldIgnoreFile(filePath: string): boolean {
 
   return false;
 }
+
+/** Max source code characters we send to the AI per file (keeps tokens sane) */
+const MAX_CODE_CHARS = 8_000;
+
+/** After this many chars of source we skip embedding entirely (file too large to summarise meaningfully) */
+const SKIP_EMBEDDING_ABOVE_CHARS = 80_000;
+
 
 // ---------------------------------------------------------------------------
 // Rate-limit-aware Gemini caller with exponential backoff
@@ -237,6 +251,7 @@ const getFileCount = async (
   githubOwner: string,
   githubRepo: string,
   acc: number = 0,
+  skipUi = false,
 ): Promise<number> => {
   const response = await githubLimiter.schedule(() =>
     octokit.rest.repos.getContent({
@@ -254,13 +269,13 @@ const getFileCount = async (
     const directories: string[] = [];
     for (const item of data) {
       if (item.type === "dir") directories.push(item.path);
-      // Only count files we would actually embed
-      if (item.type === "file" && !shouldIgnoreFile(item.path)) fileCount++;
+      // Only count files we would actually embed (respect skipUi flag)
+      if (item.type === "file" && !shouldIgnoreFile(item.path, skipUi)) fileCount++;
     }
     if (directories.length > 0) {
       const dirCounts = await Promise.all(
         directories.map((dirPath) =>
-          getFileCount(dirPath, octokit, githubOwner, githubRepo, 0),
+          getFileCount(dirPath, octokit, githubOwner, githubRepo, 0, skipUi),
         ),
       );
       fileCount += dirCounts.reduce((sum, count) => sum + count, 0);
@@ -270,13 +285,14 @@ const getFileCount = async (
   return acc;
 };
 
-export const checkCredits = async (githubUrl: string, githubToken?: string) => {
+export const checkCredits = async (githubUrl: string, githubToken?: string, skipUi = false) => {
   const octokit = new Octokit({ auth: githubToken });
   const githubOwner = githubUrl.split("/")[3];
   const githubRepo = githubUrl.split("/")[4];
   if (!githubOwner || !githubRepo) return 0;
-  return getFileCount("", octokit, githubOwner, githubRepo, 0);
+  return getFileCount("", octokit, githubOwner, githubRepo, 0, skipUi);
 };
+
 
 // ---------------------------------------------------------------------------
 // Repo loader
@@ -285,6 +301,7 @@ export const checkCredits = async (githubUrl: string, githubToken?: string) => {
 export const loadGithubRepo = async (
   githubUrl: string,
   githubToken?: string,
+  skipUi = false,
 ) => {
   const loader = new GithubRepoLoader(githubUrl, {
     accessToken: githubToken || "",
@@ -331,14 +348,15 @@ export const indexGithubRepo = async (
 ) => {
   console.log(`[indexGithubRepo] START project=${projectId}`);
 
-  // Mark project as INDEXING
-  await (db.project as any).update({
+  // Fetch flag from DB
+  const project = await (db.project as any).findUnique({
     where: { id: projectId },
-    data: { indexingStatus: "INDEXING", indexingError: null },
+    select: { skipUiComponents: true }
   });
+  const skipUi = project?.skipUiComponents ?? false;
 
   try {
-    const docs = await loadGithubRepo(githubUrl, githubToken);
+    const docs = await loadGithubRepo(githubUrl, githubToken, skipUi);
 
     // ---- Checkpoint: find files already embedded for this project ----
     const alreadyIndexed = await db.sourceCodeEmbeddings.findMany({

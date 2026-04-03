@@ -22,14 +22,28 @@ type FormFields = {
   repoUrl: string;
   projectName: string;
   githubToken?: string;
+  skipUiComponents: boolean;
 };
 
 export const CreateProjectDialog = ({ children }: { children: React.ReactNode }) => {
   const [open, setOpen] = useState(false);
-  const { register, handleSubmit, reset } = useForm<FormFields>();
+  const { register, handleSubmit, reset, watch } = useForm<FormFields>({
+    defaultValues: {
+      skipUiComponents: true
+    }
+  });
   const createProject = api.project.createProject.useMutation();
   const checkCredits = api.project.checkCreditNeeded.useMutation();
   const refetch = useRefetch();
+
+  const repoUrl = watch("repoUrl");
+  const skipUi = watch("skipUiComponents");
+
+  // Reset credit check if repo or skip preference changes
+  React.useEffect(() => {
+    checkCredits.reset();
+  }, [repoUrl, skipUi]);
+
 
   const onSubmit = (data: FormFields) => {
     if (!!checkCredits.data) {
@@ -38,6 +52,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           githubUrl: data.repoUrl,
           name: data.projectName,
           githubToken: data.githubToken,
+          skipUiComponents: data.skipUiComponents,
         },
         {
           onSuccess: () => {
@@ -55,6 +70,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
       checkCredits.mutate({
         githubUrl: data.repoUrl,
         githubToken: data.githubToken,
+        skipUiComponents: data.skipUiComponents,
       });
     }
     return true;
@@ -144,6 +160,20 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                     placeholder="GitHub token (optional — for private repos)"
                     className="h-10 rounded-xl border-slate-200 bg-slate-50 pl-9 text-[13px] font-medium placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
                   />
+                </div>
+
+                {/* Exclude UI toggle */}
+                <div className="flex items-center space-x-2 pt-1 border-t border-slate-50 mt-2">
+                  <input
+                    id="skipUi"
+                    type="checkbox"
+                    {...register("skipUiComponents")}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="skipUi" className="text-[12px] font-medium text-slate-500 cursor-pointer flex items-center gap-1.5 hover:text-slate-700 transition-colors">
+                    Exclude UI Components (Lowers credit cost)
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                  </label>
                 </div>
               </div>
 

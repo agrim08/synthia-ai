@@ -5,7 +5,10 @@ import { db } from "@/server/db";
 import { checkCredits } from "@/lib/githubRepoLoader";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
-const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const APP_URL =
+  process.env.NEXTAUTH_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  "http://localhost:3000";
 
 import { indexGithubRepo } from "@/lib/githubRepoLoader";
 import { pollCommits } from "@/lib/github";
@@ -16,35 +19,44 @@ async function triggerBackgroundIndexing(
   githubUrl: string,
   githubToken?: string,
 ) {
-  console.log(`[triggerIndexing] Starting background indexing for project=${projectId}`);
-  
+  console.log(
+    `[triggerIndexing] Starting background indexing for project=${projectId}`,
+  );
+
   // Set status immediately so polling finds something
-  await (db.project as any).update({
-    where: { id: projectId },
-    data: { indexingStatus: "INDEXING", indexingError: null },
-  }).catch(e => console.error("Status update failed", e));
+  await (db.project as any)
+    .update({
+      where: { id: projectId },
+      data: { indexingStatus: "INDEXING", indexingError: null },
+    })
+    .catch((e: any) => console.error("Status update failed", e));
 
   // Run in background (do NOT await)
   void (async () => {
     try {
       // 1. Commits
-      await pollCommits(projectId).catch(err => {
+      await pollCommits(projectId).catch((err) => {
         console.warn(`[triggerIndexing] pollCommits non-fatal error:`, err);
       });
 
       // 2. Code indexing
       await indexGithubRepo(projectId, githubUrl, githubToken);
-      
+
       console.log(`[triggerIndexing] DONE project=${projectId}`);
     } catch (err: any) {
-      console.error(`[triggerIndexing] FATAL error for project=${projectId}:`, err);
-      await (db.project as any).update({
-        where: { id: projectId },
-        data: { 
-          indexingStatus: "FAILED", 
-          indexingError: err?.message ?? String(err) 
-        },
-      }).catch(() => {});
+      console.error(
+        `[triggerIndexing] FATAL error for project=${projectId}:`,
+        err,
+      );
+      await (db.project as any)
+        .update({
+          where: { id: projectId },
+          data: {
+            indexingStatus: "FAILED",
+            indexingError: err?.message ?? String(err),
+          },
+        })
+        .catch(() => {});
     }
   })();
 }
@@ -56,10 +68,13 @@ export const projectRouter = createTRPCRouter({
         name: z.string(),
         githubUrl: z.string(),
         githubToken: z.string().optional(),
+        skipUiComponents: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      console.log(`[createProject] START — name: "${input.name}", url: ${input.githubUrl}`);
+      console.log(
+        `[createProject] START — name: "${input.name}", url: ${input.githubUrl}`,
+      );
 
       const existingUser = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId! },
@@ -70,10 +85,18 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
 
-      console.log(`[createProject] Checking credits for repo...`);
-      const fileCount = await checkCredits(input.githubUrl, input.githubToken);
+      console.log(
+        `[createProject] Checking credits for repo... (skipUi=${input.skipUiComponents})`,
+      );
+      const fileCount = await checkCredits(
+        input.githubUrl,
+        input.githubToken,
+        input.skipUiComponents,
+      );
       const currentCredits = existingUser.credits || 0;
-      console.log(`[createProject] fileCount=${fileCount}, userCredits=${currentCredits}`);
+      console.log(
+        `[createProject] fileCount=${fileCount}, userCredits=${currentCredits}`,
+      );
 
       if (fileCount > currentCredits) {
         throw new TRPCError({
@@ -87,6 +110,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           githubUrl: input.githubUrl,
           name: input.name,
+          skipUiComponents: !!input.skipUiComponents,
           indexingStatus: "INDEXING", // Start in INDEXING mode right away
         } as any,
       });
@@ -107,9 +131,15 @@ export const projectRouter = createTRPCRouter({
       console.log(`[createProject] Credits decremented by ${fileCount}`);
 
       // Kick off background indexing – does NOT block the response
-      void triggerBackgroundIndexing(project.id, input.githubUrl, input.githubToken);
+      void triggerBackgroundIndexing(
+        project.id,
+        input.githubUrl,
+        input.githubToken,
+      );
 
-      console.log(`[createProject] Background indexing scheduled. Returning project immediately.`);
+      console.log(
+        `[createProject] Background indexing scheduled. Returning project immediately.`,
+      );
       return project;
     }),
 
@@ -130,7 +160,10 @@ export const projectRouter = createTRPCRouter({
         } as any,
       });
       if (!project) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
       }
       return project;
     }),
@@ -156,14 +189,7 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
       }
 
-      const { indexingStatus, githubUrl } = link.project as any;
-      if (indexingStatus === "INDEXING") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Indexing is already in progress",
-        });
-      }
-
+      const { githubUrl } = link.project as any;
       void triggerBackgroundIndexing(input.projectId, githubUrl);
       return { scheduled: true };
     }),
@@ -305,10 +331,14 @@ export const projectRouter = createTRPCRouter({
 
   checkCreditNeeded: protectedProcedure
     .input(
-      z.object({ githubUrl: z.string(), githubToken: z.string().optional() }),
+      z.object({
+        githubUrl: z.string(),
+        githubToken: z.string().optional(),
+        skipUiComponents: z.boolean().optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const fileCount = await checkCredits(input.githubUrl, input.githubToken);
+      const fileCount = await checkCredits(input.githubUrl, input.githubToken, input.skipUiComponents);
       const userCredits = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId },
         select: { credits: true },

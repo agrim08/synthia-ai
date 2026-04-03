@@ -18,7 +18,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
     {
       // Poll while indexing is in progress
       refetchInterval: (query) => {
-        const s = query.state.data?.indexingStatus;
+        const s = (query.state.data as any)?.indexingStatus;
         return s === "INDEXING" || s === "PENDING" ? STATUS_POLL_INTERVAL_MS : false;
       },
       refetchIntervalInBackground: true,
@@ -37,7 +37,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
   const prevStatus = useRef<string | undefined>();
   useEffect(() => {
     if (!data) return;
-    const curr = data.indexingStatus;
+    const curr = (data as any).indexingStatus;
     const prev = prevStatus.current;
     if (prev === "INDEXING" && curr === "COMPLETED") {
       toast.success("🎉 Project indexed successfully! AI features are now active.");
@@ -47,17 +47,19 @@ export default function IndexingStatusBanner({ projectId }: Props) {
       toast.error("Indexing failed. Check the error below.");
     }
     prevStatus.current = curr;
-  }, [data?.indexingStatus]);
+  }, [data]);
 
   if (isLoading || !data) return null;
-
-  const { indexingStatus, indexingProgress, indexingTotal, indexingError } = data;
+  const d = data as any;
+  const { indexingStatus, indexingProgress, indexingTotal, indexingError } = d;
 
   // Don't show anything once fully completed
   if (indexingStatus === "COMPLETED") return null;
 
   const pct =
-    indexingTotal > 0 ? Math.round((indexingProgress / indexingTotal) * 100) : 0;
+    (indexingTotal as number) > 0
+      ? Math.round(((indexingProgress as number) / (indexingTotal as number)) * 100)
+      : 0;
 
   return (
     <div
@@ -131,7 +133,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         </div>
 
         {/* Action button */}
-        {(indexingStatus === "PARTIAL" || indexingStatus === "FAILED") && (
+        {(indexingStatus === "PARTIAL" || indexingStatus === "FAILED" || indexingStatus === "INDEXING") && (
           <Button
             size="sm"
             variant="outline"
@@ -144,7 +146,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
             ) : (
               <RefreshCw className="size-3" />
             )}
-            Resume
+            {indexingStatus === "INDEXING" ? "Resume" : "Resume"}
           </Button>
         )}
       </div>
