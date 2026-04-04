@@ -44,11 +44,12 @@
 */
 
 "use server";
-import { streamText } from "ai";
+import { streamText, generateObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { loadEmbedding } from "@/lib/gemini";
 import { db } from "@/server/db";
+import { z } from "zod";
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -74,9 +75,39 @@ export async function askQuestion(question: string, projectId: string) {
 
   // console.log("Query Result:", result);
 
+  // Smart Filtering using AI
+  const { object: filteredIndices } = await generateObject({
+    model: google("gemini-2.5-flash"),
+    schema: z.object({
+      indices: z.array(z.number()),
+    }),
+    prompt: `
+    You are a technical architect filtering code files for relevance.
+    USER QUESTION: "${question}"
+    
+    VECTOR SEARCH RESULTS:
+    ${result.map((doc, i) => `${i}. [${doc.fileName}]: ${doc.summary}`).join("\n")}
+    
+    TASK:
+    Identify the indices of the files that are STRICTLY RELEVANT to answering this specific question.
+    - Only include files that provide significant context or direct implementation details.
+    - Filter out noise (e.g., global styles, configuration files, or UI boilerplates) UNLESS they are directly related to the question.
+    - If a file is borderline, but could be helpful, include it.
+    - Return the indices of the relevant files as an array of numbers.
+    `,
+  });
+
+  const relevantFiles = filteredIndices.indices
+    .map((i) => result[i])
+    .filter((f): f is (typeof result)[0] => !!f);
+
+  // Fallback to top 3 if AI filtering is too aggressive or fails
+  const finalResult =
+    relevantFiles.length > 0 ? relevantFiles : result.slice(0, 3);
+
   let context = "";
 
-  for (const doc of result) {
+  for (const doc of finalResult) {
     context += `source: ${doc?.fileName}\ncodeContent:\n${doc?.sourceCode}\nsummary of file: ${doc?.summary}\n\n`;
   }
   // console.log("Constructed Context Block:\n", context);
@@ -122,5 +153,5 @@ export async function askQuestion(question: string, projectId: string) {
     }
   })();
 
-  return { output: stream.value, filesReferences: result };
+  return { output: stream.value, filesReferences: finalResult };
 }

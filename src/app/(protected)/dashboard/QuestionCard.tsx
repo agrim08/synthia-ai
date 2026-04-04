@@ -61,10 +61,10 @@ const QuestionCard = () => {
                   <Sparkles className="size-8 text-white" />
                 </div>
                 <div className="space-y-0.5">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Synthia Insight</h3>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analysis</h3>
                   <div className="flex items-center gap-2">
-                     <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Analysis Complete</span>
+                     <div className="size-2 rounded-full bg-emerald-500" />
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Result Ready</span>
                   </div>
                 </div>
               </div>
@@ -82,17 +82,17 @@ const QuestionCard = () => {
                       },
                       {
                         onSuccess: () => {
-                          toast.success("Insight saved and indexed!");
+                          toast.success("Analysis saved");
                           refetch();
                         },
                         onError: () => {
-                          toast.error("Failed to persist analysis!");
+                          toast.error("Failed to save analysis");
                         },
                       },
                     );
                   }}
                 >
-                  Save Insight
+                  Save History
                 </Button>
                 <Button 
                    variant="ghost" 
@@ -109,7 +109,7 @@ const QuestionCard = () => {
               {/* Question Context Card */}
               <div className="mb-10 p-8 rounded-[32px] bg-slate-900 shadow-2xl shadow-indigo-100/30 text-white relative overflow-hidden group/q">
                  <div className="absolute -right-10 -top-10 size-40 rounded-full bg-indigo-500/20 blur-3xl opacity-0 group-hover/q:opacity-100 transition-opacity" />
-                 <span className="inline-block px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Inquiry</span>
+                 <span className="inline-block px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Question</span>
                  <p className="text-2xl font-black leading-tight tracking-tight">{question}</p>
                  <div className="mt-4 flex items-center gap-3">
                     <div className="h-px w-8 bg-indigo-500/50" />
@@ -134,7 +134,7 @@ const QuestionCard = () => {
                   <div className="h-px flex-1 bg-slate-200"></div>
                   <div className="flex items-center gap-2 px-6 py-2 rounded-full bg-white shadow-sm ring-1 ring-slate-100">
                     <Sparkles className="size-3 text-indigo-600" />
-                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Contextual References</span>
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">References</span>
                   </div>
                   <div className="h-px flex-1 bg-slate-200"></div>
                 </div>
@@ -153,7 +153,7 @@ const QuestionCard = () => {
                    <Sparkles className="size-7" />
                 </div>
                 <div>
-                   <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none mb-2">Ask Synthia</h3>
+                   <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none mb-2">Analyze Code</h3>
                 </div>
              </div>
           </div>
@@ -170,7 +170,7 @@ const QuestionCard = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Button
+               <Button
                 type="submit"
                 className="h-14 w-full rounded-[24px] bg-indigo-700 px-10 font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-800 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
                 disabled={loading}
@@ -183,15 +183,15 @@ const QuestionCard = () => {
                     </>
                   ) : (
                     <>
-                       <Sparkles className="size-5 text-indigo-300 group-hover/card:animate-pulse" />
-                       <span>Analyze Codebase</span>
+                       <Sparkles className="size-5 text-indigo-300" />
+                       <span>Ask Question</span>
                     </>
                   )}
                 </div>
               </Button>
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full">
-                 <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">RAG Engine Active</span>
+                 <div className="size-1.5 rounded-full bg-emerald-500" />
+                 <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Live Analysis</span>
               </div>
             </div>
           </form>

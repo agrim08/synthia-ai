@@ -112,9 +112,9 @@ const MeetingCard = () => {
 
           <div className="space-y-2">
             <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none transition-colors">
-              Meeting Analyst
+              Upload Meeting
             </h3>
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.08em] block mt-1.5">Transcription & Analysis</span>
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.08em] block mt-1.5">Audio recording</span>
           </div>
 
           <div className="mt-8">
@@ -122,7 +122,7 @@ const MeetingCard = () => {
               className="rounded-full h-11 bg-indigo-700 text-white px-8 font-black text-sm transition-all hover:bg-indigo-800 active:scale-95 shadow-lg shadow-indigo-100/50"
               asChild
             >
-              <span>Browse Recording</span>
+              <span>Select file</span>
             </Button>
           </div>
         </CardContent>
@@ -144,7 +144,7 @@ const MeetingCard = () => {
             />
           </div>
           <div className="space-y-2 text-center">
-            <p className="text-xl font-black text-slate-900">Syncing Media...</p>
+            <p className="text-xl font-black text-slate-900">Uploading...</p>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Do not refresh your session</p>
           </div>
         </CardContent>

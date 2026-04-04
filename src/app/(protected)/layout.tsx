@@ -1,4 +1,4 @@
-import { SidebarProvider, SIDEBAR_COOKIE_NAME } from "@/components/ui/sidebar";
+import { SidebarProvider, SIDEBAR_COOKIE_NAME, SidebarInset } from "@/components/ui/sidebar";
 import React from "react";
 import { AppSidebar } from "./AppSidebar";
 import Header from "./Header";
@@ -18,15 +18,13 @@ const SidebarLayout = async ({ children }: Props) => {
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <div className="flex min-h-screen w-full bg-[#f0f2f7]">
-        <AppSidebar />
-        <main className="flex-1">
-          <Header />
-          <div className="min-h-[calc(100vh-80px)]">
-            {children}
-          </div>
-        </main>
-      </div>
+      <AppSidebar />
+      <SidebarInset className="bg-[#f0f2f7]">
+        <Header />
+        <div className="min-h-[calc(100vh-80px)]">
+          {children}
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 };

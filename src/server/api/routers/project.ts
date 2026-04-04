@@ -345,4 +345,12 @@ export const projectRouter = createTRPCRouter({
       });
       return { fileCount, userCredits: userCredits?.credits || 0 };
     }),
+
+  deleteQuestion: protectedProcedure
+    .input(z.object({ questionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.question.delete({
+        where: { id: input.questionId },
+      });
+    }),
 });

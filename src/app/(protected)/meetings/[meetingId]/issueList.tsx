@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api, RouterOutputs } from "@/trpc/react";
-import { Calendar, Clock, Sparkles, VideoIcon } from "lucide-react";
+import { Calendar, Clock, Sparkles, VideoIcon, Zap } from "lucide-react";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -56,9 +56,9 @@ const IssueList = ({ meetingId }: Props) => {
                 {meeting.createdAt?.toLocaleDateString()}
               </span>
               <span className="h-3 w-px bg-slate-200" />
-              <span className="flex items-center gap-1.5 uppercase tracking-widest">
-                <Sparkles className="size-3 text-indigo-500" />
-                {meeting.issues.length} Key Insights
+              <span className="flex items-center gap-1.5 uppercase tracking-widest text-indigo-700">
+                <Zap className="size-3" />
+                {meeting.issues.length} Findings
               </span>
             </div>
           </div>
@@ -75,11 +75,11 @@ const IssueList = ({ meetingId }: Props) => {
       {meeting.issues.length === 0 && (
          <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-slate-100 bg-slate-50/30 py-20 text-center">
             <div className="rounded-full bg-slate-100 p-4 mb-4">
-              <Sparkles className="size-8 text-slate-300" />
+              <VideoIcon className="size-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">No issues detected</h3>
+            <h3 className="text-lg font-bold text-slate-900">No findings</h3>
             <p className="text-xs font-medium text-slate-500 max-w-[300px] mt-1">
-              The AI is still processing the transcript or no significant issues were found.
+              The transcript is still being analyzed or no significant findings were identified.
             </p>
           </div>
       )}
@@ -103,8 +103,7 @@ function IssueCard({
           <div className="bg-white">
             <div className="border-b border-slate-100 bg-slate-50/50 px-8 py-8">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-bold text-indigo-700 uppercase tracking-widest">
-                <Sparkles className="size-3" />
-                Insight Detail
+                Detail
               </div>
               <DialogTitle className="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
                 {issue.gist}
@@ -128,7 +127,7 @@ function IssueCard({
                   onClick={() => setOpen(false)}
                   className="rounded-full bg-indigo-700 px-8 font-bold text-white transition-all hover:bg-indigo-800"
                 >
-                  Close Insight
+                  Close
                 </Button>
               </div>
             </div>
@@ -160,7 +159,7 @@ function IssueCard({
               onClick={() => setOpen(true)}
               className="rounded-full h-9 px-4 text-xs font-bold text-slate-900 hover:bg-slate-100"
             >
-              Analyze →
+              View →
             </Button>
         </div>
       </Card>

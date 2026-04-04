@@ -60,10 +60,6 @@ const CommitLogs = () => {
                 
                 {commit.commitSummary && (
                   <div className="mt-4 relative overflow-hidden rounded-xl bg-slate-50/50 p-4 border border-slate-100/60">
-                    <div className="flex items-center gap-1.5 mb-2.5">
-                       <Sparkles className="size-3 text-indigo-500" />
-                       <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">AI Summary</span>
-                    </div>
                     <div className="space-y-2">
                       {commit.commitSummary.split('*').filter(s => s.trim()).map((point, i) => (
                         <div key={i} className="flex gap-2 text-[12px] leading-relaxed text-slate-600 tracking-tight italic">
