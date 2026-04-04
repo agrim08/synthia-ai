@@ -10,7 +10,7 @@ const bodyParser = z.object({
   meetingId: z.string(),
 });
 
-export const maxDuration = 60; //5 minutes
+export const maxDuration = 60; // 1 minute (limit for Vercel Hobby plan)
 
 export async function POST(req: NextRequest) {
   try {

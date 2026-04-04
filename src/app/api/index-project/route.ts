@@ -16,7 +16,7 @@ import { db } from "@/server/db";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
-export const maxDuration = 300; // Vercel: allow up to 5 min runtime
+export const maxDuration = 60; // 60 seconds max for Hobby plan (limit is 60s)
 
 export async function POST(req: NextRequest) {
   // Validate secret to prevent external abuse
