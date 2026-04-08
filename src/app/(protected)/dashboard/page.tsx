@@ -23,7 +23,7 @@ const DashboardPage = () => {
   const { project } = useProject();
   
   return (
-    <div className="max-w-7xl mx-auto space-y-10">
+    <div className="max-w-4xl mx-auto space-y-10">
       {/* 1. Slim Sticky Context Bar (56px) */}
       <div className="sticky top-20 z-40 bg-[#f0f2f7]/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 flex items-center justify-between h-14">
         <div className="flex items-center gap-4">
@@ -84,9 +84,9 @@ const DashboardPage = () => {
       {/* Indexing status banner — polls until COMPLETED */}
       {project?.id && <IndexingStatusBanner projectId={project.id} />}
 
-      <div className="w-full mx-auto px-6 py-8 space-y-10">
+      <div className="w-full mx-auto px-6 py-8 space-y-6">
         {/* 2. Ask Synthia Hero */}
-        <AskSynthiaHero />
+        {/* <AskSynthiaHero /> */}
 
         {/* 3. Activity Timeline */}
         <section className="space-y-8 pt-4">

@@ -127,6 +127,7 @@ model Question {
   project   Project @relation(fields: [projectId], references: [id])
 
   filesReferences Json?
+  messages        Json?    @default("[]")
 }
 
 model Meeting {

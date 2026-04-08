@@ -3,291 +3,554 @@
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import useProject from "@/hooks/useProject";
 import { api } from "@/trpc/react";
-import React, { useState } from "react";
-import AskSynthiaHero from "../dashboard/AskSynthiaHero";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import MDEditor from "@uiw/react-md-editor";
-import FileReference from "../dashboard/FileReference";
-import { MessageSquare, Sparkles, X, History, Calendar, Lightbulb, Zap, Quote, Trash2, FileText } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import {
+  Sparkles,
+  History,
+  Trash2,
+  Plus,
+  ArrowUp,
+  Loader2,
+  User,
+  Copy,
+  FileCode2,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { askChatBot } from "./actions";
+import { readStreamableValue } from "ai/rsc";
+import { useUser } from "@clerk/nextjs";
+import useRefetch from "@/hooks/useRefetch";
 
-const QandA = () => {
+export default function QandA() {
   const { projectId } = useProject();
+  const { user } = useUser();
   const utils = api.useUtils();
+  const refetch = useRefetch();
+
   const { data: questions } = api.project.getQuestions.useQuery({
     projectId: projectId as string,
   });
   const deleteQuestion = api.project.deleteQuestion.useMutation();
+  const saveAnswer = api.project.saveAnswer.useMutation();
+  const updateQuestion = api.project.updateQuestion.useMutation();
 
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const question = questions?.[questionIndex];
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[] }[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: activeQuestion } = api.project.getQuestionById.useQuery(
+    { questionId: currentQuestionId as string },
+    { enabled: !!currentQuestionId }
+  );
+
+  useEffect(() => {
+    if (activeQuestion) {
+      const q = activeQuestion as any;
+      let parsedMessages = [];
+      try {
+        if (q.messages && q.messages !== "[]" && typeof q.messages === "string") {
+          parsedMessages = JSON.parse(q.messages);
+        } else if (typeof q.messages === "object" && Array.isArray(q.messages)) {
+          parsedMessages = q.messages;
+        }
+      } catch (e) {}
+
+      if (parsedMessages.length === 0) {
+        parsedMessages = [
+          { role: "user", content: activeQuestion.question },
+          { role: "bot", content: activeQuestion.answer },
+        ];
+      }
+      setMessages(parsedMessages);
+    }
+  }, [activeQuestion]);
+
+  // Scroll to bottom only when new messages arrive (not on load)
+  useEffect(() => {
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, loading]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+    }
+  }, [input]);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteQuestion.mutateAsync({ questionId: id });
-      toast.success("Question removed from history");
+      toast.success("Conversation deleted");
+      if (currentQuestionId === id) startNewChat();
       utils.project.getQuestions.invalidate();
-    } catch (error) {
-      toast.error("Failed to delete question");
+    } catch {
+      toast.error("Failed to delete");
+    }
+  };
+
+  const startNewChat = () => {
+    setCurrentQuestionId(null);
+    setMessages([]);
+    setInput("");
+    setIsSheetOpen(false);
+  };
+
+  const loadChat = (id: string) => {
+    setCurrentQuestionId(id);
+    setIsSheetOpen(false);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || !projectId || loading) return;
+
+    const userMessage = input.trim();
+    setInput("");
+
+    const newMessages = [...messages, { role: "user", content: userMessage }];
+    setMessages(newMessages);
+    setLoading(true);
+
+    try {
+      setMessages((prev) => [...prev, { role: "bot", content: "" }]);
+
+      const { output, filesReferences } = await askChatBot(userMessage, projectId, messages);
+
+      let fullAnswer = "";
+      for await (const delta of readStreamableValue(output)) {
+        if (delta) {
+          fullAnswer += delta;
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: "bot", content: fullAnswer, filesReferences };
+            return updated;
+          });
+        }
+      }
+
+      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences }];
+
+      if (!currentQuestionId) {
+        saveAnswer.mutate(
+          {
+            projectId,
+            question: userMessage,
+            answer: fullAnswer,
+            filesReferences: {},
+            messages: JSON.stringify(finalMessages),
+          },
+          {
+            onSuccess: (data) => {
+              setCurrentQuestionId(data.id);
+              utils.project.getQuestions.invalidate();
+              refetch();
+            },
+          }
+        );
+      } else {
+        updateQuestion.mutate(
+          { questionId: currentQuestionId, messages: JSON.stringify(finalMessages) },
+          { onSuccess: () => utils.project.getQuestions.invalidate() }
+        );
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
-      <Sheet>
-        {/* Ask Prompt Section */}
-        <section className="relative">
-          <div className="absolute -left-20 -top-20 size-80 rounded-full bg-indigo-100 blur-[100px] opacity-40 -z-10" />
-          <AskSynthiaHero />
-        </section>
+    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-4xl mx-auto w-full">
 
-        {/* History / Knowledge Base Section */}
-        <section className="space-y-8">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-4">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-white border border-slate-100 shadow-sm">
-                 <History className="size-5 text-indigo-500" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
-                  History
-                </h2>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">
-                   {questions?.length || 0} questions
-                </p>
-              </div>
-            </div>
+      {/* ── Top bar ── */}
+      <div className="flex items-center justify-between px-2 py-3 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div>
+            <span className="text-sm font-semibold text-slate-800 leading-none">
+              {currentQuestionId ? "Conversation" : "New chat"}
+            </span>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {questions?.map((ques, index) => (
-              <motion.div 
-                key={ques.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="group relative"
-              >
-                <div
-                  className="relative flex flex-col gap-6 p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm transition-all hover:bg-slate-50/50 hover:shadow-2xl hover:shadow-indigo-100/20 hover:scale-[1.01] hover:border-indigo-100 active:scale-95 cursor-pointer"
-                >
-                  <SheetTrigger asChild onClick={() => setQuestionIndex(index)}>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-500 border border-slate-100">
-                              <Sparkles className="size-2.5 text-indigo-500" />
-                              Analysis
-                            </div>
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                              {new Date(ques.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight line-clamp-2">
-                            {ques.question}
-                          </h3>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          {ques.user?.imageUrl && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50/50 border border-slate-100 transition-all group-hover:bg-white group-hover:shadow-sm shadow-indigo-100/10">
-                              <Image
-                                src={ques.user.imageUrl}
-                                alt="user"
-                                width={20}
-                                height={20}
-                                className="rounded-lg shadow-sm"
-                              />
-                              <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">
-                                {ques.user.firstName}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="prose prose-sm prose-slate max-w-none line-clamp-2 text-slate-500 font-medium leading-relaxed opacity-70">
-                        <MDEditor.Markdown
-                          source={ques.answer}
-                          style={{ background: "transparent", color: "inherit" }}
-                        />
-                      </div>
-                    </div>
-                  </SheetTrigger>
-
-                  {/* Move Delete Button INSIDE card to match meetings page */}
-                  <div className="absolute right-6 bottom-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-auto">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-10 rounded-xl hover:bg-red-50 hover:text-red-500 shadow-sm border border-transparent hover:border-red-100 transition-all bg-white"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDelete(e, ques.id);
-                      }}
-                    >
-                      <Trash2 className="size-5" />
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {!questions?.length && (
-            <div className="flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-100 bg-slate-50/30 py-32 text-center">
-              <div className="rounded-2xl bg-white p-4 mb-6 shadow-sm ring-1 ring-slate-100">
-                <MessageSquare className="size-8 text-slate-200" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Repository is Empty</h3>
-              <p className="text-sm text-slate-400 mt-2 max-w-[200px]">Start by asking Synthia a question above.</p>
-            </div>
+        <div className="flex items-center gap-2">
+          {currentQuestionId && (
+            <button
+              onClick={startNewChat}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100"
+            >
+              <Plus className="size-3.5" />
+              New
+            </button>
           )}
-        </section>
 
-        {question && (
-          <SheetContent
-            className="w-full flex flex-col p-0 border-none shadow-2xl sm:max-w-3xl focus-visible:outline-none bg-white"
-            side="right"
-          >
-            <div className="flex flex-col h-full bg-white">
-              {/* ── Header ────────────────────────────────────── */}
-              <div className="px-10 py-6 border-b border-slate-100 bg-white shadow-sm ring-1 ring-slate-50">
-                <div className="space-y-4">
-                  
-                  <SheetTitle className="text-xl font-black tracking-tight text-slate-900 leading-tight line-clamp-2">
-                    {question.question}
-                  </SheetTitle>
-                  
-                  <div className="flex items-center gap-6 pt-3 border-t border-slate-50">
-                    <div className="flex items-center gap-3">
-                      {question.user?.imageUrl && (
-                        <Image
-                          src={question.user.imageUrl}
-                          alt="user"
-                          width={24}
-                          height={24}
-                          className="rounded-lg shadow-sm"
-                        />
-                      )}
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-black text-slate-900 leading-none">{question.user?.firstName}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Analyst</span>
-                      </div>
-                    </div>
-                    <div className="h-3 w-px bg-slate-100" />
-                    <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                      <Calendar className="size-2.5 text-slate-300" />
-                      {new Date(question.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <button className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100 border border-slate-200">
+                <History className="size-3.5" />
+                History
+                {questions && questions.length > 0 && (
+                  <span className="ml-0.5 bg-indigo-100 text-indigo-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
+                    {questions.length}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
+                
+            {/* ── History Sheet ── */}
+            <SheetContent
+              side="right"
+              className="w-80 p-0 flex flex-col bg-white border-l border-slate-100"
+            >
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <SheetTitle className="text-sm font-semibold text-slate-800">
+                  History
+                </SheetTitle>
+                <button
+                  onClick={startNewChat}
+                  className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  <Plus className="size-3" />
+                  New chat
+                </button>
               </div>
 
-              {/* ── Content with Tabs ─────────────────────────── */}
-              <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-                <Tabs defaultValue="summary" className="flex-1 flex flex-col min-h-0">
-                  <div className="px-10 py-2.5 bg-slate-50 border-b border-slate-100">
-                    <TabsList className="bg-slate-100/50 p-1 rounded-xl border border-slate-200/50 h-10 w-full max-w-[300px]">
-                      <TabsTrigger 
-                        value="summary" 
-                        className="flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+              {/* Scrollable list — always scrollable from top */}
+              <div className="flex-1 overflow-y-auto py-2">
+                {questions && questions.length > 0 ? (
+                  <div className="px-3 space-y-0.5">
+                    {questions.map((ques) => (
+                      <div
+                        key={ques.id}
+                        onClick={() => loadChat(ques.id)}
+                        className={cn(
+                          "group relative flex items-start justify-between gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
+                          currentQuestionId === ques.id
+                            ? "bg-indigo-50"
+                            : "hover:bg-slate-50"
+                        )}
                       >
-                        Summary
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="files" 
-                        className="flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
-                      >
-                        Reference
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 min-w-0">
-                    <TabsContent value="summary" className="m-0 focus-visible:outline-none" data-color-mode="light">
-                      <div className="px-10 py-8 space-y-10">
-                         {/* Visual Intro */}
-                         <motion.div 
-                           initial={{ opacity: 0, y: 10 }}
-                           animate={{ opacity: 1, y: 0 }}
-                           className="relative overflow-hidden rounded-[32px] bg-slate-50 p-8 border border-slate-100"
-                         >
-                            <div className="absolute right-[-20px] top-[-20px] scale-[2] opacity-5 pointer-events-none">
-                               <Sparkles className="size-24 text-indigo-700" />
-                            </div>
-                            
-                            <div className="flex items-center gap-4 mb-4">
-                               <div>
-                                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-900 leading-none">Summary</h4>
-                               </div>
-                            </div>
-
-                            <div className="relative">
-                               <Quote className="absolute -left-2 -top-2 size-12 text-indigo-100 opacity-50 -scale-x-100" />
-                               <div className="relative prose prose-blue max-w-none 
-                                  prose-p:text-slate-700 prose-p:leading-relaxed prose-p:text-xl prose-p:font-bold prose-p:tracking-tight
-                                  prose-code:text-indigo-600 prose-code:bg-white prose-code:px-2 prose-code:rounded-lg prose-code:ring-1 prose-code:ring-slate-200">
-                                  <MDEditor.Markdown
-                                    source={question.answer.split('\n\n')[0]} 
-                                    style={{ background: "transparent", color: "inherit" }}
-                                  />
-                               </div>
-                            </div>
-                         </motion.div>
-
-                         {/* Detailed Breakdown */}
-                         <div className="space-y-10">
-                            <div className="flex items-center gap-4">
-                               <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Analysis</h3>
-                               <div className="h-px flex-1 bg-slate-100" />
-                            </div>
-                            
-                            <div className="prose prose-slate max-w-none 
-                               prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-base prose-p:font-medium
-                               prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900
-                               prose-strong:text-indigo-600 prose-strong:font-black
-                               prose-ul:list-none prose-ul:p-0
-                               prose-li:relative prose-li:pl-8 prose-li:mb-6 prose-li:text-slate-600 prose-li:before:absolute prose-li:before:left-0 prose-li:before:top-[12px] prose-li:before:size-2 prose-li:before:rounded-full prose-li:before:bg-indigo-400
-                               prose-code:bg-slate-50 prose-code:text-indigo-600 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
-                               prose-pre:bg-slate-900 prose-pre:text-white prose-pre:p-6 prose-pre:rounded-[24px] prose-pre:shadow-xl
-                            ">
-                               <MDEditor.Markdown
-                                 source={question.answer.split('\n\n').slice(1).join('\n\n')} 
-                                 style={{ background: "transparent", color: "inherit" }}
-                               />
-                            </div>
-                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            "text-[13px] leading-snug line-clamp-2 font-medium",
+                            currentQuestionId === ques.id
+                              ? "text-indigo-700"
+                              : "text-slate-700"
+                          )}>
+                            {ques.question}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            {new Date(ques.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => handleDelete(e, ques.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 shrink-0 mt-0.5"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </div>
-                    </TabsContent>
-
-                    <TabsContent value="files" className="m-0 px-10 py-8 focus-visible:outline-none bg-slate-50/30">
-                      <FileReference
-                        filesReferences={(question.filesReferences ?? []) as any}
-                      />
-                    </TabsContent>
+                    ))}
                   </div>
-                </Tabs>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
+                    <p className="text-sm font-medium text-slate-700">No conversations yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Your chats will appear here.</p>
+                  </div>
+                )}
               </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+      <hr className="border-slate-200 mx-2 mb-4" />
+
+      {/* ── Chat scroll area — independently scrollable ── */}
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 overflow-y-auto px-2 pb-4 scroll-smooth"
+      >
+        {messages.length === 0 ? (
+          /* Empty state */
+          <div className="h-full flex flex-col items-center justify-center text-center py-20">
+            <Logo width={56} height={56} />
+            <h2 className="text-base font-semibold text-slate-800 mb-1.5 mt-2">
+              Ask anything about your codebase
+            </h2>
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+              Synthia understands your entire repo — files, architecture, dependencies, and logic.
+            </p>
+
+            {/* Suggestion chips */}
+            <div className="mt-8 flex flex-col gap-2 w-full max-w-sm">
+              {[
+                "How is authentication handled?",
+                "Explain the folder structure",
+                "Where is the API layer defined?",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setInput(suggestion)}
+                  className="text-left text-sm text-slate-600 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all"
+                >
+                  {suggestion}
+                </button>
+              ))}
             </div>
-          </SheetContent>
+          </div>
+        ) : (
+          <AnimatePresence initial={false}>
+            <div className="space-y-6 pt-2 max-w-2xl mx-auto">
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className={cn(
+                    "flex gap-3",
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  {/* Bot avatar */}
+                  {msg.role === "bot" && (
+                    <Logo width={36} height={36} className="shrink-0 -mt-1" />
+                  )}
+
+                  <div
+                    className={cn(
+                      "max-w-[82%]",
+                      msg.role === "user"
+                        ? "bg-slate-900 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed"
+                        : "text-slate-800"
+                    )}
+                  >
+                    {msg.role === "user" ? (
+                      <p className="text-[14px] leading-relaxed whitespace-pre-wrap font-normal">
+                        {msg.content}
+                      </p>
+                    ) : (
+                      <div>
+                        {msg.content === "" ? (
+                          <div className="flex items-center gap-2 py-1 text-slate-400">
+                            <Loader2 className="size-3.5 animate-spin" />
+                            <span className="text-xs">Thinking…</span>
+                          </div>
+                        ) : (
+                          <div className="prose prose-sm max-w-none
+                            prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-slate-700 prose-p:my-2
+                            prose-headings:text-slate-900 prose-headings:font-semibold prose-headings:my-3
+                            prose-strong:text-slate-900 prose-strong:font-semibold
+                            prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
+                            prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
+                            prose-ul:my-2 prose-li:text-[14px] prose-li:text-slate-700 prose-li:my-1
+                          ">
+                            <div data-color-mode="light">
+                              <MDEditor.Markdown
+                                source={msg.content}
+                                style={{ background: "transparent", color: "inherit", fontSize: "14px" }}
+                                components={{
+                                  code: ({ inline, className, children, ...props }: any) => {
+                                    const match = /language-(\w+)/.exec(className || "");
+                                    const extractText = (child: any): string => {
+                                      if (typeof child === "string" || typeof child === "number") return String(child);
+                                      if (Array.isArray(child)) return child.map(extractText).join("");
+                                      if (child && child.props && child.props.children) return extractText(child.props.children);
+                                      return "";
+                                    };
+                                    const codeContent = extractText(children).replace(/\n$/, "");
+
+                                    return !inline && match ? (
+                                      <SyntaxHighlighter
+                                        style={atomDark}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        className="rounded-xl overflow-hidden shadow-sm border border-slate-800 my-3"
+                                        customStyle={{
+                                          background: "#1e293b",
+                                          padding: "1rem",
+                                          margin: 0,
+                                        }}
+                                        {...props}
+                                      >
+                                        {codeContent}
+                                      </SyntaxHighlighter>
+                                    ) : (
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* File references */}
+                        {msg.filesReferences && msg.filesReferences.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
+                            <span className="text-[11px] text-slate-400 font-medium self-center mr-1">
+                              Sources
+                            </span>
+                            {msg.filesReferences.map((file: any, index: number) => (
+                              <Dialog key={index}>
+                                <DialogTrigger asChild>
+                                  <button className="flex items-center gap-1 text-[12px] font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors border border-indigo-100">
+                                    <FileCode2 className="size-3" />
+                                    {file.fileName}
+                                  </button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl w-full flex flex-col max-h-[85vh] p-0 overflow-hidden bg-[#0d1117] border-slate-800">
+                                  <DialogHeader className="px-5 py-3.5 border-b border-slate-800 flex flex-row items-center justify-between sticky top-0 bg-[#0d1117] z-10 shrink-0">
+                                    <DialogTitle className="text-slate-300 font-mono text-[13px] flex items-center gap-2">
+                                      <FileCode2 className="size-4 text-indigo-400" />
+                                      {file.fileName}
+                                    </DialogTitle>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 text-xs gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(file.sourceCode);
+                                        toast.success("Copied to clipboard");
+                                      }}
+                                    >
+                                      <Copy className="size-3.5" />
+                                      Copy
+                                    </Button>
+                                  </DialogHeader>
+                                  <div className="flex-1 overflow-y-auto">
+                                    <SyntaxHighlighter
+                                      language="typescript"
+                                      style={atomDark}
+                                      customStyle={{
+                                        margin: 0,
+                                        padding: "1.25rem",
+                                        background: "transparent",
+                                        fontSize: "0.8125rem",
+                                        lineHeight: "1.6",
+                                      }}
+                                      wrapLines={true}
+                                      showLineNumbers={true}
+                                    >
+                                      {file.sourceCode}
+                                    </SyntaxHighlighter>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* User avatar */}
+                  {msg.role === "user" && (
+                    <div className="shrink-0 mt-0.5">
+                      {user?.imageUrl ? (
+                        <Image
+                          src={user.imageUrl}
+                          alt="You"
+                          width={28}
+                          height={28}
+                          className="rounded-full ring-2 ring-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="size-7 rounded-full bg-slate-200 flex items-center justify-center">
+                          <User className="size-3.5 text-slate-500" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          </AnimatePresence>
         )}
-      </Sheet>
+      </div>
+
+      {/* ── Input area — fixed to bottom ── */}
+      <div className="shrink-0 pt-2 pb-1 px-2">
+        <div className="max-w-2xl mx-auto">
+          <div className={cn(
+            "relative flex items-end gap-2 bg-white border rounded-2xl px-4 py-3 shadow-sm transition-all duration-200",
+            "border-slate-200 focus-within:border-indigo-400 focus-within:shadow-md focus-within:shadow-indigo-100/60"
+          )}>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about your codebase…"
+              className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none min-h-[24px] max-h-40 leading-relaxed py-0.5"
+            />
+            <button
+              onClick={() => handleSubmit()}
+              disabled={loading || !input.trim()}
+              className={cn(
+                "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
+                input.trim() && !loading
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:scale-105 active:scale-95"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+              )}
+            >
+              {loading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ArrowUp className="size-3.5" />
+              )}
+            </button>
+          </div>
+          <p className="text-center text-[11px] text-slate-400 mt-2">
+            Synthia answers from your connected codebase · <kbd className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono">↵</kbd> to send
+          </p>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default QandA;
+}

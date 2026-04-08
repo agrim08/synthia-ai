@@ -209,6 +209,7 @@ export const projectRouter = createTRPCRouter({
         question: z.string(),
         filesReferences: z.any(),
         answer: z.string(),
+        messages: z.any().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -219,6 +220,7 @@ export const projectRouter = createTRPCRouter({
           filesReferences: input.filesReferences,
           userId: ctx.user.userId,
           answer: input.answer,
+          messages: input.messages ?? "[]",
         },
       });
     }),
@@ -325,4 +327,30 @@ export const projectRouter = createTRPCRouter({
         where: { id: input.questionId },
       });
     }),
+
+  getQuestionById: protectedProcedure
+    .input(z.object({ questionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.question.findUnique({
+        where: { id: input.questionId },
+        include: { user: true },
+      });
+    }),
+
+  updateQuestion: protectedProcedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        messages: z.any(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.question.update({
+        where: { id: input.questionId },
+        data: {
+          messages: input.messages,
+        },
+      });
+    }),
 });
+

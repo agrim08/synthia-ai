@@ -38,7 +38,7 @@ const MeetingsPage = () => {
   const deleteMeeting = api.project.deleteMeeting.useMutation();
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
+    <div className="max-w-4xl mx-auto px-6 py-8 space-y-10">
       {/* Upload/Create Section with Header Context */}
       <section className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between px-2 gap-6">
