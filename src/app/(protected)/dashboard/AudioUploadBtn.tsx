@@ -94,7 +94,7 @@ const AudioUploadBtn = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
-          className="h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 hover:scale-105 active:scale-95 flex items-center gap-1.5"
+          className="h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center gap-1.5"
         >
           <Mic className="size-3.5" />
           <span>Audio synthesis</span>

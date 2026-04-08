@@ -56,13 +56,32 @@ export async function POST(req: NextRequest) {
       console.warn(`[/api/index-project] pollCommits error (non-fatal):`, err);
     });
 
-    // 3. Index the repo (slow – AI calls per file)
+    // 3. Index the repo (time-boxed: will exit at ~50s)
     await indexGithubRepo(projectId, githubUrl, githubToken);
 
+    // 4. Check if we need to continue (self-invoke)
+    const updatedProject = await (db.project as any).findUnique({
+      where: { id: projectId },
+      select: { indexingStatus: true }
+    });
+
+    if (updatedProject?.indexingStatus === "PARTIAL") {
+      console.log(`[/api/index-project] PARTIAL limit reached for project=${projectId}, re-triggering...`);
+      // Fire-and-forget next chunk
+      void fetch(`${req.nextUrl.origin}/api/index-project`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-secret": INTERNAL_SECRET
+        },
+        body: JSON.stringify({ projectId, githubUrl, githubToken })
+      }).catch(e => console.error("Self-trigger failed", e));
+    }
+
     console.log(
-      `[/api/index-project] Completed background indexing for project=${projectId}`,
+      `[/api/index-project] Finished chunk for project=${projectId} (status=${updatedProject?.indexingStatus})`,
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, status: updatedProject?.indexingStatus });
   } catch (err: any) {
     console.error(
       `[/api/index-project] Fatal error for project=${projectId}:`,

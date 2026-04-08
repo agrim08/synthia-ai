@@ -8,6 +8,7 @@ const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 const APP_URL =
   process.env.NEXTAUTH_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
   "http://localhost:3000";
 
 import { indexGithubRepo } from "@/lib/githubRepoLoader";
@@ -19,46 +20,17 @@ async function triggerBackgroundIndexing(
   githubUrl: string,
   githubToken?: string,
 ) {
-  console.log(
-    `[triggerIndexing] Starting background indexing for project=${projectId}`,
-  );
-
-  // Set status immediately so polling finds something
-  await (db.project as any)
-    .update({
-      where: { id: projectId },
-      data: { indexingStatus: "INDEXING", indexingError: null },
-    })
-    .catch((e: any) => console.error("Status update failed", e));
-
-  // Run in background (do NOT await)
-  void (async () => {
-    try {
-      // 1. Commits
-      await pollCommits(projectId).catch((err) => {
-        console.warn(`[triggerIndexing] pollCommits non-fatal error:`, err);
-      });
-
-      // 2. Code indexing
-      await indexGithubRepo(projectId, githubUrl, githubToken);
-
-      console.log(`[triggerIndexing] DONE project=${projectId}`);
-    } catch (err: any) {
-      console.error(
-        `[triggerIndexing] FATAL error for project=${projectId}:`,
-        err,
-      );
-      await (db.project as any)
-        .update({
-          where: { id: projectId },
-          data: {
-            indexingStatus: "FAILED",
-            indexingError: err?.message ?? String(err),
-          },
-        })
-        .catch(() => {});
-    }
-  })();
+  console.log(`[triggerIndexing] Starting background indexing for project=${projectId}`);
+  
+  // Fire-and-forget indexing (Server-side trigger)
+  void fetch(`${APP_URL}/api/index-project`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: JSON.stringify({ projectId, githubUrl, githubToken }),
+  }).catch((e) => console.error("Index trigger failed", e));
 }
 
 export const projectRouter = createTRPCRouter({

@@ -346,10 +346,16 @@ export const indexGithubRepo = async (
   githubUrl: string,
   githubToken?: string,
 ) => {
-  console.log(`[indexGithubRepo] START project=${projectId}`);
+  const startTime = Date.now();
+  // Vercel Free Plan has a hard 60s limit (Pro has 300s). 
+  // For safety, we exit the loop early if approaching the limit.
+  const isProd = process.env.NODE_ENV === "production";
+  const limitMs = isProd ? 50_000 : 280_000; // 50s for prod (leaving 10s margin), 280s for dev
+
+  console.log(`[indexGithubRepo] START project=${projectId} (env=${process.env.NODE_ENV}, limit=${limitMs/1000}s)`);
 
   // Fetch flag from DB
-  const project = await (db.project as any).findUnique({
+  const project = await db.project.findUnique({
     where: { id: projectId },
     select: { skipUiComponents: true }
   });
@@ -397,6 +403,20 @@ export const indexGithubRepo = async (
     for (const doc of pendingDocs) {
       const source = doc.metadata.source as string;
       const code = doc.pageContent;
+
+      // ---- Timeboxed exit check ----
+      if (Date.now() - startTime > limitMs) {
+        console.warn(`[indexGithubRepo] Time limit reached (${limitMs/1000}s). Saving PARTIAL state for project=${projectId}`);
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { 
+            indexingStatus: "PARTIAL", 
+            indexingProgress: processed,
+            indexingTotal: totalFiles 
+          },
+        });
+        return; // Exit loop and trigger re-poll from the caller if needed
+      }
 
       // Skip very large files
       if (code.length > SKIP_EMBEDDING_ABOVE_CHARS) {
