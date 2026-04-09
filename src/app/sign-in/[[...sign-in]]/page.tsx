@@ -128,7 +128,7 @@ export default function Page() {
                 path="/sign-in"
                 routing="path"
                 signUpUrl="/sign-up"
-                afterSignInUrl="/dashboard"
+                afterSignInUrl="/sync-user"
               />
             </div>
           </motion.div>

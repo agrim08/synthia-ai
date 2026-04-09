@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { Octokit } from "octokit";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/server/db";
@@ -65,13 +66,39 @@ export const projectRouter = createTRPCRouter({
         `[createProject] START — name: "${input.name}", url: ${input.githubUrl}`,
       );
 
-      const existingUser = await ctx.db.user.findUnique({
+      let existingUser = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId! },
         select: { credits: true },
       });
 
       if (!existingUser) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        // Fallback: upsert the user from Clerk if they bypassed /sync-user
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(ctx.user.userId!);
+        const userEmail = clerkUser.emailAddresses[0]?.emailAddress;
+        
+        if (!userEmail) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        const newUser = await ctx.db.user.upsert({
+          where: { emailAddress: userEmail },
+          update: {
+            imageUrl: clerkUser.imageUrl,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+          },
+          create: {
+            id: ctx.user.userId!,
+            emailAddress: userEmail,
+            imageUrl: clerkUser.imageUrl,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+            credits: 150,
+          },
+        });
+        
+        existingUser = { credits: newUser.credits };
       }
 
       console.log(

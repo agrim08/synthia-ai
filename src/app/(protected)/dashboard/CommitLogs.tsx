@@ -7,9 +7,10 @@ import React from "react";
 
 const CommitLogs = () => {
   const { projectId, project } = useProject();
-  const { data: commits } = api.project.getCommits.useQuery({
-    projectId: projectId,
-  });
+  const { data: commits } = api.project.getCommits.useQuery(
+    { projectId: projectId },
+    { enabled: !!projectId }
+  );
 
   return (
     <div className="relative">

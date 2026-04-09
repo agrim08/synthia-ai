@@ -14,7 +14,7 @@ const ArchiveProject = ({ id }: { id?: string }) => {
   return (
     <Button
       id={id}
-      disabled={archive.isPending}
+      disabled={archive.isPending || !projectId}
       size="sm"
       className="bg-red-600 text-white hover:bg-red-800"
       onClick={() => {

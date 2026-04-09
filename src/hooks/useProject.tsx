@@ -16,7 +16,7 @@ const useProject = () => {
   const project = projects?.find((project) => project.id === projectId);
 
   return { 
-    projectId: project ? projectId : "", 
+    projectId: project ? project.id : "", 
     setProjectId, 
     project, 
     projects 
