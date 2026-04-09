@@ -339,7 +339,9 @@ export const loadGithubRepo = async (
  * Single Bottleneck limiter used for ALL Gemini calls.
  * maxConcurrent=1 + minTime=2000ms ≈ 30 req/min – safely under free-tier limits.
  */
-const geminiLimiter = new Bottleneck({ maxConcurrent: 1, minTime: 2_000 });
+/** ~40 req/min target; override with GEMINI_MIN_INTERVAL_MS if needed */
+const GEMINI_MIN_MS = Number(process.env.GEMINI_MIN_INTERVAL_MS) || 1_500;
+const geminiLimiter = new Bottleneck({ maxConcurrent: 1, minTime: GEMINI_MIN_MS });
 
 // ---------------------------------------------------------------------------
 // GitHub URL + HEAD helpers (also used by incremental sync)

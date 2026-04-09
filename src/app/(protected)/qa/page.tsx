@@ -289,7 +289,7 @@ export default function QandA() {
                         </div>
                         <button
                           onClick={(e) => handleDelete(e, ques.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 shrink-0 mt-0.5"
+                          className="opacity-100 p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 shrink-0 mt-0.5"
                         >
                           <Trash2 className="size-3.5" />
                         </button>

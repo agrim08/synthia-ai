@@ -17,16 +17,38 @@ const APP_URL =
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
   "http://localhost:3000";
 
+/**
+ * Use the incoming request Host (tRPC) so internal fetch hits the same dev port / domain
+ * as the browser. Fallback APP_URL often breaks local dev (wrong port or 127.0.0.1 vs localhost).
+ */
+function resolvePublicOrigin(headers: Headers | undefined): string {
+  if (!headers) return APP_URL;
+  const rawHost =
+    headers.get("x-forwarded-host")?.split(",")[0]?.trim() ??
+    headers.get("host") ??
+    "";
+  if (!rawHost) return APP_URL;
+  let proto = headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (!proto) {
+    proto =
+      rawHost.startsWith("localhost") || rawHost.startsWith("127.")
+        ? "http"
+        : "https";
+  }
+  return `${proto}://${rawHost}`;
+}
+
 /** Fire-and-forget indexing */
 async function triggerBackgroundIndexing(
   projectId: string,
   githubUrl: string,
   githubToken?: string,
+  origin: string = APP_URL,
 ) {
   console.log(`[triggerIndexing] Starting background indexing for project=${projectId}`);
   
   // Fire-and-forget indexing (Server-side trigger)
-  void fetch(`${APP_URL}/api/index-project`, {
+  void fetch(`${origin}/api/index-project`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,8 +62,9 @@ async function triggerBackgroundSync(
   projectId: string,
   githubUrl: string,
   githubToken?: string,
+  origin: string = APP_URL,
 ) {
-  void fetch(`${APP_URL}/api/sync-repo`, {
+  void fetch(`${origin}/api/sync-repo`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,6 +174,7 @@ export const projectRouter = createTRPCRouter({
         project.id,
         input.githubUrl,
         input.githubToken,
+        resolvePublicOrigin(ctx.headers),
       );
 
       console.log(
@@ -276,7 +300,12 @@ export const projectRouter = createTRPCRouter({
         return { action: "current" as const };
       }
 
-      void triggerBackgroundSync(input.projectId, project.githubUrl);
+      void triggerBackgroundSync(
+        input.projectId,
+        project.githubUrl,
+        undefined,
+        resolvePublicOrigin(ctx.headers),
+      );
       return { action: "scheduled" as const };
     }),
 
@@ -303,10 +332,11 @@ export const projectRouter = createTRPCRouter({
 
       const proj = link.project as any;
       const { githubUrl } = proj;
+      const origin = resolvePublicOrigin(ctx.headers);
       if (proj.syncState != null) {
-        void triggerBackgroundSync(input.projectId, githubUrl);
+        void triggerBackgroundSync(input.projectId, githubUrl, undefined, origin);
       } else {
-        void triggerBackgroundIndexing(input.projectId, githubUrl);
+        void triggerBackgroundIndexing(input.projectId, githubUrl, undefined, origin);
       }
       return { scheduled: true };
     }),

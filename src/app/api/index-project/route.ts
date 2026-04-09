@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
       data: { indexingStatus: "INDEXING", indexingError: null },
     });
 
-    // 2. Poll commits (summaries can take a few seconds)
-    await pollCommits(projectId).catch(err => {
+    // 2. Commit summaries run in parallel — do NOT block indexing (was delaying file counts for minutes).
+    void pollCommits(projectId).catch((err) => {
       console.warn(`[/api/index-project] pollCommits error (non-fatal):`, err);
     });
 

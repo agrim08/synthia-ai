@@ -139,7 +139,8 @@ export async function runIncrementalRepoSync(
   const skipUi = (project as any).skipUiComponents ?? false;
   let syncState = (project as any).syncState as RepoSyncStatePayload | null;
 
-  await pollCommits(projectId).catch((err) => {
+  // Do not block embedding on commit summarization (same as /api/index-project).
+  void pollCommits(projectId).catch((err) => {
     console.warn(`[runIncrementalRepoSync] pollCommits:`, err);
   });
 
