@@ -121,6 +121,18 @@ export const projectRouter = createTRPCRouter({
   getProjectStatus: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       const project = await ctx.db.project.findUnique({
         where: { id: input.projectId },
         select: {
@@ -189,6 +201,18 @@ export const projectRouter = createTRPCRouter({
   getCommits: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       try {
         return await ctx.db.gitCommit.findMany({
           where: { projectId: input.projectId },
@@ -213,6 +237,18 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return await ctx.db.question.create({
         data: {
           projectId: input.projectId,
@@ -228,6 +264,18 @@ export const projectRouter = createTRPCRouter({
   getQuestions: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return await ctx.db.question.findMany({
         where: { projectId: input.projectId },
         include: { user: true },
@@ -244,6 +292,18 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return await db.meeting.create({
         data: {
           projectId: input.projectId,
@@ -256,7 +316,19 @@ export const projectRouter = createTRPCRouter({
 
   getMeetings: protectedProcedure
     .input(z.object({ projectId: z.string() }))
-    .query(({ ctx, input }) => {
+    .query(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return db.meeting.findMany({
         where: { projectId: input.projectId },
         include: { issues: true },
@@ -266,21 +338,61 @@ export const projectRouter = createTRPCRouter({
   deleteMeeting: protectedProcedure
     .input(z.object({ meetingId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const meeting = await ctx.db.meeting.findUnique({
+        where: { id: input.meetingId },
+      });
+      if (!meeting) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: meeting.projectId,
+          },
+        },
+      });
+      if (!link) throw new TRPCError({ code: "FORBIDDEN" });
+
       return await ctx.db.meeting.delete({ where: { id: input.meetingId } });
     }),
 
   getMeetingById: protectedProcedure
     .input(z.object({ meetingId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.meeting.findUnique({
+      const meeting = await ctx.db.meeting.findUnique({
         where: { id: input.meetingId },
         include: { issues: true },
       });
+      if (!meeting) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: meeting.projectId,
+          },
+        },
+      });
+      if (!link) throw new TRPCError({ code: "FORBIDDEN" });
+
+      return meeting;
     }),
 
   archiveProject: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return await ctx.db.project.update({
         where: { id: input.projectId },
         data: { deletedAt: new Date() },
@@ -290,6 +402,18 @@ export const projectRouter = createTRPCRouter({
   getTeamMembers: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
       return await ctx.db.userToProject.findMany({
         where: { projectId: input.projectId },
         include: { user: true },
@@ -297,10 +421,11 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getMyCredits: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.user.findUnique({
+    const user = await ctx.db.user.findUnique({
       where: { id: ctx.user.userId },
       select: { credits: true },
     });
+    return { credits: user?.credits ?? 0 };
   }),
 
   checkCreditNeeded: protectedProcedure
@@ -323,6 +448,21 @@ export const projectRouter = createTRPCRouter({
   deleteQuestion: protectedProcedure
     .input(z.object({ questionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const question = await ctx.db.question.findUnique({
+        where: { id: input.questionId },
+      });
+      if (!question) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: question.projectId,
+          },
+        },
+      });
+      if (!link) throw new TRPCError({ code: "FORBIDDEN" });
+
       return await ctx.db.question.delete({
         where: { id: input.questionId },
       });
@@ -331,10 +471,23 @@ export const projectRouter = createTRPCRouter({
   getQuestionById: protectedProcedure
     .input(z.object({ questionId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.question.findUnique({
+      const question = await ctx.db.question.findUnique({
         where: { id: input.questionId },
         include: { user: true },
       });
+      if (!question) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: question.projectId,
+          },
+        },
+      });
+      if (!link) throw new TRPCError({ code: "FORBIDDEN" });
+
+      return question;
     }),
 
   updateQuestion: protectedProcedure
@@ -345,6 +498,21 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const question = await ctx.db.question.findUnique({
+        where: { id: input.questionId },
+      });
+      if (!question) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: question.projectId,
+          },
+        },
+      });
+      if (!link) throw new TRPCError({ code: "FORBIDDEN" });
+
       return await ctx.db.question.update({
         where: { id: input.questionId },
         data: {

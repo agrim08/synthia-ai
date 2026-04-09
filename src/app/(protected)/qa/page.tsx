@@ -47,9 +47,10 @@ export default function QandA() {
   const utils = api.useUtils();
   const refetch = useRefetch();
 
-  const { data: questions } = api.project.getQuestions.useQuery({
-    projectId: projectId as string,
-  });
+  const { data: questions } = api.project.getQuestions.useQuery(
+    { projectId: projectId as string },
+    { enabled: !!projectId }
+  );
   const deleteQuestion = api.project.deleteQuestion.useMutation();
   const saveAnswer = api.project.saveAnswer.useMutation();
   const updateQuestion = api.project.updateQuestion.useMutation();
