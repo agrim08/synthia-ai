@@ -341,6 +341,154 @@ export const loadGithubRepo = async (
  */
 const geminiLimiter = new Bottleneck({ maxConcurrent: 1, minTime: 2_000 });
 
+// ---------------------------------------------------------------------------
+// GitHub URL + HEAD helpers (also used by incremental sync)
+// ---------------------------------------------------------------------------
+
+export function parseGithubRepoUrl(
+  githubUrl: string,
+): { owner: string; repo: string } | null {
+  try {
+    const normalized = githubUrl.trim().replace(/\.git$/i, "");
+    const u = new URL(normalized.includes("://") ? normalized : `https://${normalized}`);
+    const parts = u.pathname
+      .replace(/^\/+/, "")
+      .split("/")
+      .filter(Boolean)
+      .map((p) => p.replace(/\.git$/i, ""));
+    if (parts.length < 2) return null;
+    return { owner: parts[0]!, repo: parts[1]! };
+  } catch {
+    return null;
+  }
+}
+
+export async function getDefaultBranchHeadSha(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+): Promise<{ sha: string; branch: string }> {
+  const { data: repoInfo } = await octokit.rest.repos.get({ owner, repo });
+  const branch = repoInfo.default_branch;
+  const { data: branchRef } = await octokit.rest.repos.getBranch({
+    owner,
+    repo,
+    branch,
+  });
+  const sha = branchRef.commit.sha;
+  if (!sha) throw new Error("Could not resolve default branch HEAD");
+  return { sha, branch };
+}
+
+export async function persistProjectIndexedHeadSha(
+  projectId: string,
+  githubUrl: string,
+  githubToken?: string,
+): Promise<void> {
+  const parsed = parseGithubRepoUrl(githubUrl);
+  if (!parsed) {
+    console.warn(`[persistProjectIndexedHeadSha] Bad URL: ${githubUrl}`);
+    return;
+  }
+  const octokit = new Octokit({ auth: githubToken ?? process.env.GITHUB_TOKEN });
+  const { sha } = await getDefaultBranchHeadSha(
+    octokit,
+    parsed.owner,
+    parsed.repo,
+  );
+  await (db.project as any).update({
+    where: { id: projectId },
+    data: { lastIndexedCommitSha: sha },
+  });
+  console.log(
+    `[persistProjectIndexedHeadSha] project=${projectId} → ${sha.slice(0, 7)}`,
+  );
+}
+
+export type EmbedFileResult =
+  | { kind: "embedded" }
+  | { kind: "oversized" }
+  | { kind: "rate_limited" }
+  | { kind: "error"; message: string };
+
+/**
+ * Replace (or create) embeddings for a single file path. Used by full index and incremental sync.
+ */
+export async function embedOneSourceFile(
+  projectId: string,
+  fileName: string,
+  code: string,
+): Promise<EmbedFileResult> {
+  await db.sourceCodeEmbeddings.deleteMany({ where: { projectId, fileName } });
+
+  if (code.length > SKIP_EMBEDDING_ABOVE_CHARS) {
+    console.warn(
+      `[embedOneSourceFile] Skipping oversized file (${code.length} chars): ${fileName}`,
+    );
+    return { kind: "oversized" };
+  }
+
+  const truncatedCode = code.slice(0, MAX_CODE_CHARS);
+  const meta = { source: fileName };
+
+  try {
+    const summary = await geminiLimiter.schedule(() =>
+      withRateLimitRetry(
+        () =>
+          summariseCode(
+            new Document({
+              pageContent: truncatedCode,
+              metadata: meta,
+            }),
+          ),
+        `summariseCode:${fileName}`,
+      ),
+    );
+
+    const embeddingValues = await geminiLimiter.schedule(() =>
+      withRateLimitRetry(
+        () => loadEmbedding(summary ?? ""),
+        `loadEmbedding:${fileName}`,
+      ),
+    );
+
+    const record = await db.sourceCodeEmbeddings.create({
+      data: {
+        summary: summary ?? "",
+        sourceCode: JSON.parse(JSON.stringify(truncatedCode)),
+        fileName,
+        projectId,
+      },
+    });
+
+    await db.$executeRawUnsafe(
+      `UPDATE "SourceCodeEmbeddings" SET "summaryEmbeddings" = $1::vector WHERE "id" = $2`,
+      `[${embeddingValues.join(",")}]`,
+      record.id,
+    );
+
+    return { kind: "embedded" };
+  } catch (err: any) {
+    const is429 =
+      err?.status === 429 ||
+      (err?.message ?? "").includes("429") ||
+      (err?.message ?? "").toLowerCase().includes("quota");
+
+    if (is429) {
+      console.error(
+        `[embedOneSourceFile] Rate limit for ${fileName} — stopping`,
+      );
+      return { kind: "rate_limited" };
+    }
+
+    console.error(
+      `[embedOneSourceFile] Non-fatal error on ${fileName}:`,
+      err?.message ?? err,
+    );
+    return { kind: "error", message: String(err?.message ?? err) };
+  }
+}
+
 export const indexGithubRepo = async (
   projectId: string,
   githubUrl: string,
@@ -394,6 +542,9 @@ export const indexGithubRepo = async (
         where: { id: projectId },
         data: { indexingStatus: "COMPLETED", indexedAt: new Date() },
       });
+      await persistProjectIndexedHeadSha(projectId, githubUrl, githubToken).catch(
+        (e) => console.warn(`[indexGithubRepo] persist HEAD (no-op path):`, e),
+      );
       return;
     }
 
@@ -418,101 +569,33 @@ export const indexGithubRepo = async (
         return; // Exit loop and trigger re-poll from the caller if needed
       }
 
-      // Skip very large files
-      if (code.length > SKIP_EMBEDDING_ABOVE_CHARS) {
-        console.warn(
-          `[indexGithubRepo] Skipping oversized file (${code.length} chars): ${source}`,
+      const result = await embedOneSourceFile(projectId, source, code);
+      if (result.kind === "rate_limited") {
+        hadRateLimitError = true;
+        console.error(
+          `[indexGithubRepo] Rate limit for ${source} — stopping and saving checkpoint`,
         );
-        processed++;
         await (db.project as any).update({
           where: { id: projectId },
-          data: { indexingProgress: processed },
-        });
-        continue;
-      }
-
-      try {
-        const truncatedCode = code.slice(0, MAX_CODE_CHARS);
-
-        // Summarise
-        const summary = await geminiLimiter.schedule(() =>
-          withRateLimitRetry(
-            () =>
-              summariseCode(
-                new Document({
-                  pageContent: truncatedCode,
-                  metadata: doc.metadata,
-                }),
-              ),
-            `summariseCode:${source}`,
-          ),
-        );
-
-        // Embed
-        const embeddingValues = await geminiLimiter.schedule(() =>
-          withRateLimitRetry(
-            () => loadEmbedding(summary ?? ""),
-            `loadEmbedding:${source}`,
-          ),
-        );
-
-        // Persist
-        const record = await db.sourceCodeEmbeddings.create({
           data: {
-            summary: summary ?? "",
-            sourceCode: JSON.parse(JSON.stringify(truncatedCode)),
-            fileName: source,
-            projectId,
+            indexingStatus: "PARTIAL",
+            indexingProgress: processed,
+            indexingError: `Rate limit hit after processing ${processed}/${totalFiles} files. Re-run to resume.`,
           },
         });
+        return;
+      }
 
-        await db.$executeRawUnsafe(
-          `UPDATE "SourceCodeEmbeddings" SET "summaryEmbeddings" = $1::vector WHERE "id" = $2`,
-          `[${embeddingValues.join(",")}]`,
-          record.id,
-        );
+      processed++;
+      await (db.project as any).update({
+        where: { id: projectId },
+        data: { indexingProgress: processed },
+      });
 
-        processed++;
-        await (db.project as any).update({
-          where: { id: projectId },
-          data: { indexingProgress: processed },
-        });
-
+      if (result.kind === "embedded") {
         console.log(
           `[indexGithubRepo] [${processed}/${totalFiles}] Indexed: ${source}`,
         );
-      } catch (err: any) {
-        const is429 =
-          err?.status === 429 ||
-          (err?.message ?? "").includes("429") ||
-          (err?.message ?? "").toLowerCase().includes("quota");
-
-        if (is429) {
-          hadRateLimitError = true;
-          console.error(
-            `[indexGithubRepo] Exhausted retries on rate limit for ${source} — stopping and saving checkpoint`,
-          );
-          await (db.project as any).update({
-            where: { id: projectId },
-            data: {
-              indexingStatus: "PARTIAL",
-              indexingProgress: processed,
-              indexingError: `Rate limit hit after processing ${processed}/${totalFiles} files. Re-run to resume.`,
-            },
-          });
-          return; // Exit early; next run will skip already-processed files
-        }
-
-        // Non-rate-limit error: log and continue with next file
-        console.error(
-          `[indexGithubRepo] Non-fatal error on ${source}:`,
-          err?.message ?? err,
-        );
-        processed++;
-        await (db.project as any).update({
-          where: { id: projectId },
-          data: { indexingProgress: processed },
-        });
       }
     }
 
@@ -533,6 +616,12 @@ export const indexGithubRepo = async (
     console.log(
       `[indexGithubRepo] DONE — status=${finalStatus}, processed=${processed}/${totalFiles}`,
     );
+
+    if (finalStatus === "COMPLETED") {
+      await persistProjectIndexedHeadSha(projectId, githubUrl, githubToken).catch(
+        (e) => console.warn(`[indexGithubRepo] persist HEAD:`, e),
+      );
+    }
   } catch (err: any) {
     console.error(`[indexGithubRepo] Fatal error:`, err);
     await (db.project as any).update({

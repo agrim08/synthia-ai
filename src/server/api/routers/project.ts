@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { Octokit } from "octokit";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "@/server/db";
-import { checkCredits } from "@/lib/githubRepoLoader";
+import {
+  checkCredits,
+  getDefaultBranchHeadSha,
+  parseGithubRepoUrl,
+} from "@/lib/githubRepoLoader";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 const APP_URL =
@@ -10,9 +15,6 @@ const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
   "http://localhost:3000";
-
-import { indexGithubRepo } from "@/lib/githubRepoLoader";
-import { pollCommits } from "@/lib/github";
 
 /** Fire-and-forget indexing */
 async function triggerBackgroundIndexing(
@@ -31,6 +33,21 @@ async function triggerBackgroundIndexing(
     },
     body: JSON.stringify({ projectId, githubUrl, githubToken }),
   }).catch((e) => console.error("Index trigger failed", e));
+}
+
+async function triggerBackgroundSync(
+  projectId: string,
+  githubUrl: string,
+  githubToken?: string,
+) {
+  void fetch(`${APP_URL}/api/sync-repo`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: JSON.stringify({ projectId, githubUrl, githubToken }),
+  }).catch((e) => console.error("Sync trigger failed", e));
 }
 
 export const projectRouter = createTRPCRouter({
@@ -141,6 +158,7 @@ export const projectRouter = createTRPCRouter({
           indexingTotal: true,
           indexingError: true,
           indexedAt: true,
+          syncState: true,
         } as any,
       });
       if (!project) {
@@ -149,7 +167,90 @@ export const projectRouter = createTRPCRouter({
           message: "Project not found",
         });
       }
-      return project;
+      const p = project as any;
+      return {
+        indexingStatus: p.indexingStatus,
+        indexingProgress: p.indexingProgress,
+        indexingTotal: p.indexingTotal,
+        indexingError: p.indexingError,
+        indexedAt: p.indexedAt,
+        hasSyncCheckpoint: p.syncState != null,
+      };
+    }),
+
+  /**
+   * Cheap HEAD check vs lastIndexedCommitSha; kicks /api/sync-repo when the remote is ahead.
+   * Call on a long interval (e.g. 90s) from the dashboard — avoids polling GitHub too often.
+   */
+  syncRepoIfBehind: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
+      const project = (await ctx.db.project.findUnique({
+        where: { id: input.projectId },
+      })) as any;
+
+      if (!project?.githubUrl) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      if (
+        project.indexingStatus === "PENDING" ||
+        project.indexingStatus === "INDEXING"
+      ) {
+        return { action: "skipped" as const, reason: "indexing" };
+      }
+
+      if (project.indexingStatus === "FAILED") {
+        return { action: "skipped" as const, reason: "failed" };
+      }
+
+      if (
+        !project.lastIndexedCommitSha &&
+        project.indexingStatus === "PARTIAL" &&
+        project.syncState == null
+      ) {
+        return { action: "skipped" as const, reason: "initial_partial" };
+      }
+
+      const parsed = parseGithubRepoUrl(project.githubUrl);
+      if (!parsed) {
+        return { action: "skipped" as const, reason: "bad_url" };
+      }
+
+      let headSha: string;
+      try {
+        const octokit = new Octokit({
+          auth: process.env.GITHUB_TOKEN,
+        });
+        const r = await getDefaultBranchHeadSha(octokit, parsed.owner, parsed.repo);
+        headSha = r.sha;
+      } catch {
+        return { action: "skipped" as const, reason: "github" };
+      }
+
+      const ahead =
+        !project.lastIndexedCommitSha ||
+        project.lastIndexedCommitSha !== headSha ||
+        project.syncState != null;
+
+      if (!ahead) {
+        return { action: "current" as const };
+      }
+
+      void triggerBackgroundSync(input.projectId, project.githubUrl);
+      return { action: "scheduled" as const };
     }),
 
   // ------------------------------------------------------------------
@@ -173,8 +274,13 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
       }
 
-      const { githubUrl } = link.project as any;
-      void triggerBackgroundIndexing(input.projectId, githubUrl);
+      const proj = link.project as any;
+      const { githubUrl } = proj;
+      if (proj.syncState != null) {
+        void triggerBackgroundSync(input.projectId, githubUrl);
+      } else {
+        void triggerBackgroundIndexing(input.projectId, githubUrl);
+      }
       return { scheduled: true };
     }),
 

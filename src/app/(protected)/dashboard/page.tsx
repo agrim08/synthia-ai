@@ -10,7 +10,7 @@ import AudioUploadBtn from "./AudioUploadBtn";
 import ArchiveProject from "./ArchiveProject";
 import InviteTeam from "./InviteTeam";
 import TeamMembers from "./TeamMembers";
-import IndexingStatusBanner from "./IndexingStatusBanner";
+import IndexingStatusBanner from "@/components/IndexingStatusBanner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

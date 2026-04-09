@@ -40,6 +40,7 @@ import { askChatBot } from "./actions";
 import { readStreamableValue } from "ai/rsc";
 import { useUser } from "@clerk/nextjs";
 import useRefetch from "@/hooks/useRefetch";
+import IndexingStatusBanner from "@/components/IndexingStatusBanner";
 
 export default function QandA() {
   const { projectId } = useProject();
@@ -201,6 +202,7 @@ export default function QandA() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] max-w-4xl mx-auto w-full">
+      {projectId ? <IndexingStatusBanner projectId={projectId} /> : null}
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-2 py-3 shrink-0">

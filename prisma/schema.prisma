@@ -49,6 +49,12 @@ model Project {
   indexingError    String?        // last error message if FAILED
   indexedAt        DateTime?      // when indexing completed
 
+  /// Commit SHA of the default branch that embeddings + commit logs are aligned with (incremental sync cursor).
+  lastIndexedCommitSha String?
+
+  /// Resume payload when a repo sync is chunked (time/API limits): target head + ordered file paths + progress index.
+  syncState Json?
+
   skipUiComponents Boolean @default(false)
   
   userToProjects UserToProject[]
@@ -64,6 +70,7 @@ model Project {
 enum IndexingStatus {
   PENDING
   INDEXING
+  SYNCING // applying incremental GitHub changes (embeddings + commit summaries)
   COMPLETED
   FAILED
   PARTIAL // completed with some files skipped due to rate limits
