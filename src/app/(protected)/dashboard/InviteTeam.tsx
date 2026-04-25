@@ -29,7 +29,7 @@ const InviteTeam = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite Team Members</DialogTitle>
-            <p className="text-sm text-gray-200">
+            <p className="text-sm text-slate-900">
               Ask them to copy &amp; paste this link
             </p>
             <Input
