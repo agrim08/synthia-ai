@@ -13,6 +13,7 @@ import {
   ArrowRight,
   TrendingUp,
   FileText,
+  ShieldQuestionIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -39,7 +40,7 @@ const BillingPage = () => {
   const estimatedRepos = Math.floor(creditsToBuyAmount / 80);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-10">
+    <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
 
         {/* ── Page Header ── */}
         <div className="space-y-1">
@@ -47,90 +48,48 @@ const BillingPage = () => {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
               <CreditCard className="h-3.5 w-3.5 text-white" />
             </div>
-            <h1 className="text-[22px] font-extrabold tracking-[-0.025em] text-slate-900">
+            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-slate-900">
               Billing & Credits
             </h1>
           </div>
-          <p className="pl-9 text-[13px] text-slate-500">
-            Manage your workspace's intelligence fuel
-          </p>
         </div>
 
-        {/* ── Top row: Balance + Usage ── */}
+        {/* ── Top row: Stats Cards ── */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-
-          {/* Balance card */}
-          <div className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-600 to-violet-600 p-6 text-white shadow-lg shadow-indigo-200/40">
-            {/* decorative ring */}
-            <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full border border-white/10" />
-            <div className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 rounded-full border border-white/10" />
-
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-indigo-200">
-              Available Balance
-            </p>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[40px] font-extrabold leading-none tracking-[-0.04em] text-white">
-                {user?.credits ?? "—"}
-              </span>
-              <span className="text-[12px] font-semibold text-indigo-200">credits</span>
-            </div>
-            <div className="mt-4 flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-[11px] font-medium text-white/80 backdrop-blur-sm">
-              <TrendingUp className="h-3 w-3 text-indigo-200" />
-              ₹1.00 per credit · no expiry
-            </div>
-          </div>
-
-          {/* Usage stat cards */}
-          <div className="flex flex-col gap-4 md:col-span-2 md:flex-row">
-            {[
-              {
-                label: "Files Indexed",
-                value: user?.credits ?? 0,
-                unit: "files",
-                icon: FileText,
-                color: "indigo",
-              },
-              {
-                label: "Est. Repos",
-                value: Math.floor((user?.credits ?? 0) / 80),
-                unit: "repos",
-                icon: Sparkles,
-                color: "violet",
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex flex-1 flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                    {stat.label}
-                  </span>
-                  <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                      stat.color === "indigo"
-                        ? "bg-indigo-50"
-                        : "bg-violet-50"
-                    }`}
-                  >
-                    <stat.icon
-                      className={`h-3.5 w-3.5 ${
-                        stat.color === "indigo"
-                          ? "text-indigo-600"
-                          : "text-violet-600"
-                      }`}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[28px] font-extrabold leading-none tracking-[-0.03em] text-slate-900">
-                    {stat.value}
-                  </span>
-                  <span className="text-[11px] text-slate-400">{stat.unit}</span>
-                </div>
+          {[
+            {
+              label: "Available Balance",
+              value: user?.credits ?? "—",
+              unit: "credits",
+            },
+            {
+              label: "Files Indexed",
+              value: user?.credits ?? 0,
+              unit: "files",
+            },
+            {
+              label: "Est. Repos",
+              value: Math.floor((user?.credits ?? 0) / 80),
+              unit: "repos",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-white p-6 text-black shadow-lg shadow-indigo-200/40"
+            >
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                {stat.label}
+              </p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[24px] font-semibold leading-none tracking-[-0.04em] text-slate-900">
+                  {stat.value}
+                </span>
+                <span className="text-[12px] font-semibold text-black">
+                  {stat.unit}
+                </span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
         {/* ── Purchase Card ── */}
@@ -139,9 +98,6 @@ const BillingPage = () => {
           <div className="border-b border-slate-100 px-7 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-                  <Zap className="h-4 w-4 fill-white/20 text-white" />
-                </div>
                 <div>
                   <h2 className="text-[15px] font-bold tracking-[-0.015em] text-slate-900">
                     Add Credits
@@ -195,7 +151,7 @@ const BillingPage = () => {
                   Custom Amount
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-[24px] font-extrabold leading-none tracking-[-0.03em] text-indigo-700">
+                  <span className="text-[24px] font-semibold leading-none tracking-[-0.03em] text-indigo-700">
                     {creditsToBuyAmount}
                   </span>
                   <span className="text-[11px] text-slate-400">credits</span>
@@ -246,7 +202,7 @@ const BillingPage = () => {
                   Total
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-[28px] font-extrabold leading-none tracking-[-0.03em] text-slate-900">
+                  <span className="text-[28px] font-semibold leading-none tracking-[-0.03em] text-slate-900">
                     ₹{price}
                   </span>
                   <span className="text-[11px] text-slate-400">INR</span>
@@ -267,22 +223,22 @@ const BillingPage = () => {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             {
-              icon: Sparkles,
+              icon: ShieldQuestionIcon,
               title: "Deep RAG Analysis",
               desc: "Credits fuel the advanced retrieval-augmented generation engine that powers Synthia's intelligence.",
               color: "indigo",
             },
             {
-              icon: Zap,
+              icon: ShieldQuestionIcon,
               title: "Instant Indexing",
               desc: "Files are processed and indexed in real-time. Credits are consumed only on successful indexing.",
-              color: "violet",
+              color: "indigo",
             },
             {
-              icon: ShieldCheck,
+              icon: ShieldQuestionIcon,
               title: "Secure Payments",
               desc: "Powered by PayPal for enterprise-grade payment security. Credits never expire.",
-              color: "blue",
+              color: "indigo",
             },
           ].map((item) => (
             <div

@@ -9,6 +9,8 @@ type Props = {
 };
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 
 const SidebarLayout = async ({ children }: Props) => {
   const cookieStore = await cookies();

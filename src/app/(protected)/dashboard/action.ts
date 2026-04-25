@@ -77,7 +77,7 @@ export async function askQuestion(question: string, projectId: string) {
 
   // Smart Filtering using AI
   const { object: filteredIndices } = await generateObject({
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-1.5-flash"),
     schema: z.object({
       indices: z.array(z.number()),
     }),
@@ -115,7 +115,7 @@ export async function askQuestion(question: string, projectId: string) {
   (async () => {
     try {
       const { textStream } = await streamText({
-        model: google("gemini-2.5-flash"),
+        model: google("gemini-1.5-flash"),
         prompt: `
     You are an AI code assistant who answers questions about the codebase. Your target audience is a technical intern.
     The AI assistant is a brand new, powerful, human-like artificial intelligence.

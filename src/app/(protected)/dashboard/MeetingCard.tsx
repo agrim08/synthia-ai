@@ -2,9 +2,8 @@
 
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { uploadFile } from "@/lib/firebase";
-import { AudioLines, Mic, Sparkles, Video } from "lucide-react";
+import { AudioLines } from "lucide-react";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { api } from "@/trpc/react";
@@ -43,43 +42,31 @@ const MeetingCard = () => {
       "audio/*": [".mp3", ".wav", ".m4a"],
     },
     multiple: false,
-    maxSize: 50000000, //50mb
+    maxSize: 50_000_000,
     onDrop: async (acceptedFiles) => {
       setIsUploading(true);
       const file = acceptedFiles[0];
-
-      if (!project) return;
-      if (!file) return;
+      if (!project || !file) return;
 
       try {
-        const downloadUrl = (await uploadFile(
-          file as File,
-          setProgress,
-        )) as string;
+        const downloadUrl = (await uploadFile(file as File, setProgress)) as string;
 
         uploadMeeting.mutate(
-          {
-            meetingUrl: downloadUrl,
-            projectId: project?.id,
-            name: file.name,
-          },
+          { meetingUrl: downloadUrl, projectId: project.id, name: file.name },
           {
             onSuccess: (meeting) => {
-              toast.success("Meeting uploaded! Analysis starting...");
+              toast.success("Meeting uploaded — analysis starting");
               router.push("/meetings");
               processMeeting.mutateAsync({
                 meetingUrl: downloadUrl,
-                projectId: project?.id,
+                projectId: project.id,
                 meetingId: meeting!.id,
               });
             },
-            onError: (error) => {
-              toast.error("Failed to upload recording");
-              console.error(error);
-            },
+            onError: () => toast.error("Failed to upload recording"),
           },
         );
-      } catch (error) {
+      } catch {
         toast.error("Cloud storage error");
       } finally {
         setIsUploading(false);
@@ -88,68 +75,74 @@ const MeetingCard = () => {
   });
 
   return (
-    <Card
-      className={cn(
-        "group h-full flex flex-col items-center justify-center border border-slate-200 rounded-[40px] bg-white transition-all duration-300 relative overflow-hidden",
-        isDragActive ? "border-indigo-400 bg-indigo-50/50 scale-[0.98]" : "hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-100/40 cursor-pointer hover:translate-y-[-4px] active:translate-y-0",
-        isUploading && "pointer-events-none opacity-90 cursor-wait"
-      )}
+    <div
       {...getRootProps()}
+      className={cn(
+        "relative flex flex-col items-center justify-center rounded-xl border bg-white px-8 py-10 text-center transition-colors duration-150 cursor-pointer select-none",
+        isDragActive
+          ? "border-indigo-300 bg-indigo-50/40"
+          : "border-slate-200 border-dashed hover:border-indigo-300 hover:bg-slate-50/60",
+        isUploading && "pointer-events-none cursor-wait"
+      )}
     >
       <input {...getInputProps()} />
-      
+
       {!isUploading ? (
-        <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 size-16 rounded-2xl bg-indigo-50 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex size-16 items-center justify-center rounded-[20px] bg-slate-50 text-slate-400 border border-slate-100 group-hover:bg-indigo-700 group-hover:text-white group-hover:border-indigo-700 transition-all duration-500 shadow-sm">
-              <AudioLines className="size-8" />
-            </div>
-            <div className="absolute -right-3 -top-3 flex size-6 items-center justify-center rounded-full bg-indigo-700 text-white shadow-lg ring-4 ring-white group-hover:scale-110 transition-transform">
-               <Mic className="size-3" />
-            </div>
+        <div className="flex flex-col items-center gap-4">
+          {/* Icon */}
+          <div className={cn(
+            "flex size-10 items-center justify-center rounded-lg border transition-colors duration-150",
+            isDragActive
+              ? "border-indigo-200 bg-indigo-50 text-indigo-500"
+              : "border-slate-100 bg-slate-50 text-slate-400"
+          )}>
+            <AudioLines className="size-4" />
           </div>
 
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-none transition-colors">
-              Upload Meeting
-            </h3>
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.08em] block mt-1.5">Audio recording</span>
+          {/* Text */}
+          <div className="space-y-1">
+            <p className="text-[14px] font-medium text-slate-800">
+              {isDragActive ? "Drop to upload" : "Upload a recording"}
+            </p>
+            <p className="text-[12px] text-slate-400">
+              MP3, WAV or M4A · max 50 MB
+            </p>
           </div>
 
-          <div className="mt-8">
-            <Button
-              className="rounded-full h-11 bg-indigo-700 text-white px-8 font-black text-sm transition-all hover:bg-indigo-800 active:scale-95 shadow-lg shadow-indigo-100/50"
-              asChild
-            >
-              <span>Select file</span>
-            </Button>
-          </div>
-        </CardContent>
+          {/* CTA */}
+          <Button
+            size="sm"
+            className="mt-1 h-8 rounded-md bg-indigo-600 px-4 text-[13px] font-medium text-white shadow-none hover:bg-indigo-700 transition-colors"
+            asChild
+          >
+            <span>Select file</span>
+          </Button>
+        </div>
       ) : (
-        <CardContent className="flex flex-col items-center justify-center p-10 animate-in fade-in zoom-in-95 duration-300">
-          <div className="size-36 relative mb-8">
+        <div className="flex flex-col items-center gap-5">
+          {/* Progress */}
+          <div className="size-16">
             <CircularProgressbar
               value={progress}
               text={`${Math.round(progress)}%`}
               strokeWidth={10}
               styles={buildStyles({
-                pathColor: "#4338ca",
-                trailColor: "#f1f5f9",
+                pathColor: "#4f46e5",
+                trailColor: "#e2e8f0",
                 textColor: "#0f172a",
-                textSize: "20px",
+                textSize: "22px",
                 strokeLinecap: "round",
-                pathTransitionDuration: 0.5,
+                pathTransitionDuration: 0.4,
               })}
             />
           </div>
-          <div className="space-y-2 text-center">
-            <p className="text-xl font-black text-slate-900">Uploading...</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Do not refresh your session</p>
+          <div className="space-y-0.5">
+            <p className="text-[14px] font-medium text-slate-800">Uploading…</p>
+            <p className="text-[12px] text-slate-400">Do not close this tab</p>
           </div>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

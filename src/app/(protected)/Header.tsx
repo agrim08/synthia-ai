@@ -3,52 +3,100 @@
 import { UserButton } from "@clerk/nextjs";
 import useProject from "@/hooks/useProject";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bell, Search, Zap, LayoutDashboard, ChevronRight } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const { project } = useProject();
+  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { title: "Dashboard", url: "/dashboard" },
+    { title: "Q&A", url: "/qa" },
+    { title: "Meetings", url: "/meetings" },
+    { title: "Billing", url: "/billing" },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/70 backdrop-blur-3xl">
-      <div className="mx-auto max-w-7xl px-8 flex h-20 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <div className="group -ml-2">
-            <SidebarTrigger className="h-8 w-8 text-slate-400 transition-all hover:bg-slate-100/50 hover:text-slate-900 shadow-sm" />
-          </div>
+    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-xl">
+      <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger className="size-8 text-slate-400 transition-colors hover:text-slate-900" />
+          
+          <div className="h-4 w-px bg-slate-100 hidden sm:block" />
 
-          <div className="h-6 w-px bg-slate-100" />
-
-          <div className="flex items-center gap-2.5">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                Project
-              </span>
-              <span className="text-xs font-black text-slate-900 truncate max-w-[200px] tracking-tight">
-                {project?.name || "No project selected"}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-semibold text-slate-900 truncate max-w-[150px] sm:max-w-[300px] tracking-tight">
+              {project?.name || "No project selected"}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden h-10 items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 px-6 text-slate-400 transition-all hover:bg-white hover:shadow-xl hover:shadow-indigo-100/20 group md:flex cursor-pointer hover:border-indigo-100">
-            <Search className="size-3 group-hover:text-indigo-600 transition-colors" />
-            <span className="text-xs font-medium text-slate-500 group-hover:text-slate-900 transition-colors">Search...</span>
-            <div className="ml-8 flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-              <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 bg-white px-1.5 font-sans text-[10px] font-bold text-slate-400">
-                <span className="text-[8px]">⌘</span>K
-              </kbd>
+        <div className="flex items-center gap-6">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.url}
+                href={item.url}
+                className={cn(
+                  "text-[13px] font-medium tracking-tight transition-colors",
+                  pathname === item.url
+                    ? "text-indigo-600"
+                    : "text-slate-500 hover:text-slate-900"
+                )}
+              >
+                {item.title}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3 sm:gap-4 pl-4 border-l border-slate-100">
+            {/* Mobile Hamburger */}
+            <div className="lg:hidden">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-slate-500 hover:bg-slate-100">
+                    <Menu className="size-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="top" className="w-full p-0 border-b border-slate-100 shadow-xl rounded-b-2xl">
+                  <SheetHeader className="px-6 py-4 border-b border-slate-50 flex flex-row items-center justify-between">
+                    <SheetTitle className="text-left text-sm font-bold">Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col p-2 bg-white">
+                    {navItems.map((item) => (
+                      <Link
+                        key={item.url}
+                        href={item.url}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn(
+                          "px-4 py-3 rounded-lg text-[14px] font-medium transition-all",
+                          pathname === item.url
+                            ? "bg-slate-50 text-indigo-600"
+                            : "text-slate-600 hover:bg-slate-50"
+                        )}
+                      >
+                        {item.title}
+                      </Link>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
+
             <UserButton
                appearance={{
                  elements: {
-                   userButtonAvatarBox: "size-8 rounded-2xl ring-4 ring-slate-100 transition-all hover:ring-indigo-100 shadow-sm",
-                   userButtonPopoverCard: "rounded-3xl border-none shadow-3xl",
-                   userButtonPopoverActionButton: "hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all",
+                   userButtonAvatarBox: "size-7 rounded-lg ring-2 ring-slate-100 transition-all hover:ring-indigo-100",
+                   userButtonPopoverCard: "rounded-xl border-none shadow-xl",
+                   userButtonPopoverActionButton: "hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-all",
                  },
                }}
              />

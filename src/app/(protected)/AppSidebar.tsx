@@ -6,181 +6,167 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/Logo";
 import useProject from "@/hooks/useProject";
 import { cn } from "@/lib/utils";
-import {
-  Bot,
-  ChevronRight,
-  CreditCard,
-  Hash,
-  LayoutDashboard,
-  Plus,
-  Presentation,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
+// Muted, professional single-tone colors — no gradients
+const PROJECT_COLORS = [
+  { bg: "bg-indigo-50",   text: "text-indigo-700" },
+  { bg: "bg-indigo-100",  text: "text-indigo-700" },
+  { bg: "bg-sky-50",      text: "text-sky-700" },
+  { bg: "bg-blue-50",    text: "text-blue-700" },
+  { bg: "bg-rose-50",     text: "text-rose-700" },
+  { bg: "bg-violet-50",   text: "text-violet-700" },
+];
+
+function getProjectColor(name: string) {
+  const idx = name.charCodeAt(0) % PROJECT_COLORS.length;
+  return PROJECT_COLORS[idx];
+}
+
+function ProjectAvatar({
+  name,
+  size = "md",
+}: {
+  name: string;
+  size?: "sm" | "md";
+}) {
+  const color = getProjectColor(name);
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-md font-semibold tracking-tight select-none",
+        color.bg,
+        color.text,
+        size === "md" ? "size-7 text-[11px]" : "size-6 text-[10px]"
+      )}
+    >
+      {name?.[0]?.toUpperCase()}
+    </div>
+  );
+}
+
 export const AppSidebar = () => {
-  const pathname = usePathname();
   const { open } = useSidebar();
   const { projects, projectId, setProjectId } = useProject();
-
-  const mainItems = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Q&A", url: "/qa", icon: Bot },
-    { title: "Meetings", url: "/meetings", icon: Presentation },
-    { title: "Billings", url: "/billing", icon: CreditCard },
-  ];
 
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-slate-200/60 bg-white shadow-[1px_0_0_0_rgba(0,0,0,0.02)]"
+      className="border-r border-slate-100 bg-white"
     >
-      <SidebarHeader className={cn("px-4 py-8", !open && "px-0 items-center justify-center")}>
-        <Link href="/" className="flex items-center gap-3">
-          <Logo width={open ? 34 : 40} height={open ? 34 : 40} />
+      {/* Header */}
+      <SidebarHeader
+        className={cn(
+          "h-14 border-b border-slate-100",
+          open ? "px-4" : "items-center justify-center px-0"
+        )}
+      >
+        <Link
+          href="/"
+          className={cn(
+            "flex items-center gap-2.5 mt-3 h-full",
+            !open && "justify-center"
+          )}
+        >
+          <Logo width={32} height={32} />
           {open && (
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-slate-900 leading-none">
-                Synthia
-              </span>
-              <span className="mt-1 text-[10px] font-bold text-indigo-700 uppercase tracking-widest leading-none">
-                AI Intelligence
-              </span>
-            </div>
+            <span className="text-[15px] font-semibold tracking-tight text-slate-900">
+              Synthia
+            </span>
           )}
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className={cn("px-4", !open && "px-0")}>
-        {/* Workspace Navigation */}
-        <SidebarGroup className={cn("py-4", !open && "px-0")}>
-          <SidebarMenu className="gap-2.5">
-            {mainItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.url}
-                  tooltip={!open ? item.title : undefined}
+      {/* Content */}
+      <SidebarContent className={cn("py-4", open ? "px-3" : "px-2")}>
+        <SidebarGroup>
+          {/* Section label */}
+          {open && (
+            <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-widest text-slate-400">
+              Projects
+            </p>
+          )}
+
+          <div className={cn("space-y-0.5", !open && "flex flex-col items-center gap-1")}>
+            {projects?.map((project) => {
+              const isActive = project.id === projectId;
+
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => setProjectId(project.id)}
+                  title={project.name}
                   className={cn(
-                    "h-12 rounded-2xl transition-all duration-300",
-                    pathname === item.url
-                      ? "bg-indigo-700 text-white hover:bg-indigo-800 shadow-xl shadow-indigo-100"
-                      : "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900",
-                    !open && "size-12 justify-center px-0 mx-auto"
+                    "group flex w-full items-center rounded-md transition-colors duration-150",
+                    open
+                      ? "gap-2.5 px-2 py-1.5"
+                      : "size-9 justify-center",
+                    isActive
+                      ? "bg-indigo-50 text-indigo-700 font-semibold ring-1 ring-indigo-100/50"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                   )}
                 >
-                  <Link href={item.url} className={cn(
-                     "flex items-center w-full",
-                     open ? "justify-start px-4" : "justify-center px-0"
-                  )}>
-                    <item.icon className={cn(
-                      "size-[20px] shrink-0",
-                      open ? "mr-4" : "mx-0",
-                      pathname === item.url ? "text-indigo-300" : "text-slate-400"
-                    )} />
-                    {open && <span className="font-bold text-[14px] tracking-tight">{item.title}</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+                  {isActive && (
+                    <div className="absolute left-0 h-4 w-1 rounded-r-full bg-indigo-600" />
+                  )}
+                  <ProjectAvatar name={project.name} size="md" />
 
-        {/* Projects Section */}
-        <SidebarGroup className={cn(!open && "px-0 items-center")}>
-          <div className={cn("flex items-center justify-between px-2 mb-6 w-full", !open && "justify-center")}>
-            {open && (
-              <SidebarGroupLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Connected Projects
-              </SidebarGroupLabel>
-            )}
-            <CreateProjectDialog>
-              <button className={cn(
-                "p-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200 focus:outline-none",
-                !open && "hidden"
-              )}>
-                 <Plus className="size-3.5 text-slate-400" />
-              </button>
-            </CreateProjectDialog>
-            {!open && (
-               <div className="h-px w-6 bg-slate-100" />
-            )}
-          </div>
-          
-          <div className={cn("space-y-3", open ? "px-1" : "flex flex-col items-center")}>
-            {projects?.map((project) => (
-              <button
-                key={project.id}
-                onClick={() => setProjectId(project.id)}
-                className={cn(
-                  "group relative flex items-center transition-all duration-300",
-                  open ? "w-full gap-3.5 rounded-[20px] p-2 hover:bg-slate-50" : "size-12 rounded-xl justify-center",
-                  project.id === projectId && open ? "bg-slate-50 ring-1 ring-slate-100 border-l-[3px] border-indigo-700 rounded-l-none" : ""
-                )}
-                title={project.name}
-              >
-                <div className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-xl border font-bold text-[13px] shadow-sm transition-all",
-                  project.id === projectId
-                    ? "border-indigo-700 bg-white text-indigo-700 ring-4 ring-indigo-50"
-                    : "border-slate-100 bg-white text-slate-400 group-hover:border-slate-300 group-hover:text-slate-600",
-                  !open && "size-10 mx-auto"
-                )}>
-                  {project.name[0].toUpperCase()}
-                </div>
-
-                {open && (
-                  <div className="flex flex-1 flex-col items-start overflow-hidden text-left">
-                    <span className={cn(
-                      "w-full truncate text-[13px] font-bold tracking-tight",
-                      project.id === projectId ? "text-slate-900" : "text-slate-500"
-                    )}>
-                      {project.name}
-                    </span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter opacity-40">Codebase</span>
-                  </div>
-                )}
-              </button>
-            ))}
+                  {open && (
+                    <div className="flex flex-1 flex-col items-start overflow-hidden text-left">
+                      <span
+                        className={cn(
+                          "w-full truncate text-[13px] font-medium leading-tight",
+                          isActive ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
+                        )}
+                      >
+                        {project.name}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className={cn("p-4 mb-4", !open && "p-2 mb-0 flex items-center justify-center")}>
+      {/* Footer */}
+      <SidebarFooter
+        className={cn(
+          "border-t border-slate-100 p-3",
+          !open && "flex items-center justify-center"
+        )}
+      >
         <CreateProjectDialog>
           <Button
+            variant="ghost"
             className={cn(
-               "w-full h-8 rounded-2xl bg-indigo-700 text-white transition-all hover:bg-indigo-800 hover:scale-[1.02] shadow-2xl shadow-indigo-100/40",
-               !open && "size-8 p-0 rounded-2xl"
+              "h-8 w-full rounded-md border border-indigo-400 bg-white text-slate-600 text-[13px] font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors",
+              !open && "size-8 p-0"
             )}
             size={!open ? "icon" : "default"}
           >
             {open ? (
-              <div className="flex items-center gap-2">
-                 <Plus className="size-4" />
-                 <span>New Project</span>
+              <div className="flex items-center gap-1.5">
+                <Plus className="size-3.5" />
+                <span>New Project</span>
               </div>
             ) : (
-              <Plus className="size-6" />
+              <Plus className="size-4 text-indigo-700 font-semibold" />
             )}
           </Button>
         </CreateProjectDialog>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );

@@ -13,7 +13,6 @@ import Image from "next/image";
 import MDEditor from "@uiw/react-md-editor";
 import { Logo } from "@/components/Logo";
 import {
-  Sparkles,
   History,
   Trash2,
   Plus,
@@ -40,7 +39,7 @@ import { askChatBot } from "./actions";
 import { readStreamableValue } from "ai/rsc";
 import { useUser } from "@clerk/nextjs";
 import useRefetch from "@/hooks/useRefetch";
-import IndexingStatusBanner from "@/components/IndexingStatusBanner";
+
 
 export default function QandA() {
   const { projectId } = useProject();
@@ -168,8 +167,8 @@ export default function QandA() {
             projectId,
             question: userMessage,
             answer: fullAnswer,
-            filesReferences: {},
-            messages: JSON.stringify(finalMessages),
+            filesReferences: filesReferences,
+            messages: finalMessages,
           },
           {
             onSuccess: (data) => {
@@ -181,7 +180,7 @@ export default function QandA() {
         );
       } else {
         updateQuestion.mutate(
-          { questionId: currentQuestionId, messages: JSON.stringify(finalMessages) },
+          { questionId: currentQuestionId, messages: finalMessages },
           { onSuccess: () => utils.project.getQuestions.invalidate() }
         );
       }
@@ -201,8 +200,8 @@ export default function QandA() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-4xl mx-auto w-full">
-      {projectId ? <IndexingStatusBanner projectId={projectId} /> : null}
+    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-5xl mx-auto w-full px-6 py-2">
+
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-2 py-3 shrink-0">
@@ -216,26 +215,32 @@ export default function QandA() {
 
         <div className="flex items-center gap-2">
           {currentQuestionId && (
-            <button
+            <Button
+              variant="default"
+              size="sm"
               onClick={startNewChat}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100"
+              className="gap-1.5 h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center"
             >
               <Plus className="size-3.5" />
-              New
-            </button>
+              New Chat
+            </Button>
           )}
 
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
-              <button className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100 border border-slate-200">
+              <Button 
+                variant="default" 
+                size="sm"
+                className="gap-1.5 h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center"
+              >
                 <History className="size-3.5" />
                 History
                 {questions && questions.length > 0 && (
-                  <span className="ml-0.5 bg-indigo-100 text-indigo-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="ml-1 bg-white/20 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
                     {questions.length}
                   </span>
                 )}
-              </button>
+              </Button>
             </SheetTrigger>
                 
             {/* ── History Sheet ── */}
@@ -249,7 +254,7 @@ export default function QandA() {
                 </SheetTitle>
                 <button
                   onClick={startNewChat}
-                  className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-indigo-700 hover:text-indigo-700 font-medium px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
                 >
                   <Plus className="size-3" />
                   New chat
@@ -307,7 +312,7 @@ export default function QandA() {
           </Sheet>
         </div>
       </div>
-      <hr className="border-slate-200 mx-2 mb-4" />
+      <div className="h-px bg-slate-200 w-full mb-4" />
 
       {/* ── Chat scroll area — independently scrollable ── */}
       <div
@@ -344,7 +349,7 @@ export default function QandA() {
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            <div className="space-y-6 pt-2 max-w-2xl mx-auto">
+            <div className="space-y-6 pt-2 max-w-5xl mx-auto w-full">
               {messages.map((msg, idx) => (
                 <motion.div
                   key={idx}
@@ -356,17 +361,12 @@ export default function QandA() {
                     msg.role === "user" ? "justify-end" : "justify-start"
                   )}
                 >
-                  {/* Bot avatar */}
-                  {msg.role === "bot" && (
-                    <Logo width={36} height={36} className="shrink-0 -mt-1" />
-                  )}
-
                   <div
                     className={cn(
                       "max-w-[82%]",
                       msg.role === "user"
-                        ? "bg-slate-900 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed"
-                        : "text-slate-800"
+                        ? "bg-indigo-700 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm"
+                        : "bg-slate-100 px-5 py-4 rounded-2xl rounded-tl-sm border border-slate-200/60 shadow-sm"
                     )}
                   >
                     {msg.role === "user" ? (
@@ -381,13 +381,13 @@ export default function QandA() {
                             <span className="text-xs">Thinking…</span>
                           </div>
                         ) : (
-                          <div className="prose prose-sm max-w-none
-                            prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-slate-700 prose-p:my-2
-                            prose-headings:text-slate-900 prose-headings:font-semibold prose-headings:my-3
-                            prose-strong:text-slate-900 prose-strong:font-semibold
-                            prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
-                            prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
-                            prose-ul:my-2 prose-li:text-[14px] prose-li:text-slate-700 prose-li:my-1
+                          <div className="pindigo pindigo-sm max-w-none
+                            pindigo-p:text-[14px] pindigo-p:leading-relaxed pindigo-p:text-slate-700 pindigo-p:my-2
+                            pindigo-headings:text-slate-900 pindigo-headings:font-semibold pindigo-headings:my-3
+                            pindigo-strong:text-slate-900 pindigo-strong:font-semibold
+                            pindigo-code:text-indigo-700 pindigo-code:bg-indigo-50 pindigo-code:px-1.5 pindigo-code:py-0.5 pindigo-code:rounded pindigo-code:text-[13px] pindigo-code:before:content-none pindigo-code:after:content-none
+                            pindigo-pre:p-0 pindigo-pre:bg-transparent pindigo-pre:border-none pindigo-pre:shadow-none
+                            pindigo-ul:my-2 pindigo-li:text-[14px] pindigo-li:text-slate-700 pindigo-li:my-1
                           ">
                             <div data-color-mode="light">
                               <MDEditor.Markdown
@@ -433,50 +433,60 @@ export default function QandA() {
 
                         {/* File references */}
                         {msg.filesReferences && msg.filesReferences.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
-                            <span className="text-[11px] text-slate-400 font-medium self-center mr-1">
-                              Sources
-                            </span>
+                          <div className="mt-4 p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100/60 flex flex-wrap gap-2 shadow-sm">
+                            <div className="w-full mb-1 flex items-center gap-1.5">
+                              <div className="size-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                              <span className="text-[11px] text-indigo-700 font-bold uppercase tracking-wider">
+                                References
+                              </span>
+                            </div>
                             {msg.filesReferences.map((file: any, index: number) => (
                               <Dialog key={index}>
                                 <DialogTrigger asChild>
-                                  <button className="flex items-center gap-1 text-[12px] font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors border border-indigo-100">
-                                    <FileCode2 className="size-3" />
+                                  <button className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-700 bg-white hover:bg-indigo-100 hover:text-indigo-700 px-3 py-1.5 rounded-xl transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md active:scale-95">
+                                    <FileCode2 className="size-3.5 text-indigo-500" />
                                     {file.fileName}
                                   </button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-4xl w-full flex flex-col max-h-[85vh] p-0 overflow-hidden bg-[#0d1117] border-slate-800">
-                                  <DialogHeader className="px-5 py-3.5 border-b border-slate-800 flex flex-row items-center justify-between sticky top-0 bg-[#0d1117] z-10 shrink-0">
-                                    <DialogTitle className="text-slate-300 font-mono text-[13px] flex items-center gap-2">
-                                      <FileCode2 className="size-4 text-indigo-400" />
-                                      {file.fileName}
-                                    </DialogTitle>
+                                <DialogContent className="max-w-5xl w-[95vw] flex flex-col h-[90vh] p-0 overflow-hidden bg-[#0d1117] border-slate-800 rounded-3xl">
+                                  <DialogHeader className="px-6 py-4 border-b border-slate-800/60 flex flex-row items-center justify-between sticky top-0 bg-[#0d1117]/95 backdrop-blur-md z-10 shrink-0">
+                                    <div className="flex flex-col gap-0.5">
+                                      <DialogTitle className="text-slate-200 font-mono text-sm flex items-center gap-2.5">
+                                        <div className="p-1.5 rounded-lg bg-indigo-500/10">
+                                          <FileCode2 className="size-4 text-indigo-400" />
+                                        </div>
+                                        {file.fileName}
+                                      </DialogTitle>
+                                      <span className="text-[10px] text-slate-500 font-medium ml-9">Source code from your repository</span>
+                                    </div>
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-8 text-xs gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800"
+                                      className="h-9 px-4 text-xs gap-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-700"
                                       onClick={() => {
                                         navigator.clipboard.writeText(file.sourceCode);
                                         toast.success("Copied to clipboard");
                                       }}
                                     >
                                       <Copy className="size-3.5" />
-                                      Copy
+                                      Copy Code
                                     </Button>
                                   </DialogHeader>
-                                  <div className="flex-1 overflow-y-auto">
+                                  <div className="flex-1 overflow-y-auto custom-scrollbar">
                                     <SyntaxHighlighter
                                       language="typescript"
                                       style={atomDark}
                                       customStyle={{
                                         margin: 0,
-                                        padding: "1.25rem",
+                                        padding: "1.5rem",
                                         background: "transparent",
-                                        fontSize: "0.8125rem",
-                                        lineHeight: "1.6",
+                                        fontSize: "13px",
+                                        lineHeight: "1.7",
+                                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                                       }}
                                       wrapLines={true}
                                       showLineNumbers={true}
+                                      lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', color: '#4b5563', textAlign: 'right' }}
                                     >
                                       {file.sourceCode}
                                     </SyntaxHighlighter>
@@ -518,7 +528,7 @@ export default function QandA() {
 
       {/* ── Input area — fixed to bottom ── */}
       <div className="shrink-0 pt-2 pb-1 px-2">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto w-full">
           <div className={cn(
             "relative flex items-end gap-2 bg-white border rounded-2xl px-4 py-3 shadow-sm transition-all duration-200",
             "border-slate-200 focus-within:border-indigo-400 focus-within:shadow-md focus-within:shadow-indigo-100/60"
@@ -538,7 +548,7 @@ export default function QandA() {
               className={cn(
                 "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
                 input.trim() && !loading
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:scale-105 active:scale-95"
+                  ? "bg-indigo-700 hover:bg-indigo-700 text-white shadow-sm hover:scale-105 active:scale-95"
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
               )}
             >
