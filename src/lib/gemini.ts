@@ -8,7 +8,7 @@ const model = genAi.getGenerativeModel({
 
 export const summarizeCommit = async (diff: string) => {
   console.log(
-    `[summarizeCommit] Calling gemini-1.5-flash, diff size: ${diff.length} chars`,
+    `[summarizeCommit] Calling gemini-2.5-flash, diff size: ${diff.length} chars`,
   );
   try {
     const response = await model.generateContent([

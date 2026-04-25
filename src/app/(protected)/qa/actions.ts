@@ -11,7 +11,11 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-export async function askChatBot(question: string, projectId: string, prevMessages: { role: string; content: string }[] = []) {
+export async function askChatBot(
+  question: string,
+  projectId: string,
+  prevMessages: { role: string; content: string }[] = [],
+) {
   const stream = createStreamableValue();
 
   try {
@@ -31,7 +35,7 @@ export async function askChatBot(question: string, projectId: string, prevMessag
     let finalResult = result.slice(0, 3);
     try {
       const { object: filteredIndices } = await generateObject({
-        model: google("gemini-1.5-flash"),
+        model: google("gemini-2.5-flash"),
         schema: z.object({
           indices: z.array(z.number()),
         }),
@@ -67,11 +71,13 @@ export async function askChatBot(question: string, projectId: string, prevMessag
 
     let conversationHistory = "";
     if (prevMessages.length > 0) {
-      conversationHistory = prevMessages.map(m => `${m.role.toUpperCase()}:\n${m.content}`).join("\n\n");
+      conversationHistory = prevMessages
+        .map((m) => `${m.role.toUpperCase()}:\n${m.content}`)
+        .join("\n\n");
     }
 
     const { textStream } = await streamText({
-      model: google("gemini-1.5-flash"),
+      model: google("gemini-2.5-flash"),
       prompt: `
       You are an AI code assistant who answers questions about the codebase. Your target audience is a technical user.
       The AI assistant is a brand new, powerful, human-like artificial intelligence.
@@ -114,7 +120,9 @@ export async function askChatBot(question: string, projectId: string, prevMessag
   } catch (error) {
     console.error("Critical error in askChatBot:", error);
     // Even if it fails early, we can return the stream value so the frontend can read the error message we inject
-    stream.update("An internal error occurred while processing your request. Please check the server logs.");
+    stream.update(
+      "An internal error occurred while processing your request. Please check the server logs.",
+    );
     stream.done();
     return { output: stream.value, filesReferences: [] };
   }
