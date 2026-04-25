@@ -70,11 +70,9 @@ export async function askChatBot(question: string, projectId: string, prevMessag
       conversationHistory = prevMessages.map(m => `${m.role.toUpperCase()}:\n${m.content}`).join("\n\n");
     }
 
-    (async () => {
-      try {
-        const { textStream } = await streamText({
-          model: google("gemini-1.5-flash"),
-          prompt: `
+    const { textStream } = await streamText({
+      model: google("gemini-1.5-flash"),
+      prompt: `
       You are an AI code assistant who answers questions about the codebase. Your target audience is a technical user.
       The AI assistant is a brand new, powerful, human-like artificial intelligence.
       The traits of AI include expert knowledge, helpfulness, cleverness, and articulateness.
@@ -95,15 +93,17 @@ export async function askChatBot(question: string, projectId: string, prevMessag
       If the context does not provide an answer, use your best software engineering knowledge, but don't invent code that definitively isn't there if asked about specific internal logic.
       Answers should be provided in Markdown syntax, with code snippets if needed. Responses should be as detailed as possible, ensuring clarity and accuracy while avoiding unnecessary or misleading information.
       `,
-        });
+    });
 
+    (async () => {
+      try {
         for await (const delta of textStream) {
           stream.update(delta);
         }
       } catch (e) {
-        console.error("Error asking question", e);
+        console.error("Error streaming text in askChatBot:", e);
         stream.update(
-          "I'm sorry, I ran into an error processing your request.",
+          "\n\nI'm sorry, I ran into an error while streaming the response.",
         );
       } finally {
         stream.done();

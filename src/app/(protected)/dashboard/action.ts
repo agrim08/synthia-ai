@@ -112,11 +112,9 @@ export async function askQuestion(question: string, projectId: string) {
   }
   // console.log("Constructed Context Block:\n", context);
 
-  (async () => {
-    try {
-      const { textStream } = await streamText({
-        model: google("gemini-1.5-flash"),
-        prompt: `
+  const { textStream } = await streamText({
+    model: google("gemini-1.5-flash"),
+    prompt: `
     You are an AI code assistant who answers questions about the codebase. Your target audience is a technical intern.
     The AI assistant is a brand new, powerful, human-like artificial intelligence.
     The traits of AI include expert knowledge, helpfulness, cleverness, and articulateness.
@@ -138,15 +136,17 @@ export async function askQuestion(question: string, projectId: string) {
     The AI assistant will not invent anything that is not directly drawn from the given context.
     Answers should be provided in Markdown syntax, with code snippets if needed. Responses should be as detailed as possible, ensuring clarity and accuracy while avoiding unnecessary or misleading information.
     `,
-      });
+  });
 
+  (async () => {
+    try {
       for await (const delta of textStream) {
         stream.update(delta);
       }
     } catch (e) {
-      console.error("Error asking question", e);
+      console.error("Error streaming text in askQuestion:", e);
       stream.update(
-        "I'm sorry, I ran into an error processing your request. Please check the server logs for more details.",
+        "\n\nI'm sorry, I ran into an error while streaming the response.",
       );
     } finally {
       stream.done();
