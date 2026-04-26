@@ -19,8 +19,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import DashboardSkeleton from "./DashboardSkeleton";
+
 const DashboardPage = () => {
-  const { project } = useProject();
+  const { project, isLoading } = useProject();
+  
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
   
   return (
     <div className="max-w-5xl mx-auto space-y-10">
