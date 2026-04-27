@@ -1,5 +1,9 @@
 "use server";
 
+// Vercel Hobby plan allows up to 60s; server actions need their own export
+// (maxDuration does NOT inherit from layout.tsx)
+export const maxDuration = 60;
+
 import { streamText, generateObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
