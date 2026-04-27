@@ -45,9 +45,8 @@
 
 "use server";
 
-// Vercel Hobby plan allows up to 60s; server actions need their own export
-// (maxDuration does NOT inherit from layout.tsx)
-export const maxDuration = 60;
+// maxDuration is set in (protected)/layout.tsx (60s) — it cascades to
+// server actions invoked from pages under that layout segment.
 
 import { streamText, generateObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
