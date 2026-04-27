@@ -1,50 +1,49 @@
-# Synthia AI — Intelligent Code Companion
+# Synthia AI
 
-[![T3 Stack](https://img.shields.io/badge/stack-T3%20Stack-blue.svg)](https://create.t3.gg/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+**Your codebase, understood.**
 
-> *"Developers spend 35% of their time understanding code rather than writing it. Synthia flips this ratio."*
-
-**Synthia AI** is an AI-powered GitHub assistant that understands your codebase, analyzes commits, and answers technical questions through natural language — so your team spends less time reading code and more time writing it.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Why Synthia AI?](#why-synthia-ai)
-- [Deployment](#deployment)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)](https://nextjs.org/)
+[![tRPC](https://img.shields.io/badge/tRPC-11-398CCB?logo=trpc)](https://trpc.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)](https://prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38BDF8?logo=tailwindcss)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql)](https://neon.tech/)
+[![Google Gemini](https://img.shields.io/badge/Gemini-API-4285F4?logo=google)](https://ai.google.dev/)
 
 ---
 
-## Features
+Connect your GitHub repository and start asking questions about your code. Synthia indexes your codebase, answers questions about any file or function, and reviews every pull request automatically — grounded entirely in your actual code, not a generic model's assumptions. It works across any repo size, supports private repositories, and stores none of your code after indexing.
 
-| Feature | Description |
-|---------|-------------|
-| **AI Code Analysis** | Automatic summaries of your latest 15 commits |
-| **Precision Q&A** | RAG pipeline powered by Gemini API & Langchain.js |
-| **Meeting Intelligence** | Audio processing and transcription via AssemblyAI |
-| **Multi-Project Management** | Team collaboration with access controls via Clerk |
-| **Credit System** | Pay-as-you-go analysis at ₹1 per file |
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    A[GitHub Repo] -->|webhook + REST| B[Indexing Pipeline]
+    B -->|chunk + embed| C[Vector Store]
+    C -->|semantic retrieval| D[RAG Query Engine]
+    D -->|Gemini API| E[AI Review Output]
+    E -->|PR comment / Q&A| F[Developer]
+```
 
 ---
 
 ## Tech Stack
 
 | Layer | Technologies |
-|-------|-------------|
-| **Frontend** | Next.js 14, Shadcn/ui, Tailwind CSS |
-| **Backend** | tRPC, Prisma, Clerk |
-| **Database** | PostgreSQL, Neon DB, Firestore |
-| **AI** | Google Gemini, Langchain.js, AssemblyAI |
+|---|---|
+| **Frontend** | Next.js 15, Tailwind CSS, shadcn/ui |
+| **API** | tRPC, Next.js App Router |
+| **Auth** | Clerk |
+| **Database** | PostgreSQL (Neon), Prisma ORM |
+| **AI** | Google Gemini, Langchain.js |
+| **Storage** | Firestore (embeddings) |
 
 ---
 
 ## Quick Start
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/yourusername/synthia-ai.git
@@ -57,40 +56,32 @@ cd synthia-ai
 npm install
 ```
 
-### 3. Configure environment variables
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and fill in your API keys and configuration values.
+Fill in your API keys. See `.env.example` for required variables.
 
-### 4. Start the development server
+### 4. Set up the database
+
+```bash
+npx prisma db push
+```
+
+### 5. Run the dev server
 
 ```bash
 npm run dev
 ```
 
-Your app will be running at `http://localhost:3000`.
-
----
-
-## Why Synthia AI?
-
-Most developer tools help you write code faster — Synthia helps you **understand it faster**.
-
-- **Context-Aware** — Learns project-specific patterns from your actual codebase, not generic examples
-- **Zero Hallucination** — Every answer is grounded in your real code, not guesswork
-- **Team Ready** — Collaborative workspaces with role-based access controls built in
+Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
 ## Deployment
 
-Synthia AI is pre-configured for one-click deployment on **Vercel**.
+Pre-configured for [Vercel](https://vercel.com). Set the same environment variables from `.env` in your Vercel project settings, then deploy.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
-
----
-
-> ⭐ **Star this repo** if Synthia makes your developer life easier!
