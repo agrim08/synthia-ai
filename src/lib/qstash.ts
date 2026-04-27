@@ -12,11 +12,22 @@ import { Client } from "@upstash/qstash";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
-export const qstash = new Client({
-  token: process.env.QSTASH_TOKEN ?? "",
-});
-
 export const isDev = process.env.NODE_ENV !== "production";
+
+/** Lazy singleton — avoids module-level throw when QSTASH_TOKEN is missing. */
+let _qstash: Client | null = null;
+function getQStash(): Client {
+  if (!_qstash) {
+    const token = process.env.QSTASH_TOKEN;
+    if (!token) {
+      throw new Error(
+        "[qstash] QSTASH_TOKEN env var is not set. Add it to Vercel environment variables.",
+      );
+    }
+    _qstash = new Client({ token });
+  }
+  return _qstash;
+}
 
 /**
  * Enqueue a POST job to one of our internal API routes.
@@ -44,7 +55,7 @@ export async function enqueueJob(
   }
 
   // Production: enqueue via QStash (survives Lambda freeze)
-  await qstash.publishJSON({
+  await getQStash().publishJSON({
     url,
     body,
     headers: {
@@ -54,3 +65,4 @@ export async function enqueueJob(
     ...(opts.delaySeconds ? { delay: opts.delaySeconds } : {}),
   });
 }
+
