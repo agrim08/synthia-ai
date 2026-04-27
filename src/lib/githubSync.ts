@@ -16,6 +16,7 @@ import {
   persistProjectIndexedHeadSha,
   type EmbedFileResult,
 } from "@/lib/githubRepoLoader";
+import * as Sentry from "@sentry/nextjs";
 
 const githubContentLimiter = new Bottleneck({ maxConcurrent: 1, minTime: 200 });
 
@@ -142,6 +143,7 @@ export async function runIncrementalRepoSync(
   // Do not block embedding on commit summarization (same as /api/index-project).
   void pollCommits(projectId).catch((err) => {
     console.warn(`[runIncrementalRepoSync] pollCommits:`, err);
+    Sentry.captureException(err, { extra: { projectId, context: "pollCommits" } });
   });
 
   let headSha: string;
@@ -150,6 +152,7 @@ export async function runIncrementalRepoSync(
     headSha = remote.sha;
   } catch (e) {
     console.error(`[runIncrementalRepoSync] HEAD fetch failed:`, e);
+    Sentry.captureException(e, { extra: { projectId, owner, repo } });
     await (db.project as any).update({
       where: { id: projectId },
       data: {
@@ -225,6 +228,7 @@ export async function runIncrementalRepoSync(
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       console.error(`[runIncrementalRepoSync] compare failed:`, msg);
+      Sentry.captureException(e, { extra: { projectId, baseSha, headSha } });
       // Force-push or missing SHAs: realign to current HEAD without deleting embeddings.
       if (e?.status === 404 || /404|not found/i.test(msg)) {
         await persistProjectIndexedHeadSha(projectId, githubUrl, githubToken).catch(

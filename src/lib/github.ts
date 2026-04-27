@@ -28,6 +28,7 @@ import { Octokit } from "octokit";
 import axios from "axios";
 import { summarizeCommit } from "./gemini";
 import Bottleneck from "bottleneck";
+import * as Sentry from "@sentry/nextjs";
 
 const MAX_RETRIES = 6;
 const BASE_DELAY_MS = 5_000;
@@ -138,56 +139,72 @@ const summarizeCommitFunc = async (githubUrl: string, commitHash: string) => {
     return summary;
   } catch (err) {
     console.error(`[summarizeCommitFunc] FAILED for commit ${commitHash.slice(0, 7)}:`, err);
+    Sentry.captureException(err, { extra: { githubUrl, commitHash } });
     throw err;
   }
 };
 
 export const pollCommits = async (projectId: string) => {
-  const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
-  console.log(`[pollCommits] Fetching commits for: ${githubUrl}`);
-  const commitHashes = await gitCommitHash(githubUrl);
-  const unprocessedCommits = await filterUnprocessedCommits(
-    projectId,
-    commitHashes,
-  );
-  console.log(`[pollCommits] ${unprocessedCommits.length} unprocessed commits to summarise`);
-
-  if (unprocessedCommits.length === 0) {
-    console.log(`[pollCommits] Nothing to process, skipping.`);
-    return;
-  }
-
-  const summaryResponses = await Promise.allSettled(
-    unprocessedCommits.map((commit, index) => {
-      console.log(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] Summarising commit: ${commit.commitHash.slice(0, 7)} — "${commit.commitMessage.slice(0, 60)}"`);
-      return summarizeCommitFunc(githubUrl, commit.commitHash);
-    }),
-  );
-
-  const summaries = summaryResponses.map((response, index) => {
-    if (response.status === "fulfilled") {
-      console.log(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] Commit summary OK: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`);
-      return response.value as string;
-    } else {
-      console.error(`[pollCommits] [${index + 1}/${unprocessedCommits.length}] FAILED commit: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`, response.reason);
-      return "";
-    }
-  });
-
-  const commits = await db.gitCommit.createMany({
-    data: summaries.map((summary, index) => ({
-      commitSummary: summary,
+  try {
+    const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
+    console.log(`[pollCommits] Fetching commits for: ${githubUrl}`);
+    const commitHashes = await gitCommitHash(githubUrl);
+    const unprocessedCommits = await filterUnprocessedCommits(
       projectId,
-      commitHash: unprocessedCommits[index]?.commitHash ?? "",
-      commitMessage: unprocessedCommits[index]?.commitMessage ?? "",
-      commitAuthorName: unprocessedCommits[index]?.commitAuthorName ?? "",
-      commitAuthorAvatar: unprocessedCommits[index]?.commitAuthorAvatar ?? "",
-      commitDate: unprocessedCommits[index]?.commitDate ?? "",
-    })),
-  });
-  console.log(`[pollCommits] Saved ${commits.count} commits to DB ✓`);
+      commitHashes,
+    );
+    console.log(
+      `[pollCommits] ${unprocessedCommits.length} unprocessed commits to summarise`,
+    );
 
-  return commits;
+    if (unprocessedCommits.length === 0) {
+      console.log(`[pollCommits] Nothing to process, skipping.`);
+      return;
+    }
+
+    const summaryResponses = await Promise.allSettled(
+      unprocessedCommits.map((commit, index) => {
+        console.log(
+          `[pollCommits] [${index + 1}/${unprocessedCommits.length}] Summarising commit: ${commit.commitHash.slice(0, 7)} — "${commit.commitMessage.slice(0, 60)}"`,
+        );
+        return summarizeCommitFunc(githubUrl, commit.commitHash);
+      }),
+    );
+
+    const summaries = summaryResponses.map((response, index) => {
+      if (response.status === "fulfilled") {
+        console.log(
+          `[pollCommits] [${index + 1}/${unprocessedCommits.length}] Commit summary OK: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`,
+        );
+        return response.value as string;
+      } else {
+        console.error(
+          `[pollCommits] [${index + 1}/${unprocessedCommits.length}] FAILED commit: ${unprocessedCommits[index]?.commitHash.slice(0, 7)}`,
+          response.reason,
+        );
+        return "";
+      }
+    });
+
+    const commits = await db.gitCommit.createMany({
+      data: summaries.map((summary, index) => ({
+        commitSummary: summary,
+        projectId,
+        commitHash: unprocessedCommits[index]?.commitHash ?? "",
+        commitMessage: unprocessedCommits[index]?.commitMessage ?? "",
+        commitAuthorName: unprocessedCommits[index]?.commitAuthorName ?? "",
+        commitAuthorAvatar: unprocessedCommits[index]?.commitAuthorAvatar ?? "",
+        commitDate: unprocessedCommits[index]?.commitDate ?? "",
+      })),
+    });
+    console.log(`[pollCommits] Saved ${commits.count} commits to DB ✓`);
+
+    return commits;
+  } catch (err) {
+    console.error(`[pollCommits] FAILED for project ${projectId}:`, err);
+    Sentry.captureException(err, { extra: { projectId } });
+    throw err;
+  }
 };
 
 const fetchProjectGithubUrl = async (projectId: string) => {

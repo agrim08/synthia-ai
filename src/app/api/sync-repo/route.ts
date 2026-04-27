@@ -12,6 +12,7 @@ import {
 } from "@/lib/githubRepoLoader";
 import { db } from "@/server/db";
 import { enqueueJob } from "@/lib/qstash";
+import * as Sentry from "@sentry/nextjs";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
@@ -88,6 +89,9 @@ export async function POST(req: NextRequest) {
     headSha = r.sha;
   } catch (e) {
     console.error("[sync-repo] resolve HEAD failed", e);
+    Sentry.captureException(e, {
+      extra: { projectId, githubUrl },
+    });
     return NextResponse.json({ error: "GitHub unreachable" }, { status: 502 });
   }
 

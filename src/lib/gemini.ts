@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Document } from "@langchain/core/documents";
+import * as Sentry from "@sentry/nextjs";
 
 const genAi = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAi.getGenerativeModel({
@@ -48,6 +49,7 @@ It is given only as an example of appropriate comments.`,
     return text;
   } catch (err) {
     console.error(`[summarizeCommit] FAILED:`, err);
+    Sentry.captureException(err, { extra: { diffSnippet: diff.slice(0, 100) } });
     throw err;
   }
 };
@@ -77,6 +79,7 @@ export const summariseCode = async (doc: Document) => {
     return text || "No summary generated";
   } catch (err) {
     console.error(`[summariseCode] FAILED for ${doc.metadata.source}:`, err);
+    Sentry.captureException(err, { extra: { source: doc.metadata.source } });
     throw err;
   }
 };
@@ -101,6 +104,7 @@ export async function loadEmbedding(summary: string) {
     return values;
   } catch (err) {
     console.error(`[loadEmbedding] FAILED:`, err);
+    Sentry.captureException(err, { extra: { summarySnippet: summary.slice(0, 100) } });
     throw err;
   }
 }

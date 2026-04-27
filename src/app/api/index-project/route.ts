@@ -14,6 +14,7 @@ import { indexGithubRepo } from "@/lib/githubRepoLoader";
 import { pollCommits } from "@/lib/github";
 import { db } from "@/server/db";
 import { enqueueJob } from "@/lib/qstash";
+import * as Sentry from "@sentry/nextjs";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
@@ -87,6 +88,9 @@ export async function POST(req: NextRequest) {
       `[/api/index-project] Fatal error for project=${projectId}:`,
       err,
     );
+    Sentry.captureException(err, {
+      extra: { projectId, githubUrl },
+    });
     return NextResponse.json(
       { error: err?.message ?? "Unknown error" },
       { status: 500 },
