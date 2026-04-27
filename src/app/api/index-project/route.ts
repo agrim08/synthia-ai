@@ -13,6 +13,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { indexGithubRepo } from "@/lib/githubRepoLoader";
 import { pollCommits } from "@/lib/github";
 import { db } from "@/server/db";
+import { enqueueJob } from "@/lib/qstash";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
@@ -51,8 +52,10 @@ export async function POST(req: NextRequest) {
       data: { indexingStatus: "INDEXING", indexingError: null },
     });
 
-    // 2. Commit summaries run in parallel — do NOT block indexing (was delaying file counts for minutes).
-    void pollCommits(projectId).catch((err) => {
+    // 2. Commit summaries run in parallel — fire-and-forget is OK here because
+    //    pollCommits is called BEFORE indexGithubRepo, so the Lambda is still
+    //    alive during the await below. Failures are non-fatal.
+    pollCommits(projectId).catch((err) => {
       console.warn(`[/api/index-project] pollCommits error (non-fatal):`, err);
     });
 
@@ -66,16 +69,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (updatedProject?.indexingStatus === "PARTIAL") {
-      console.log(`[/api/index-project] PARTIAL limit reached for project=${projectId}, re-triggering...`);
-      // Fire-and-forget next chunk
-      void fetch(`${req.nextUrl.origin}/api/index-project`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-internal-secret": INTERNAL_SECRET
-        },
-        body: JSON.stringify({ projectId, githubUrl, githubToken })
-      }).catch(e => console.error("Self-trigger failed", e));
+      console.log(`[/api/index-project] PARTIAL limit reached for project=${projectId}, re-enqueuing via QStash...`);
+      // Enqueue next chunk BEFORE returning the response (guaranteed delivery via QStash)
+      await enqueueJob(
+        `${req.nextUrl.origin}/api/index-project`,
+        { projectId, githubUrl, githubToken },
+        { retries: 3 },
+      );
     }
 
     console.log(

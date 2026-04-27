@@ -9,6 +9,7 @@ import {
   getDefaultBranchHeadSha,
   parseGithubRepoUrl,
 } from "@/lib/githubRepoLoader";
+import { enqueueJob } from "@/lib/qstash";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 const APP_URL =
@@ -38,40 +39,40 @@ function resolvePublicOrigin(headers: Headers | undefined): string {
   return `${proto}://${rawHost}`;
 }
 
-/** Fire-and-forget indexing */
+/**
+ * Enqueue a background index job via QStash (prod) or direct fetch (dev).
+ * MUST be awaited so the job is guaranteed enqueued before the Lambda returns.
+ */
 async function triggerBackgroundIndexing(
   projectId: string,
   githubUrl: string,
   githubToken?: string,
   origin: string = APP_URL,
 ) {
-  console.log(`[triggerIndexing] Starting background indexing for project=${projectId}`);
-  
-  // Fire-and-forget indexing (Server-side trigger)
-  void fetch(`${origin}/api/index-project`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-internal-secret": INTERNAL_SECRET,
-    },
-    body: JSON.stringify({ projectId, githubUrl, githubToken }),
-  }).catch((e) => console.error("Index trigger failed", e));
+  console.log(`[triggerIndexing] Enqueuing background indexing for project=${projectId}`);
+  await enqueueJob(
+    `${origin}/api/index-project`,
+    { projectId, githubUrl, githubToken },
+    { retries: 3 },
+  );
 }
 
+/**
+ * Enqueue a background sync job via QStash (prod) or direct fetch (dev).
+ * MUST be awaited so the job is guaranteed enqueued before the Lambda returns.
+ */
 async function triggerBackgroundSync(
   projectId: string,
   githubUrl: string,
   githubToken?: string,
   origin: string = APP_URL,
 ) {
-  void fetch(`${origin}/api/sync-repo`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-internal-secret": INTERNAL_SECRET,
-    },
-    body: JSON.stringify({ projectId, githubUrl, githubToken }),
-  }).catch((e) => console.error("Sync trigger failed", e));
+  console.log(`[triggerSync] Enqueuing background sync for project=${projectId}`);
+  await enqueueJob(
+    `${origin}/api/sync-repo`,
+    { projectId, githubUrl, githubToken },
+    { retries: 3 },
+  );
 }
 
 export const projectRouter = createTRPCRouter({
@@ -169,8 +170,8 @@ export const projectRouter = createTRPCRouter({
       });
       console.log(`[createProject] Credits decremented by ${fileCount}`);
 
-      // Kick off background indexing – does NOT block the response
-      void triggerBackgroundIndexing(
+      // Kick off background indexing — awaited so QStash ACK happens before Lambda returns
+      await triggerBackgroundIndexing(
         project.id,
         input.githubUrl,
         input.githubToken,
@@ -300,7 +301,7 @@ export const projectRouter = createTRPCRouter({
         return { action: "current" as const };
       }
 
-      void triggerBackgroundSync(
+      await triggerBackgroundSync(
         input.projectId,
         project.githubUrl,
         undefined,
@@ -334,9 +335,9 @@ export const projectRouter = createTRPCRouter({
       const { githubUrl } = proj;
       const origin = resolvePublicOrigin(ctx.headers);
       if (proj.syncState != null) {
-        void triggerBackgroundSync(input.projectId, githubUrl, undefined, origin);
+        await triggerBackgroundSync(input.projectId, githubUrl, undefined, origin);
       } else {
-        void triggerBackgroundIndexing(input.projectId, githubUrl, undefined, origin);
+        await triggerBackgroundIndexing(input.projectId, githubUrl, undefined, origin);
       }
       return { scheduled: true };
     }),

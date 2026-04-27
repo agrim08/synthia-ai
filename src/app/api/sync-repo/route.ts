@@ -11,25 +11,24 @@ import {
   parseGithubRepoUrl,
 } from "@/lib/githubRepoLoader";
 import { db } from "@/server/db";
+import { enqueueJob } from "@/lib/qstash";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
 
 export const maxDuration = 60;
 
-function chainNextChunk(
+async function chainNextChunk(
   req: NextRequest,
   projectId: string,
   githubUrl: string,
   githubToken?: string,
 ) {
-  void fetch(`${req.nextUrl.origin}/api/sync-repo`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-internal-secret": INTERNAL_SECRET,
-    },
-    body: JSON.stringify({ projectId, githubUrl, githubToken }),
-  }).catch((e) => console.error("[sync-repo] self-trigger failed", e));
+  // Enqueue via QStash (prod) or direct fetch (dev) — MUST be awaited
+  await enqueueJob(
+    `${req.nextUrl.origin}/api/sync-repo`,
+    { projectId, githubUrl, githubToken },
+    { retries: 3 },
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
         githubToken,
       );
       if (result.status === "PARTIAL") {
-        chainNextChunk(req, projectId, githubUrl, githubToken);
+        await chainNextChunk(req, projectId, githubUrl, githubToken);
       }
       return NextResponse.json({ ok: true, status: result.status });
     }
@@ -134,7 +133,7 @@ export async function POST(req: NextRequest) {
       githubToken,
     );
     if (result.status === "PARTIAL") {
-      chainNextChunk(req, projectId, githubUrl, githubToken);
+      await chainNextChunk(req, projectId, githubUrl, githubToken);
     }
     return NextResponse.json({ ok: true, status: result.status });
   }
@@ -164,7 +163,7 @@ export async function POST(req: NextRequest) {
   );
 
   if (result.status === "PARTIAL") {
-    chainNextChunk(req, projectId, githubUrl, githubToken);
+    await chainNextChunk(req, projectId, githubUrl, githubToken);
   }
 
   return NextResponse.json({ ok: true, status: result.status });
