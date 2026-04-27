@@ -6,6 +6,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/documentation",
   "/api/webhook/payapl(.*)",
+  "/api/index-project(.*)",
+  "/api/sync-repo(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
