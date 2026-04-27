@@ -43,6 +43,7 @@ const MeetingCard = () => {
     },
     multiple: false,
     maxSize: 50_000_000,
+    disabled: !project,
     onDrop: async (acceptedFiles) => {
       setIsUploading(true);
       const file = acceptedFiles[0];
@@ -82,7 +83,7 @@ const MeetingCard = () => {
         isDragActive
           ? "border-indigo-300 bg-indigo-50/40"
           : "border-slate-200 border-dashed hover:border-indigo-300 hover:bg-slate-50/60",
-        isUploading && "pointer-events-none cursor-wait"
+        (isUploading || !project) && "pointer-events-none opacity-50 cursor-not-allowed"
       )}
     >
       <input {...getInputProps()} />
@@ -102,10 +103,10 @@ const MeetingCard = () => {
           {/* Text */}
           <div className="space-y-1">
             <p className="text-[14px] font-medium text-slate-800">
-              {isDragActive ? "Drop to upload" : "Upload a recording"}
+              {project ? (isDragActive ? "Drop to upload" : "Upload a recording") : "No project selected"}
             </p>
             <p className="text-[12px] text-slate-400">
-              MP3, WAV or M4A · max 50 MB
+              {project ? "MP3, WAV or M4A · max 50 MB" : "Link a project first to upload meetings"}
             </p>
           </div>
 
@@ -114,8 +115,9 @@ const MeetingCard = () => {
             size="sm"
             className="mt-1 h-8 rounded-md bg-indigo-600 px-4 text-[13px] font-medium text-white shadow-none hover:bg-indigo-700 transition-colors"
             asChild
+            disabled={!project}
           >
-            <span>Select file</span>
+            <span>{project ? "Select file" : "Disabled"}</span>
           </Button>
         </div>
       ) : (

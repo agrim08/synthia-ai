@@ -103,17 +103,18 @@ const AskSynthiaHero = () => {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about this codebase..."
-              className="flex-1 bg-transparent px-6 py-[10px] text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none overflow-hidden min-h-[32px] flex items-center"
+              placeholder={projectId ? "Ask anything about this codebase..." : "Select a project first..."}
+              disabled={!projectId}
+              className="flex-1 bg-transparent px-6 py-[10px] text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none overflow-hidden min-h-[32px] flex items-center disabled:cursor-not-allowed"
               style={{ height: "32px" }}
             />
             
             <button
               onClick={() => handleSubmit()}
-              disabled={loading || !question.trim()}
+              disabled={loading || !question.trim() || !projectId}
               className={cn(
                 "group relative flex size-10 items-center justify-center rounded-2xl transition-all duration-300 mr-2",
-                question.trim() 
+                (question.trim() && projectId) 
                   ? "bg-indigo-700 shadow-lg shadow-indigo-100/50 hover:bg-indigo-800 hover:scale-105 active:scale-95" 
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
               )}

@@ -24,8 +24,10 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function Home() {
+  const { userId } = await auth();
   const bentoFeatures = [
     {
       id: "intelligence",
@@ -187,15 +189,17 @@ export default async function Home() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/sign-in"
-                className="hidden text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 md:block"
-              >
-                Sign in
-              </Link>
+              {!userId && (
+                <Link
+                  href="/sign-in"
+                  className="hidden text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 md:block"
+                >
+                  Sign in
+                </Link>
+              )}
               <Link href="/dashboard">
                 <Button className="h-8 rounded-lg bg-indigo-600 px-4 text-[13px] font-semibold text-white shadow-none hover:bg-indigo-700 transition-colors">
-                  Get Started
+                  {userId ? "Dashboard" : "Get Started"}
                   <ChevronRight className="ml-1 h-3.5 w-3.5" />
                 </Button>
               </Link>
@@ -242,7 +246,7 @@ export default async function Home() {
                   size="lg"
                   className="h-12 rounded-xl bg-indigo-600 px-8 text-[15px] font-semibold text-white shadow-lg shadow-indigo-200/60 hover:bg-indigo-700 transition-all hover:shadow-indigo-300/60 hover:-translate-y-px"
                 >
-                  Start for free
+                  {userId ? "Go to Dashboard" : "Start for free"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>

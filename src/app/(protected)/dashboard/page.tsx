@@ -37,13 +37,17 @@ const DashboardPage = () => {
             <Github className="size-4" />
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={project?.githubUrl ?? ""}
-              target="_blank"
-              className="text-xs font-medium text-slate-400 hover:text-indigo-700 transition-colors truncate max-w-[150px]"
-            >
-              {project?.githubUrl?.split("/").pop() || "repository"}
-            </Link>
+            {project ? (
+              <Link
+                href={project.githubUrl}
+                target="_blank"
+                className="text-xs font-medium text-slate-400 hover:text-indigo-700 transition-colors truncate max-w-[150px]"
+              >
+                {project.githubUrl.split("/").pop()}
+              </Link>
+            ) : (
+              <span className="text-xs font-medium text-slate-300">No project selected</span>
+            )}
           </div>
         </div>
 
@@ -57,7 +61,12 @@ const DashboardPage = () => {
             <InviteTeam />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200">
+                <Button 
+                  disabled={!project}
+                  variant="ghost" 
+                  size="icon" 
+                  className="size-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200"
+                >
                   <Settings className="size-4" />
                 </Button>
               </DropdownMenuTrigger>

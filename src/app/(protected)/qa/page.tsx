@@ -231,6 +231,7 @@ export default function QandA() {
               <Button 
                 variant="default" 
                 size="sm"
+                disabled={!projectId}
                 className="gap-1.5 h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center"
               >
                 <History className="size-3.5" />
@@ -286,7 +287,7 @@ export default function QandA() {
                             {ques.question}
                           </p>
                           <p className="text-[11px] text-slate-400 mt-1">
-                            {new Date(ques.createdAt).toLocaleDateString("en-US", {
+                            {new Date(ques?.createdAt || Date.now()).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
                             })}
@@ -539,15 +540,16 @@ export default function QandA() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your codebase…"
-              className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none min-h-[24px] max-h-40 leading-relaxed py-0.5"
+              placeholder={projectId ? "Ask about your codebase…" : "Select a project to start chatting…"}
+              disabled={!projectId}
+              className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none min-h-[24px] max-h-40 leading-relaxed py-0.5 disabled:cursor-not-allowed"
             />
             <button
               onClick={() => handleSubmit()}
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || !projectId}
               className={cn(
                 "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
-                input.trim() && !loading
+                input.trim() && !loading && projectId
                   ? "bg-indigo-700 hover:bg-indigo-700 text-white shadow-sm hover:scale-105 active:scale-95"
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
               )}

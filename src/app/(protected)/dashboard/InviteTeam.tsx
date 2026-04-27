@@ -48,6 +48,7 @@ const InviteTeam = () => {
         onClick={() => setOpen(true)}
         size="sm"
         className="bg-indigo-700 hover:bg-indigo-800"
+        disabled={!projectId}
       >
         Invite Members
       </Button>

@@ -166,9 +166,13 @@ const MeetingsPage = () => {
             <div className="flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 mb-4">
               <Video className="size-4 text-slate-300" />
             </div>
-            <p className="text-[14px] font-medium text-slate-700">No meetings yet</p>
+            <p className="text-[14px] font-medium text-slate-700">
+              {project ? "No meetings yet" : "No project selected"}
+            </p>
             <p className="text-[13px] text-slate-400 mt-1">
-              Upload a recording above to get started.
+              {project 
+                ? "Upload a recording above to get started." 
+                : "Select or link a project to view and upload meetings."}
             </p>
           </div>
         )}
