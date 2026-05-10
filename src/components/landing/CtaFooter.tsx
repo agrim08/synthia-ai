@@ -43,7 +43,7 @@ export function CtaFooter() {
                 </a>
               </SignedIn>
               <a
-                href="https://github.com/agrim08/ownyourcode-ai"
+                href="https://github.com/agrim08/synthia-ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-white/80 px-6 py-3.5 text-sm font-semibold text-ink backdrop-blur transition-all hover:-translate-y-0.5 hover:border-ink/40"
