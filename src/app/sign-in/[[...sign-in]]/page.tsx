@@ -31,7 +31,7 @@ export default function Page() {
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="bg-white/5 p-2 rounded-xl border border-white/10 group-hover:border-white/20 transition-colors">
-              <Logo width={32} height={38} />
+              <Logo width={32} height={32} />
             </div>
             <span className="text-xl font-bold text-white tracking-tight text-center">OwnYourCode</span>
           </Link>
@@ -86,7 +86,7 @@ export default function Page() {
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex flex-col items-center mb-8 text-center">
              <div className="bg-slate-900 p-3 rounded-2xl mb-4 shadow-xl">
-               <Logo width={40} height={48} />
+               <Logo width={40} height={40} />
              </div>
              <h1 className="text-3xl font-bold text-slate-900 leading-none">OwnYourCode</h1>
              <p className="text-slate-500 mt-2">Sign in to your account</p>

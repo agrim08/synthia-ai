@@ -94,7 +94,7 @@ export const AppSidebar = () => {
         >
           {/* Logo container */}
           <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-cream transition-colors group-hover:bg-white/20">
-             <span className="font-display text-lg leading-none">O</span>
+             <Logo width={18} height={18} />
           </div>
           {open && (
             <span className="text-sm font-semibold tracking-tight text-white">

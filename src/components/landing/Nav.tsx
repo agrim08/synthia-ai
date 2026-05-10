@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Github } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { Logo } from "@/components/Logo";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -25,7 +26,7 @@ export function Nav() {
       >
         <Link href="/" className="group flex items-center gap-2 pl-3">
           <span className="relative grid h-8 w-8 place-items-center rounded-xl bg-ink text-cream shadow-pop-sm transition-transform group-hover:-rotate-6">
-            <span className="font-display text-lg leading-none">O</span>
+            <Logo width={20} height={20} />
             <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse-soft rounded-full bg-coral" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight text-ink">

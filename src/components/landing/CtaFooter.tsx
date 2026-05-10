@@ -1,5 +1,6 @@
 import { Github, Globe } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { Logo } from "@/components/Logo";
 
 export function CtaFooter() {
   return (
@@ -60,7 +61,7 @@ export function CtaFooter() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink text-cream">
-                <span className="font-display text-lg leading-none">O</span>
+                <Logo width={20} height={20} />
               </span>
               <span className="font-semibold text-ink">OwnYourCode</span>
             </div>

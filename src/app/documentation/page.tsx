@@ -31,7 +31,7 @@ export default function Home() {
       {/* Hero Section */}
       <motion.div {...fadeIn} className="container mx-auto px-4 py-20">
         <div className="flex flex-col items-center mb-16 text-center">
-          <Logo width={64} height={76} className="mb-8" />
+          <Logo width={64} height={64} className="mb-8" />
           <h1 className="mb-6 text-6xl font-bold">
             <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
               OwnYourCode AI
