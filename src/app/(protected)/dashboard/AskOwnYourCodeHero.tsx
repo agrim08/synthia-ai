@@ -20,7 +20,7 @@ import Image from "next/image";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 
-const AskSynthiaHero = () => {
+const AskOwnYourCodeHero = () => {
   const { projectId } = useProject();
   const { user } = useUser();
   const saveAnswer = api.project.saveAnswer.useMutation();
@@ -88,7 +88,7 @@ const AskSynthiaHero = () => {
         <div className="flex items-center gap-2 group cursor-default ml-1">
           <Sparkles className="size-4 text-indigo-500" />
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-slate-900 leading-none">Ask Synthia</h3>
+            <h3 className="text-sm font-bold text-slate-900 leading-none">Ask our AI</h3>
           </div>
         </div>
 
@@ -280,7 +280,7 @@ const AskSynthiaHero = () => {
                     <div className="space-y-8">
                        <div className="space-y-2">
                           <h3 className="text-xl font-black text-slate-900 tracking-tight">Source Material</h3>
-                          <p className="text-sm font-medium text-slate-500">Synthia analyzed these files to generate your insight.</p>
+                          <p className="text-sm font-medium text-slate-500">Our AI analyzed these files to generate your insight.</p>
                        </div>
                        <FileReference
                          filesReferences={(filesReferences ?? []) as any}
@@ -300,4 +300,4 @@ const AskSynthiaHero = () => {
   );
 };
 
-export default AskSynthiaHero;
+export default AskOwnYourCodeHero;

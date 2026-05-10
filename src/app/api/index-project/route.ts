@@ -16,7 +16,7 @@ import { db } from "@/server/db";
 import { enqueueJob } from "@/lib/qstash";
 import * as Sentry from "@sentry/nextjs";
 
-const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "ownyourcode-internal";
 
 export const maxDuration = 60; // 60 seconds max for Hobby plan (limit is 60s)
 

@@ -13,18 +13,24 @@ import {
 import { Logo } from "@/components/Logo";
 import useProject from "@/hooks/useProject";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { 
+  Plus, 
+  Home, 
+  MessageSquare, 
+  Video,
+  CreditCard
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
-// Muted, professional single-tone colors — no gradients
+// Dark mode friendly project colors
 const PROJECT_COLORS = [
-  { bg: "bg-indigo-50",   text: "text-indigo-700" },
-  { bg: "bg-indigo-100",  text: "text-indigo-700" },
-  { bg: "bg-sky-50",      text: "text-sky-700" },
-  { bg: "bg-blue-50",    text: "text-blue-700" },
-  { bg: "bg-rose-50",     text: "text-rose-700" },
-  { bg: "bg-violet-50",   text: "text-violet-700" },
+  { bg: "bg-coral/20", text: "text-coral" },
+  { bg: "bg-sky/20", text: "text-sky" },
+  { bg: "bg-sage/20", text: "text-sage" },
+  { bg: "bg-butter/20", text: "text-butter" },
+  { bg: "bg-white/10", text: "text-cream" },
 ];
 
 function getProjectColor(name: string) {
@@ -32,13 +38,7 @@ function getProjectColor(name: string) {
   return PROJECT_COLORS[idx];
 }
 
-function ProjectAvatar({
-  name,
-  size = "md",
-}: {
-  name: string;
-  size?: "sm" | "md";
-}) {
+function ProjectAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
   const color = getProjectColor(name);
   return (
     <div
@@ -46,7 +46,7 @@ function ProjectAvatar({
         "flex shrink-0 items-center justify-center rounded-md font-semibold tracking-tight select-none",
         color.bg,
         color.text,
-        size === "md" ? "size-7 text-[11px]" : "size-6 text-[10px]"
+        size === "md" ? "size-6 text-[11px]" : "size-5 text-[10px]"
       )}
     >
       {name?.[0]?.toUpperCase()}
@@ -54,33 +54,51 @@ function ProjectAvatar({
   );
 }
 
+const MAIN_NAV = [
+  { title: "Dashboard", url: "/dashboard", icon: Home },
+  { title: "Q&A", url: "/qa", icon: MessageSquare },
+  { title: "Meetings", url: "/meetings", icon: Video },
+];
+
+const BOTTOM_NAV = [
+  { title: "Billing", url: "/billing", icon: CreditCard },
+];
+
 export const AppSidebar = () => {
   const { open } = useSidebar();
   const { projects, projectId, setProjectId } = useProject();
+  const pathname = usePathname();
+
+  const sortedProjects = projects
+    ? [...projects].sort((a, b) => (a.id === projectId ? -1 : b.id === projectId ? 1 : 0))
+    : [];
 
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-slate-100 bg-white"
+      className="border-r border-ink/10 bg-ink text-cream"
     >
       {/* Header */}
       <SidebarHeader
         className={cn(
-          "h-14 border-b border-slate-100",
+          "h-14 border-b border-white/10",
           open ? "px-4" : "items-center justify-center px-0"
         )}
       >
         <Link
           href="/"
           className={cn(
-            "flex items-center gap-2.5 mt-3 h-full",
+            "flex items-center gap-3 h-full group",
             !open && "justify-center"
           )}
         >
-          <Logo width={32} height={32} />
+          {/* Logo container */}
+          <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-cream transition-colors group-hover:bg-white/20">
+             <span className="font-display text-lg leading-none">O</span>
+          </div>
           {open && (
-            <span className="text-[15px] font-semibold tracking-tight text-slate-900">
-              Synthia
+            <span className="text-sm font-semibold tracking-tight text-white">
+              OwnYourCode
             </span>
           )}
         </Link>
@@ -88,16 +106,51 @@ export const AppSidebar = () => {
 
       {/* Content */}
       <SidebarContent className={cn("py-4", open ? "px-3" : "px-2")}>
+        
+        {/* Main Navigation */}
         <SidebarGroup>
-          {/* Section label */}
+          <div className={cn("space-y-0.5", !open && "flex flex-col items-center gap-1")}>
+            {MAIN_NAV.map((item) => {
+              const isActive = pathname === item.url;
+              return (
+                <Link
+                  key={item.url}
+                  href={item.url}
+                  title={item.title}
+                  className={cn(
+                    "flex items-center rounded-lg transition-all duration-150 group",
+                    open ? "gap-3 px-3 py-2" : "size-10 justify-center",
+                    isActive
+                      ? "bg-white/10 text-white font-medium shadow-pop-sm"
+                      : "text-cream/60 hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <item.icon className={cn("shrink-0", open ? "size-4" : "size-5")} />
+                  {open && (
+                    <span className="text-[13px] truncate">{item.title}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </SidebarGroup>
+
+        <div className="my-2 px-3">
+          <div className="h-px w-full bg-white/10" />
+        </div>
+
+        {/* Projects Section */}
+        <SidebarGroup>
           {open && (
-            <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-widest text-slate-400">
-              Projects
-            </p>
+            <div className="mb-2 flex items-center justify-between px-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-cream/40">
+                Projects
+              </p>
+            </div>
           )}
 
           <div className={cn("space-y-0.5", !open && "flex flex-col items-center gap-1")}>
-            {projects?.map((project) => {
+            {sortedProjects?.map((project) => {
               const isActive = project.id === projectId;
 
               return (
@@ -106,28 +159,27 @@ export const AppSidebar = () => {
                   onClick={() => setProjectId(project.id)}
                   title={project.name}
                   className={cn(
-                    "group flex w-full items-center rounded-md transition-colors duration-150",
+                    "group relative flex w-full items-center rounded-lg transition-all duration-150",
                     open
-                      ? "gap-2.5 px-2 py-1.5"
-                      : "size-9 justify-center",
+                      ? "gap-3 px-3 py-1.5"
+                      : "size-10 justify-center",
                     isActive
-                      ? "bg-indigo-50 text-indigo-700 font-semibold ring-1 ring-indigo-100/50"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                      ? "bg-white/5 text-white font-medium"
+                      : "text-cream/60 hover:bg-white/5 hover:text-white"
                   )}
                 >
-                  {isActive && (
-                    <div className="absolute left-0 h-4 w-1 rounded-r-full bg-indigo-600" />
+                  {isActive && !open && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-1 rounded-r-full bg-coral" />
                   )}
+                  {isActive && open && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-1 rounded-r-full bg-coral" />
+                  )}
+                  
                   <ProjectAvatar name={project.name} size="md" />
 
                   {open && (
-                    <div className="flex flex-1 flex-col items-start overflow-hidden text-left">
-                      <span
-                        className={cn(
-                          "w-full truncate text-[13px] font-medium leading-tight",
-                          isActive ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
-                        )}
-                      >
+                    <div className="flex flex-1 items-center justify-between overflow-hidden text-left">
+                      <span className="truncate text-[13px] leading-tight">
                         {project.name}
                       </span>
                     </div>
@@ -140,28 +192,45 @@ export const AppSidebar = () => {
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter
-        className={cn(
-          "border-t border-slate-100 p-3",
-          !open && "flex items-center justify-center"
-        )}
-      >
+      <SidebarFooter className="border-t border-white/10 p-3">
+        {/* Bottom Nav Links */}
+        <div className={cn("mb-3 space-y-0.5", !open && "flex flex-col items-center gap-1")}>
+          {BOTTOM_NAV.map((item) => (
+            <Link
+              key={item.url}
+              href={item.url}
+              title={item.title}
+              className={cn(
+                "flex items-center rounded-lg transition-colors group",
+                open ? "gap-3 px-3 py-2" : "size-10 justify-center",
+                pathname === item.url
+                  ? "bg-white/10 text-white font-medium"
+                  : "text-cream/60 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <item.icon className={cn("shrink-0", open ? "size-4" : "size-5")} />
+              {open && <span className="text-[13px]">{item.title}</span>}
+            </Link>
+          ))}
+        </div>
+
+        {/* New Project Button */}
         <CreateProjectDialog>
           <Button
             variant="ghost"
             className={cn(
-              "h-8 w-full rounded-md border border-indigo-400 bg-white text-slate-600 text-[13px] font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors",
-              !open && "size-8 p-0"
+              "w-full rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all shadow-pop-sm border border-white/5",
+              !open ? "size-10 p-0" : "h-9 px-3"
             )}
             size={!open ? "icon" : "default"}
           >
             {open ? (
-              <div className="flex items-center gap-1.5">
-                <Plus className="size-3.5" />
-                <span>New Project</span>
+              <div className="flex items-center justify-center gap-2">
+                <Plus className="size-4 text-coral" />
+                <span className="text-[13px] font-semibold tracking-tight">New Project</span>
               </div>
             ) : (
-              <Plus className="size-4 text-indigo-700 font-semibold" />
+              <Plus className="size-5 text-coral" />
             )}
           </Button>
         </CreateProjectDialog>

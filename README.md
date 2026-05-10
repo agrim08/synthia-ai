@@ -1,4 +1,4 @@
-# Synthia AI
+# OwnYourCode AI
 
 **Your codebase, understood.**
 
@@ -11,7 +11,7 @@
 
 ---
 
-Connect your GitHub repository and start asking questions about your code. Synthia indexes your codebase, answers questions about any file or function, and reviews every pull request automatically — grounded entirely in your actual code, not a generic model's assumptions. It works across any repo size, supports private repositories, and stores none of your code after indexing.
+Connect your GitHub repository and start asking questions about your code. Our AI indexes your codebase, answers questions about any file or function, and reviews every pull request automatically — grounded entirely in your actual code, not a generic model's assumptions. It works across any repo size, supports private repositories, and stores none of your code after indexing.
 
 ---
 
@@ -46,8 +46,8 @@ graph LR
 ### 1. Clone
 
 ```bash
-git clone https://github.com/yourusername/synthia-ai.git
-cd synthia-ai
+git clone https://github.com/yourusername/ownyourcode-ai.git
+cd ownyourcode-ai
 ```
 
 ### 2. Install dependencies

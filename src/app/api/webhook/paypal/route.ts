@@ -67,8 +67,8 @@ async function verifyWebhook(req: Request): Promise<boolean> {
 
 // Helper to extract credits from the purchase unit description
 function extractCredits(description: string): number | null {
-  // Assumes description follows the format: "10 Synthia Credits"
-  const match = description.match(/(\d+)\s*Synthia Credits/i);
+  // Assumes description follows the format: "10 OwnYourCode Credits"
+  const match = description.match(/(\d+)\s*OwnYourCode Credits/i);
   return match && match[1] ? Number(match[1]) : null;
 }
 

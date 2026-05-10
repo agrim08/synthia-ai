@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const AudioUploadBtn = () => {
+const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -93,14 +93,18 @@ const AudioUploadBtn = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          disabled={!project}
-          className="h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center gap-1.5"
-        >
-          <Mic className="size-3.5" />
-          <span>Audio synthesis</span>
-          <Plus className="size-3 opacity-60" />
-        </Button>
+        {children ? (
+          children
+        ) : (
+          <Button 
+            disabled={!project}
+            className="h-8 rounded-lg bg-indigo-700 px-3 text-[11px] font-bold text-white transition-all hover:bg-indigo-800 shadow-sm hover:shadow-indigo-200/50 flex items-center gap-1.5"
+          >
+            <Mic className="size-3.5" />
+            <span>Audio synthesis</span>
+            <Plus className="size-3 opacity-60" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-md rounded-[32px] border-none p-8 shadow-2xl">
         <DialogHeader>

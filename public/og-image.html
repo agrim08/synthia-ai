@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200" />
+  <title>OwnYourCode AI — OG Image</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: 'Inter', sans-serif;
+      position: relative;
+    }
+
+    /* Dot-grid background */
+    .dot-grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #f1f1f1 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    .layout {
+      position: relative;
+      z-index: 1;
+      width: 1200px;
+      height: 630px;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 56px 44px 56px;
+    }
+
+    /* Top row */
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+
+    .logo {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .badge {
+      background: #6366f1;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 999px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Middle content */
+    .middle {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: space-between;
+      gap: 48px;
+      margin-top: 40px;
+    }
+
+    .left-content {
+      flex: 0 0 auto;
+      max-width: 560px;
+    }
+
+    .headline {
+      font-family: 'Inter', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      color: #18181b;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .subline {
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      font-weight: 400;
+      color: #71717a;
+      line-height: 1.6;
+      max-width: 440px;
+    }
+
+    /* Right code diff card */
+    .diff-card {
+      flex: 0 0 380px;
+      background: #f8fafc;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .diff-card-header {
+      background: #f4f4f5;
+      border-bottom: 1px solid #e4e4e7;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e4e4e7;
+    }
+
+    .file-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #71717a;
+      margin-left: 4px;
+    }
+
+    .diff-body {
+      padding: 16px 0;
+    }
+
+    .diff-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.7;
+      padding: 0 16px;
+      white-space: pre;
+      display: block;
+    }
+
+    .diff-line.context {
+      color: #71717a;
+    }
+
+    .diff-line.addition {
+      background: rgba(16, 185, 129, 0.08);
+      color: #10b981;
+    }
+
+    .diff-line.deletion {
+      background: rgba(239, 68, 68, 0.08);
+      color: #ef4444;
+    }
+
+    .diff-line.neutral {
+      color: #a1a1aa;
+    }
+
+    /* Bottom strip */
+    .bottom-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #f1f1f1;
+    }
+
+    .tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: #a1a1aa;
+      letter-spacing: -0.01em;
+    }
+
+    .domain {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      color: #a1a1aa;
+    }
+  </style>
+</head>
+<body>
+  <div class="dot-grid"></div>
+  <div class="layout">
+
+    <!-- Top row: logo left, badge right -->
+    <div class="top-row">
+      <img class="logo" src="/public/logo.svg" alt="OwnYourCode AI" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <span style="display:none; font-family:'Inter',sans-serif; font-size:20px; font-weight:800; color:#18181b; letter-spacing:-0.03em;">OwnYourCode AI</span>
+      <span class="badge">OwnYourCode AI</span>
+    </div>
+
+    <!-- Middle: headline left, diff card right -->
+    <div class="middle">
+      <div class="left-content">
+        <h1 class="headline">Your codebase,<br>understood.</h1>
+        <p class="subline">Connect your GitHub repo. Ask questions about your code. Get AI reviews on every PR.</p>
+      </div>
+
+      <div class="diff-card">
+        <div class="diff-card-header">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <span class="file-path">src/auth/middleware.ts</span>
+        </div>
+        <div class="diff-body">
+          <span class="diff-line context"> import { NextRequest } from 'next/server'</span>
+          <span class="diff-line context"> import { verifyToken } from './jwt'</span>
+          <span class="diff-line neutral"> </span>
+          <span class="diff-line deletion">-  if (!token) return redirect('/login')</span>
+          <span class="diff-line deletion">-  const user = parseJWT(token)</span>
+          <span class="diff-line addition">+  const verified = await verifyToken(token)</span>
+          <span class="diff-line addition">+  if (!verified.ok) return unauthorized()</span>
+          <span class="diff-line neutral"> </span>
+          <span class="diff-line context">   return next()</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom strip -->
+    <div class="bottom-strip">
+      <span class="tagline">Your codebase, understood.</span>
+      <span class="domain">ownyourcode.app</span>
+    </div>
+
+  </div>
+</body>
+</html>

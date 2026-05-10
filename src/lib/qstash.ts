@@ -10,7 +10,7 @@
 
 import { Client } from "@upstash/qstash";
 
-const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "ownyourcode-internal";
 
 export const isDev = process.env.NODE_ENV !== "production";
 

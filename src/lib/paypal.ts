@@ -40,7 +40,7 @@ export async function createCheckoutSession(credits: number) {
           currency_code: "USD",
           value: amount,
         },
-        description: `${credits} Synthia Credits`,
+        description: `${credits} OwnYourCode Credits`,
         custom_id: userId.toString(),
       },
     ],

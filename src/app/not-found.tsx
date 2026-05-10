@@ -28,7 +28,7 @@ export default function NotFound() {
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <Logo width={40} height={40} />
-            <span className="text-[20px] font-bold tracking-tight text-slate-900">Synthia</span>
+            <span className="text-[20px] font-bold tracking-tight text-slate-900">OwnYourCode</span>
           </Link>
         </div>
 
@@ -95,7 +95,7 @@ export default function NotFound() {
       {/* Footer text */}
       <div className="absolute bottom-8 text-center w-full">
         <p className="text-[12px] text-slate-400 font-medium tracking-wide uppercase">
-          Synthia AI Intelligence Layer
+          OwnYourCode AI Intelligence Layer
         </p>
       </div>
     </main>

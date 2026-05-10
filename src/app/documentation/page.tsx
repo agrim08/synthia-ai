@@ -34,7 +34,7 @@ export default function Home() {
           <Logo width={64} height={76} className="mb-8" />
           <h1 className="mb-6 text-6xl font-bold">
             <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              Synthia AI
+              OwnYourCode AI
             </span>
           </h1>
           <p className="mx-auto max-w-3xl text-xl text-white/60">
@@ -62,7 +62,7 @@ export default function Home() {
               className="border-white/20 text-white hover:bg-white/10"
             >
               <a
-                href="https://github.com/agrim08/synthia-ai"
+                href="https://github.com/agrim08/ownyourcode-ai"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -306,7 +306,7 @@ export default function Home() {
             Ready to Transform Your Development Workflow?
           </h2>
           <p className="mx-auto mb-6 max-w-2xl text-white/60">
-            Join forward-thinking developers who are using Synthia AI to build
+            Join forward-thinking developers who are using OwnYourCode AI to build
             better software, faster.
           </p>
           <Link href={"/dashboard"}>

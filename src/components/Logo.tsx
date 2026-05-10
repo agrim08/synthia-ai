@@ -81,7 +81,7 @@ export const Logo: React.FC<LogoProps> = ({ className, width = 160, height = 190
         fill="#4f46e5"
         textAnchor="middle"
         letterSpacing="3.5"
-      >SYNTHIA</text>
+      >OWNYOURCODE</text>
 
       {/* Tiny "ai" suffix in lighter weight */}
       <text

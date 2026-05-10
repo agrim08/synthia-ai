@@ -328,7 +328,7 @@ export default function QandA() {
               Ask anything about your codebase
             </h2>
             <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
-              Synthia understands your entire repo — files, architecture, dependencies, and logic.
+              Our AI understands your entire repo — files, architecture, dependencies, and logic.
             </p>
 
             {/* Suggestion chips */}
@@ -562,7 +562,7 @@ export default function QandA() {
             </button>
           </div>
           <p className="text-center text-[11px] text-slate-400 mt-2">
-            Synthia answers from your connected codebase · <kbd className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono">↵</kbd> to send
+            Our AI answers from your connected codebase · <kbd className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono">↵</kbd> to send
           </p>
         </div>
       </div>

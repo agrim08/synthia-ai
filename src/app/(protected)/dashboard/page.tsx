@@ -5,7 +5,7 @@ import { Github, MoreHorizontal, Settings, FolderArchive } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import CommitLogs from "./CommitLogs";
-import AskSynthiaHero from "./AskSynthiaHero";
+import AskOwnYourCodeHero from "./AskOwnYourCodeHero";
 import AudioUploadBtn from "./AudioUploadBtn";
 import ArchiveProject from "./ArchiveProject";
 import InviteTeam from "./InviteTeam";
@@ -100,8 +100,8 @@ const DashboardPage = () => {
       {project?.id && <IndexingStatusBanner projectId={project.id} />}
 
       <div className="w-full mx-auto px-6 py-8 space-y-6">
-        {/* 2. Ask Synthia Hero */}
-        {/* <AskSynthiaHero /> */}
+        {/* 2. Ask OwnYourCode Hero */}
+        {/* <AskOwnYourCodeHero /> */}
 
         {/* 3. Activity Timeline */}
         <section className="space-y-8 pt-4">

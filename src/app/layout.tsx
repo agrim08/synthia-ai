@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Synthia",
+  title: "OwnYourCode",
   description: "Bringing Intelligence to Your Workflow.",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
 };

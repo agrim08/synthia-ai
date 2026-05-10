@@ -90,7 +90,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
       <DialogContent className="max-w-[680px] w-full rounded-2xl border border-slate-200/80 p-0 overflow-hidden bg-white gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Connect a repository</DialogTitle>
-          <DialogDescription>Link a GitHub repo to Synthia.</DialogDescription>
+          <DialogDescription>Link a GitHub repo to OwnYourCode.</DialogDescription>
         </DialogHeader>
 
         {/* ── Left accent strip + header (horizontal layout) ── */}
@@ -105,7 +105,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
 
             <img
               src="/vector.webp"
-              alt="Synthia Vector"
+              alt="OwnYourCode Vector"
               className="h-32 w-auto drop-shadow-2xl brightness-110 grayscale-[0.2] transition-all hover:scale-110 duration-500"
             />
           </div>
@@ -120,7 +120,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                   Connect a repository
                 </DialogTitle>
                 <DialogDescription className="text-[12px] text-slate-400">
-                  Synthia will index your codebase instantly.
+                  Our AI will index your codebase instantly.
                 </DialogDescription>
               </DialogHeader>
             </div>

@@ -11,7 +11,7 @@ import {
 } from "@/lib/githubRepoLoader";
 import { enqueueJob } from "@/lib/qstash";
 
-const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "synthia-internal";
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "ownyourcode-internal";
 const APP_URL =
   process.env.NEXTAUTH_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??

@@ -33,7 +33,7 @@ export default function Page() {
             <div className="bg-white/5 p-2 rounded-xl border border-white/10 group-hover:border-white/20 transition-colors">
               <Logo width={32} height={38} />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">Synthia</span>
+            <span className="text-xl font-bold text-white tracking-tight">OwnYourCode</span>
           </Link>
         </div>
 
@@ -72,7 +72,7 @@ export default function Page() {
         </div>
 
         <div className="relative z-10 flex items-center gap-6">
-          <p className="text-slate-500 text-xs font-medium">© 2026 Synthia AI Inc.</p>
+          <p className="text-slate-500 text-xs font-medium">© 2026 OwnYourCode AI Inc.</p>
           <div className="h-px flex-1 bg-white/5" />
           <div className="flex gap-4">
              <div className="size-2 rounded-full bg-white/10" />
@@ -88,7 +88,7 @@ export default function Page() {
              <div className="bg-slate-900 p-3 rounded-2xl mb-4 shadow-xl">
                <Logo width={40} height={48} />
              </div>
-             <h1 className="text-3xl font-bold text-slate-900 leading-none">Synthia</h1>
+             <h1 className="text-3xl font-bold text-slate-900 leading-none">OwnYourCode</h1>
              <p className="text-slate-500 mt-2">Create your free account</p>
           </div>
 

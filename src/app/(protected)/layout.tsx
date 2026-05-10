@@ -21,11 +21,11 @@ const SidebarLayout = async ({ children }: Props) => {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
-      <SidebarInset className="bg-[#f0f2f7]">
+      <SidebarInset className="bg-cream text-ink">
         <Header />
-        <div className="min-h-[calc(100vh-80px)]">
+        <main className="min-h-[calc(100vh-56px)] w-full">
           {children}
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
