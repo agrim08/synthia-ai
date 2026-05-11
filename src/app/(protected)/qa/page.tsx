@@ -126,6 +126,11 @@ export default function QandA() {
     setIsSheetOpen(false);
   };
 
+  // Reset chat when project changes
+  useEffect(() => {
+    startNewChat();
+  }, [projectId]);
+
   const loadChat = (id: string) => {
     setCurrentQuestionId(id);
     setIsSheetOpen(false);

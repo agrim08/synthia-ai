@@ -1,51 +1,33 @@
-<svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="tileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
-    </linearGradient>
-
-    <filter id="tileShadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#4f46e5" flood-opacity="0.4"/>
-    </filter>
-  </defs>
-
-  <!-- Rounded square tile -->
-  <rect x="16" y="8" width="128" height="128" rx="30" fill="url(#tileGrad)" filter="url(#tileShadow)"/>
-
-  <!-- Subtle border highlight -->
-  <rect x="16" y="8" width="128" height="128" rx="30"
-    fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
-
-  <!-- Top inner glow sheen -->
-  <ellipse cx="80" cy="22" rx="46" ry="14" fill="white" opacity="0.08"/>
-
-  <!-- Connection arc -->
-  <path
-    d="M 96 52 C 86 68, 74 60, 64 76"
+<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background to ensure visibility on all tab themes -->
+  <rect width="36" height="36" rx="8" fill="#0f172a" />
+  
+  <!-- Left chevron < -->
+  <polyline
+    points="20,8 8,18 20,28"
     fill="none"
     stroke="white"
-    stroke-width="6"
+    stroke-width="3.2"
     stroke-linecap="round"
-    opacity="0.85"
+    stroke-linejoin="round"
   />
 
-  <!-- Top-right node: Repo -->
-  <circle cx="96" cy="48" r="14" fill="none" stroke="white" stroke-width="5.5" opacity="0.95"/>
-  <circle cx="96" cy="48" r="5" fill="white"/>
-
-  <!-- Bottom-left node: AI -->
-  <circle cx="64" cy="80" r="14" fill="none" stroke="white" stroke-width="5.5" opacity="0.95"/>
-  <circle cx="64" cy="80" r="5" fill="white"/>
-
-  <!-- Third mini node -->
-  <circle cx="48" cy="50" r="7" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3.5"/>
-  <circle cx="48" cy="50" r="2.5" fill="rgba(255,255,255,0.6)"/>
-
-  <!-- Thin connector -->
-  <line x1="53" y1="55" x2="59" y2="75"
-    stroke="rgba(255,255,255,0.3)"
-    stroke-width="2.5"
+  <!-- Right chevron > -->
+  <polyline
+    points="14,12 26,18 14,24"
+    fill="none"
+    stroke="white"
+    stroke-width="3.2"
     stroke-linecap="round"
-    stroke-dasharray="3 3"/>
+    stroke-linejoin="round"
+  />
+
+  <!-- Coral ownership dot — right terminal -->
+  <circle cx="26" cy="18" r="3" fill="#c45c32" />
+
+  <!-- Coral center dot — ownership point -->
+  <circle cx="17.5" cy="18" r="2" fill="#c45c32" opacity="0.85" />
+
+  <!-- White left terminal dot -->
+  <circle cx="8" cy="18" r="2.2" fill="white" />
 </svg>
