@@ -57,7 +57,7 @@ function ProjectAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
 const MAIN_NAV = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Q&A", url: "/qa", icon: MessageSquare },
-  { title: "Meetings", url: "/meetings", icon: Video },
+  // { title: "Meetings", url: "/meetings", icon: Video },
 ];
 
 const BOTTOM_NAV = [

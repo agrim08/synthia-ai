@@ -7,17 +7,24 @@ import { cn } from "@/lib/utils";
 export type JobProgressTone = "indigo" | "sky" | "amber" | "red";
 
 const toneClasses: Record<JobProgressTone, string> = {
-  indigo: "border-indigo-200 bg-indigo-50",
-  sky: "border-sky-200 bg-sky-50",
-  amber: "border-amber-200 bg-amber-50",
-  red: "border-red-200 bg-red-50",
+  indigo: "border-ink/10 bg-white/70 shadow-soft text-ink",
+  sky: "border-sky/20 bg-sky/5 shadow-soft text-ink",
+  amber: "border-butter/30 bg-butter/5 shadow-soft text-ink",
+  red: "border-coral-soft/30 bg-coral-soft/5 shadow-soft text-ink",
 };
 
 const barTone: Record<JobProgressTone, string> = {
-  indigo: "bg-indigo-500",
-  sky: "bg-sky-500",
-  amber: "bg-amber-400",
-  red: "bg-red-400",
+  indigo: "bg-ink",
+  sky: "bg-sky",
+  amber: "bg-coral",
+  red: "bg-coral",
+};
+
+const accentText: Record<JobProgressTone, string> = {
+  indigo: "text-coral",
+  sky: "text-sky",
+  amber: "text-coral",
+  red: "text-coral",
 };
 
 type IconMode = "spinner-indigo" | "spinner-sky" | "warn" | "error" | "success";
@@ -25,15 +32,35 @@ type IconMode = "spinner-indigo" | "spinner-sky" | "warn" | "error" | "success";
 function StatusIcon({ mode }: { mode: IconMode }) {
   switch (mode) {
     case "spinner-sky":
-      return <Loader2 className="size-5 animate-spin text-sky-600" />;
+      return (
+        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-sky/15 text-sky border border-sky/10">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      );
     case "warn":
-      return <AlertCircle className="size-5 text-amber-500" />;
+      return (
+        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-butter/40 text-coral border border-butter/50 animate-pulse-soft">
+          <AlertCircle className="size-5" />
+        </div>
+      );
     case "error":
-      return <AlertCircle className="size-5 text-red-500" />;
+      return (
+        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-coral-soft/30 text-coral border border-coral-soft/40 animate-float" style={{ animationDuration: '4s' }}>
+          <AlertCircle className="size-5" />
+        </div>
+      );
     case "success":
-      return <CheckCircle2 className="size-5 text-emerald-500" />;
+      return (
+        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-sage/20 text-sage border border-sage/30">
+          <CheckCircle2 className="size-5" />
+        </div>
+      );
     default:
-      return <Loader2 className="size-5 animate-spin text-indigo-600" />;
+      return (
+        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-ink/5 text-ink border border-ink/10">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      );
   }
 }
 
@@ -76,25 +103,31 @@ export function JobProgressBanner({
   return (
     <div
       className={cn(
-        "mx-6 mt-4 rounded-xl border px-5 py-4 transition-all",
+        "mx-6 mt-5 rounded-2xl border px-6 py-5 transition-all duration-300 hover-lift hover:shadow-pop-sm hover:border-ink/20 animate-fade-up",
         toneClasses[tone],
       )}
     >
-      <div className="flex items-start gap-4">
-        <div className="mt-0.5 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="shrink-0 flex items-center gap-3">
           <StatusIcon mode={iconMode} />
+          <div className="sm:hidden">
+            <h4 className="text-sm font-bold text-ink leading-tight">{title}</h4>
+            <p className="mt-0.5 text-xs text-ink-soft leading-snug">{description}</p>
+          </div>
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-800">{title}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+          <div className="hidden sm:block">
+            <h4 className="text-sm font-bold text-ink leading-tight">{title}</h4>
+            <p className="mt-0.5 text-xs text-ink-soft leading-snug">{description}</p>
+          </div>
 
           {(indeterminate || (showCounts && total > 0)) && (
             <div className="mt-3">
-              <div className="flex justify-between text-[10px] font-medium text-slate-400 mb-1">
+              <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wider text-ink-soft mb-1.5">
                 <span className="flex items-center gap-1">
-                  <Zap className="size-3" />
-                  {indeterminate ? "In progress" : `${safePct}% complete`}
+                  <Zap className={cn("size-3 animate-pulse-soft", accentText[tone])} />
+                  {indeterminate ? "Processing" : `${safePct}% ready`}
                 </span>
                 {showCounts && !indeterminate && (
                   <span>
@@ -102,18 +135,19 @@ export function JobProgressBanner({
                   </span>
                 )}
               </div>
-              <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-ink/5 overflow-hidden border border-ink/5">
                 {indeterminate ? (
                   <div
                     className={cn(
-                      "h-full w-full rounded-full opacity-80 animate-pulse",
+                      "h-full w-full rounded-full opacity-80 animate-shimmer bg-gradient-to-r from-transparent via-coral-soft/50 to-transparent",
                       barTone[tone],
                     )}
+                    style={{ backgroundSize: '200% 100%' }}
                   />
                 ) : (
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all duration-700",
+                      "h-full rounded-full transition-all duration-700 ease-out",
                       barTone[tone],
                     )}
                     style={{ width: `${safePct}%` }}
@@ -127,15 +161,14 @@ export function JobProgressBanner({
         {showResume && onResume && (
           <Button
             size="sm"
-            variant="outline"
-            className="shrink-0 gap-1.5 text-xs border-slate-300 hover:border-indigo-400 hover:text-indigo-700"
+            className="shrink-0 gap-1.5 text-xs font-semibold rounded-full bg-ink text-cream border border-ink shadow-pop-sm hover:shadow-pop hover:-translate-y-0.5 transition-all"
             onClick={onResume}
             disabled={resumePending}
           >
             {resumePending ? (
-              <Loader2 className="size-3 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="size-3" />
+              <RefreshCw className="size-3.5" />
             )}
             Resume
           </Button>
@@ -144,3 +177,4 @@ export function JobProgressBanner({
     </div>
   );
 }
+

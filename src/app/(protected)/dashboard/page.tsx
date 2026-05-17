@@ -1,7 +1,15 @@
 "use client";
 
 import useProject from "@/hooks/useProject";
-import { Github, MoreHorizontal, Settings, FolderArchive } from "lucide-react";
+import {
+  Github,
+  MoreHorizontal,
+  Settings,
+  FolderArchive,
+  Activity,
+  GitBranch,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import CommitLogs from "./CommitLogs";
@@ -23,96 +31,127 @@ import DashboardSkeleton from "./DashboardSkeleton";
 
 const DashboardPage = () => {
   const { project, isLoading } = useProject();
-  
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
-  
-  return (
-    <div className="max-w-5xl mx-auto space-y-10">
-      {/* 1. Slim Sticky Context Bar (56px) */}
-      <div className="sticky top-20 z-40 bg-[#f0f2f7]/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 flex items-center justify-between h-14">
-        <div className="flex items-center gap-4">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm transition-all hover:bg-indigo-700 hover:text-white">
-            <Github className="size-4" />
-          </div>
-          <div className="flex items-center gap-2">
-            {project ? (
-              <Link
-                href={project.githubUrl}
-                target="_blank"
-                className="text-xs font-medium text-slate-400 hover:text-indigo-700 transition-colors truncate max-w-[150px]"
-              >
-                {project.githubUrl.split("/").pop()}
-              </Link>
-            ) : (
-              <span className="text-xs font-medium text-slate-300">No project selected</span>
-            )}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 mr-2">
-            <TeamMembers />
-            <AudioUploadBtn />
+  return (
+    <div className="relative min-h-screen bg-cream text-ink">
+      {/* Decorative ambient blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-coral-soft/40 blur-3xl animate-blob" />
+        <div
+          className="absolute top-40 -right-32 h-96 w-96 rounded-full bg-sky/30 blur-3xl animate-blob"
+          style={{ animationDelay: "3s" }}
+        />
+        <div
+          className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-butter/40 blur-3xl animate-blob"
+          style={{ animationDelay: "6s" }}
+        />
+      </div>
+
+      {/* 1. Sticky Context Bar */}
+      <div className="sticky top-0 z-40 backdrop-blur-xl bg-cream/75 border-b border-ink/10">
+        <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-ink-soft/70 font-medium">
+                Repository
+              </p>
+              {project ? (
+                <Link
+                  href={project.githubUrl}
+                  target="_blank"
+                  className="text-sm font-semibold truncate underline-grow"
+                >
+                  {project.githubUrl.split("/").pop()}
+                </Link>
+              ) : (
+                <span className="text-sm text-ink-soft">No project selected</span>
+              )}
+            </div>
           </div>
-          <div className="h-4 w-px bg-slate-200" />
+
           <div className="flex items-center gap-2">
-            <InviteTeam />
+            <div className="hidden sm:flex items-center gap-2">
+              {/* <AudioUploadBtn /> */}
+              <InviteTeam />
+            </div>
+            <TeamMembers />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  disabled={!project}
-                  variant="ghost" 
-                  size="icon" 
-                  className="size-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full hover:text-ink hover:bg-stone-100 transition-all hover:rotate-90 duration-300"
                 >
-                  <Settings className="size-4" />
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-xl border-slate-200 shadow-xl p-1">
-                <DropdownMenuItem className="rounded-lg gap-2 text-slate-600 focus:text-indigo-700 focus:bg-indigo-50 cursor-pointer py-2">
-                  <Settings className="size-4" />
-                  <span className="font-semibold text-xs">Project Settings</span>
+              <DropdownMenuContent
+                align="end"
+                className="bg-cream border-ink/10 rounded-xl shadow-md w-52 mt-5"
+              >
+                <DropdownMenuItem className="rounded-lg cursor-pointer hover:text-black/80">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Project Settings
                 </DropdownMenuItem>
-                <div className="h-px bg-slate-100 my-1 mx-1" />
-                <DropdownMenuItem 
-                  className="rounded-lg gap-2 text-red-500 focus:text-red-700 focus:bg-red-50 cursor-pointer py-2"
+                <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
-                    document.getElementById('archive-trigger')?.click();
+                    document.getElementById("archive-trigger")?.click();
                   }}
+                  className="rounded-lg cursor-pointer text-coral focus:text-coral focus:bg-coral-soft/30"
                 >
-                  <FolderArchive className="size-4" />
-                  <span className="font-semibold text-xs">Archive Project</span>
+                  <FolderArchive className="mr-2 h-4 w-4" />
+                  Archive Project
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {/* Hidden actual archive component to reuse its logic */}
+
             <div className="hidden">
-               <ArchiveProject id="archive-trigger" />
+              <ArchiveProject />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Indexing status banner — polls until COMPLETED */}
+      {/* Indexing status banner */}
       {project?.id && <IndexingStatusBanner projectId={project.id} />}
 
-      <div className="w-full mx-auto px-6 py-8 space-y-6">
-        {/* 2. Ask OwnYourCode Hero */}
+      <div className="relative mx-auto max-w-6xl px-6 py-10 space-y-10">
+        {/* Hero (kept commented as in original) */}
         {/* <AskOwnYourCodeHero /> */}
 
-        {/* 3. Activity Timeline */}
-        <section className="space-y-8 pt-4">
-          <div className="flex items-center justify-between px-1">
-             <div className="flex items-center gap-3">
-                <div className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">Commits History</h2>
-             </div>
+        {/* Activity Timeline */}
+        <section className="animate-fade-up">
+          <div className="flex items-end justify-between mb-6">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-soft/70 font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-coral animate-pulse-soft" />
+                Live activity
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl text-ink leading-[1.05]">
+                Commits <span className="marker-highlight">history</span>
+              </h2>
+              <p className="text-ink-soft text-sm max-w-md">
+                Skim what changed without opening the diff.
+              </p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-xs text-ink-soft bg-white/60 backdrop-blur border border-ink/10 rounded-full px-3 py-1.5 shadow-soft">
+              <GitBranch className="h-3.5 w-3.5" />
+              main
+            </div>
           </div>
-          <div className="max-w-full">
-             <CommitLogs />
+
+          <div className="relative rounded-3xl border border-ink/10 bg-white/70 backdrop-blur-sm shadow-soft p-6 md:p-8 hover-lift transition-all">
+            <div className="absolute -top-3 left-6 inline-flex items-center gap-1.5 bg-ink text-cream text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full shadow-pop-sm">
+              <Activity className="h-3 w-3" />
+              Timeline
+            </div>
+            <CommitLogs />
           </div>
         </section>
       </div>
