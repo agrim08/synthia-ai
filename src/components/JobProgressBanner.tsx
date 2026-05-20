@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export type JobProgressTone = "indigo" | "sky" | "amber" | "red";
 
 const toneClasses: Record<JobProgressTone, string> = {
-  indigo: "border-ink/10 bg-white/70 shadow-soft text-ink",
+  indigo: "border-ink/10 bg-card shadow-soft text-ink",
   sky: "border-sky/20 bg-sky/5 shadow-soft text-ink",
   amber: "border-butter/30 bg-butter/5 shadow-soft text-ink",
   red: "border-coral-soft/30 bg-coral-soft/5 shadow-soft text-ink",

@@ -39,7 +39,7 @@ export function Hero() {
         {/* Pill */}
         <a
           href="#features"
-          className="group inline-flex animate-fade-up items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-3 py-1.5 text-xs font-semibold text-ink shadow-soft backdrop-blur-md transition-transform hover:-translate-y-0.5"
+          className="group inline-flex animate-fade-up items-center gap-2 rounded-full border border-ink/10 bg-card/70 px-3 py-1.5 text-xs font-semibold text-ink shadow-soft backdrop-blur-md transition-transform hover:-translate-y-0.5"
         >
           <span className="grid h-5 w-5 place-items-center rounded-full bg-coral text-white">
             <Sparkles className="h-3 w-3" />
@@ -101,7 +101,7 @@ export function Hero() {
             href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-white px-6 py-3.5 text-[15px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-ink/40"
+            className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-card px-6 py-3.5 text-[15px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-ink/40"
           >
             <span className="font-display text-lg leading-none">▶</span>
             Watch the 60s demo
@@ -138,14 +138,14 @@ export function Hero() {
         >
           <div className="relative">
             {/* Floating sticker decorations */}
-            <div className="pointer-events-none absolute -left-10 -top-8 hidden -rotate-12 animate-float rounded-2xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold shadow-pop-sm md:block">
+            <div className="pointer-events-none absolute -left-10 -top-8 hidden -rotate-12 animate-float rounded-2xl border border-ink/10 bg-card px-3 py-2 text-xs font-semibold shadow-pop-sm md:block">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-sage" />
                 Indexing 14,302 files
               </span>
             </div>
             <div
-              className="pointer-events-none absolute -right-8 top-12 hidden rotate-6 animate-float rounded-2xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold shadow-pop-sm md:block"
+              className="pointer-events-none absolute -right-8 top-12 hidden rotate-6 animate-float rounded-2xl border border-ink/10 bg-card px-3 py-2 text-xs font-semibold shadow-pop-sm md:block"
               style={{ animationDelay: "-3s" }}
             >
               <span className="flex items-center gap-1.5 text-ink">
@@ -155,7 +155,7 @@ export function Hero() {
             </div>
 
             {/* Browser chrome */}
-            <div className="rounded-3xl border border-ink/10 bg-white p-2 shadow-pop">
+            <div className="rounded-3xl border border-ink/10 bg-card p-2 shadow-pop">
               <div className="flex items-center gap-2 border-b border-ink/5 px-3 py-2">
                 <div className="flex gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-coral/80" />
@@ -218,7 +218,7 @@ export function Hero() {
                       "group inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-300",
                       i === active
                         ? "border-ink bg-ink text-cream shadow-pop-sm"
-                        : "border-ink/10 bg-white text-ink-soft hover:-translate-y-0.5 hover:border-ink/30 hover:text-ink",
+                        : "border-ink/10 bg-card text-ink-soft hover:-translate-y-0.5 hover:border-ink/30 hover:text-ink",
                     ].join(" ")}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -248,7 +248,7 @@ function MockScreen({
   return (
     <div className="grid h-full grid-cols-12 gap-3 p-4">
       {/* Sidebar */}
-      <aside className="col-span-3 hidden flex-col gap-2 rounded-xl bg-white p-3 md:flex">
+      <aside className="col-span-3 hidden flex-col gap-2 rounded-xl bg-card p-3 md:flex">
         <div className="flex items-center gap-2">
           <span className="grid h-6 w-6 place-items-center rounded-lg bg-ink text-[10px] font-bold text-cream">
             O
@@ -271,7 +271,7 @@ function MockScreen({
       </aside>
 
       {/* Main panel */}
-      <main className="col-span-12 flex flex-col gap-3 rounded-xl bg-white p-4 md:col-span-9">
+      <main className="col-span-12 flex flex-col gap-3 rounded-xl bg-card p-4 md:col-span-9">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={`grid h-9 w-9 place-items-center rounded-xl ${accent} text-ink`}>

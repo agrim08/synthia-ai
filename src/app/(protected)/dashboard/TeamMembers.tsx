@@ -27,7 +27,7 @@ const TeamMembers = () => {
           />
         ))}
       </div>
-      <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
+      <span className="text-[11px] font-bold text-ink-soft whitespace-nowrap">
         {members?.length || 0} {members?.length === 1 ? 'member' : 'members'}
       </span>
     </div>

@@ -96,41 +96,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
         </DialogHeader>
 
         {/* ── Left accent strip + header (horizontal layout) ── */}
-        <div className="flex min-h-[460px]">
-
-          {/* Left panel — desktop mesh gradient bg */}
-          {/* <div className="relative hidden w-[220px] shrink-0 flex-col justify-between p-6 sm:flex overflow-hidden bg-ink select-none border-r border-ink/15"> */}
-            {/* Animated Ambient Glowing Spots */}
-            {/* <div className="absolute inset-0 z-0 pointer-events-none">
-              <div className="absolute top-[-20%] right-[-20%] w-[150px] h-[150px] rounded-full bg-coral/25 blur-[45px] animate-pulse-soft" />
-              <div className="absolute bottom-[-20%] left-[-20%] w-[150px] h-[150px] rounded-full bg-sky/25 blur-[45px] animate-pulse-soft" />
-              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
-            </div> */}
-
-            {/* Logo and Brand */}
-            {/* <div className="relative z-10 flex flex-col items-center gap-2 mt-2">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/10 shadow-inner">
-                <Logo width={28} height={28} className="text-white" />
-              </div>
-              <span className="text-[12px] font-bold text-white tracking-widest uppercase opacity-90">OwnYourCode</span>
-            </div> */}
-
-            {/* Centered Graphic */}
-            {/* <div className="relative z-10 my-auto flex flex-col items-center justify-center">
-              <img
-                src="/vector.webp"
-                alt="OwnYourCode Logo"
-                className="h-28 w-auto drop-shadow-2xl brightness-110 grayscale-[0.2] transition-all hover:scale-105 duration-500 animate-float"
-              />
-            </div> */}
-
-            {/* Bottom Caption */}
-            {/* <div className="relative z-10 text-center">
-              <p className="text-[10px] text-cream/40 uppercase tracking-widest font-bold">Secure Indexing</p>
-            </div> */}
-          {/* </div> */}
-
-          {/* Right panel — form */}
+        <div className="flex">
           <div className="flex flex-1 flex-col bg-cream">
 
             {/* Desktop Header */}
@@ -165,7 +131,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                     {...register("projectName", { required: true })}
                     placeholder="Project Name"
                     required
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-white focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
+                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
                   />
                 </div>
 
@@ -177,7 +143,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                     placeholder="https://github.com/owner/repo"
                     required
                     type="url"
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-white focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
+                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
                   />
                 </div>
 
@@ -187,34 +153,26 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                   <Input
                     {...register("githubToken")}
                     placeholder="GitHub Token (optional — for private repos)"
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-white focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
+                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
                   />
                 </div>
 
                 {/* Exclude UI toggle */}
-                <div className="flex items-center space-x-3 pt-2.5 border-t border-ink/5 mt-2">
-                  <input
-                    id="skipUi"
-                    type="checkbox"
-                    {...register("skipUiComponents")}
-                    className="h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer"
-                  />
-                  <label htmlFor="skipUi" className="text-[12px] font-bold text-ink-soft cursor-pointer flex items-center gap-1.5 hover:text-ink transition-colors select-none">
-                    Exclude UI Components (Lowers credit cost)                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex items-center text-ink-soft/60 hover:text-ink p-0.5 cursor-help transition-colors">
-                            <Info className="size-3.5" />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[260px] bg-ink text-cream border border-ink/20 rounded-xl p-3 shadow-pop-sm text-xs leading-normal">
-                          <p className="font-semibold text-[11px] text-coral uppercase tracking-wider mb-1">About Exclude Feature</p>
-                          Filters out layout components, icons, visual elements, and assets. Recommended to focus indexing on core application logic and lower cost.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </label>
+                <div className="flex flex-col space-y-1 pt-2.5 border-t border-ink/5 mt-2">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      id="skipUi"
+                      type="checkbox"
+                      {...register("skipUiComponents")}
+                      className="h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer"
+                    />
+                    <label htmlFor="skipUi" className="text-[12px] font-bold text-ink-soft cursor-pointer flex items-center gap-1.5 hover:text-ink transition-colors select-none">
+                      Exclude UI Components (Lowers credit cost)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-ink-soft/60 pl-7 leading-normal">
+                    Filters out layout components, icons, visual elements, and assets. Recommended to focus indexing on core application logic.
+                  </p>
                 </div>
               </div>
 
@@ -313,6 +271,23 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           </div>
         </div>
       </DialogContent>
+      {createProject.isPending && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-cream/70 backdrop-blur-xl transition-all animate-in fade-in duration-500">
+          <div className="flex flex-col items-center text-center gap-6 animate-pulse-soft">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-24 w-24 rounded-full bg-coral/30 blur-2xl animate-spin-slow"></div>
+              <div className="absolute h-16 w-16 rounded-full border-2 border-dashed border-coral animate-spin" style={{ animationDuration: '3s' }}></div>
+              <div className="h-12 w-12 rounded-full bg-cream border border-ink/10 flex items-center justify-center shadow-soft relative z-10">
+                <Sparkles className="h-5 w-5 text-coral" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-ink tracking-tight">Initializing Intelligence Engine</h2>
+              <p className="text-sm font-medium text-ink-soft">Preparing vector embeddings for your repository...</p>
+            </div>
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 };

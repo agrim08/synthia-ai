@@ -71,28 +71,28 @@ export default function BillingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-cream text-ink">
-      {/* Decorative background blobs */}
+      {/* Decorative background blobs — lower opacity for dark-mode comfort */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-coral-soft/50 blur-3xl animate-blob"
+        className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-coral-soft/30 blur-3xl animate-blob"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-40 right-0 h-96 w-96 rounded-full bg-sky/40 blur-3xl animate-blob"
+        className="pointer-events-none absolute top-40 right-0 h-96 w-96 rounded-full bg-sky/30 blur-3xl animate-blob"
         style={{ animationDelay: "-5s" }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-butter/50 blur-3xl animate-blob"
+        className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-butter/30 blur-3xl animate-blob"
         style={{ animationDelay: "-9s" }}
       />
 
       <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-24">
         {/* ── Page Header ── */}
         <header className="animate-fade-up text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-pop-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink shadow-pop-sm">
             <Sparkles className="h-3 w-3 text-coral" />
-            Billing & Credits
+            Billing &amp; Credits
           </span>
           <h1 className="mt-5 text-balance text-5xl font-semibold tracking-tight text-ink md:text-6xl">
             Fuel your{" "}
@@ -115,7 +115,7 @@ export default function BillingPage() {
             return (
               <div
                 key={stat.label}
-                className="hover-lift group relative overflow-hidden rounded-3xl border border-ink/10 bg-white p-6 shadow-pop-sm transition-all hover:shadow-pop"
+                className="hover-lift group relative overflow-hidden rounded-3xl border border-ink/10 bg-card p-6 shadow-pop-sm transition-all hover:shadow-pop"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
@@ -140,12 +140,12 @@ export default function BillingPage() {
 
         {/* ── Purchase Card ── */}
         <section
-          className="relative mt-10 overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-pop animate-fade-up"
+          className="relative mt-10 overflow-hidden rounded-[2rem] border border-ink/10 bg-card shadow-pop animate-fade-up"
           style={{ animationDelay: "160ms" }}
         >
           {/* Sticker */}
-          <span className="absolute -right-3 top-6 hidden rotate-6 rounded-full bg-coral px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-pop-sm md:block">
-            <Star className="mr-1 inline h-3 w-3 fill-white" />
+          <span className="absolute -right-3 top-6 hidden rotate-6 rounded-full bg-coral px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cream shadow-pop-sm ring-2 ring-coral/30 md:block">
+            <Star className="mr-1 inline h-3 w-3 fill-cream" />
             Best value
           </span>
 
@@ -157,7 +157,7 @@ export default function BillingPage() {
                 Choose how many credits to purchase.
               </p>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1.5 text-xs font-semibold text-ink-soft">
               <Zap className="h-3 w-3 text-coral" />
               Standard rate · ₹1.00 / credit
             </span>
@@ -180,8 +180,8 @@ export default function BillingPage() {
                       className={[
                         "group rounded-2xl border px-4 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:-translate-y-0.5",
                         active
-                          ? "border-ink bg-ink text-cream shadow-pop-sm"
-                          : "border-ink/10 bg-cream-deep/40 text-ink hover:border-ink/30 hover:bg-white hover:shadow-pop-sm",
+                          ? "border-coral bg-coral text-cream shadow-pop-sm"
+                          : "border-ink/10 bg-cream-deep/30 text-ink hover:border-ink/20 hover:shadow-pop-sm",
                       ].join(" ")}
                     >
                       {preset}
@@ -215,7 +215,7 @@ export default function BillingPage() {
                 min={10}
                 max={1000}
                 step={10}
-                className="[&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-track]]:bg-ink/10 [&_[data-slot=slider-range]]:bg-coral [&_[data-slot=slider-thumb]]:h-5 [&_[data-slot=slider-thumb]]:w-5 [&_[data-slot=slider-thumb]]:border-ink [&_[data-slot=slider-thumb]]:bg-cream"
+                className="[&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-track]]:bg-ink/10 [&_[data-slot=slider-range]]:bg-coral [&_[data-slot=slider-thumb]]:h-5 [&_[data-slot=slider-thumb]]:w-5 [&_[data-slot=slider-thumb]]:border-coral [&_[data-slot=slider-thumb]]:bg-cream"
               />
               <div className="mt-2 flex justify-between text-[11px] font-medium text-ink-soft">
                 <span>10</span>
@@ -248,7 +248,7 @@ export default function BillingPage() {
                   return (
                     <div
                       key={item.label}
-                      className="hover-lift rounded-xl border border-ink/10 bg-white px-4 py-3 shadow-pop-sm"
+                      className="hover-lift rounded-xl border border-ink/10 bg-card px-4 py-3 shadow-pop-sm"
                     >
                       <Icon className="mb-2 h-4 w-4 text-coral" />
                       <p className="font-display text-2xl text-ink">
@@ -277,7 +277,7 @@ export default function BillingPage() {
               <button
                 type="button"
                 onClick={() => createCheckoutSession(creditsToBuyAmount)}
-                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-coral px-7 text-sm font-bold text-white shadow-pop-sm transition-all hover:-translate-y-0.5 hover:bg-coral/90 hover:shadow-pop active:translate-y-0"
+                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-coral px-7 text-sm font-bold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:bg-coral/90 hover:shadow-pop active:translate-y-0"
               >
                 Purchase Credits
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -315,7 +315,7 @@ export default function BillingPage() {
             return (
               <div
                 key={item.title}
-                className="hover-lift rounded-3xl border border-ink/10 bg-white p-6 shadow-pop-sm transition-all hover:shadow-pop"
+                className="hover-lift rounded-3xl border border-ink/10 bg-card p-6 shadow-pop-sm transition-all hover:shadow-pop"
               >
                 <span
                   className={`inline-grid h-11 w-11 place-items-center rounded-2xl ${item.accent} text-ink`}

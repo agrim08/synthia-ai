@@ -5,7 +5,7 @@ export function Bento() {
     <section id="features" className="px-6 py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             <Sparkles className="h-3 w-3 text-coral" />
             Features
           </span>
@@ -21,7 +21,7 @@ export function Bento() {
 
         <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-6 md:grid-rows-2">
           {/* Big card — chat */}
-          <div className="group relative col-span-1 row-span-1 overflow-hidden rounded-3xl border border-ink/10 bg-white p-6 shadow-pop-sm md:col-span-4 md:row-span-2 md:p-8">
+          <div className="group relative col-span-1 row-span-1 overflow-hidden rounded-3xl border border-ink/10 bg-card p-6 shadow-pop-sm md:col-span-4 md:row-span-2 md:p-8">
             <div className="relative z-10">
               <div className="flex items-center gap-2">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-cream">
@@ -69,7 +69,7 @@ export function Bento() {
 
           {/* Auto docs */}
           <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-ink/10 bg-sky/30 p-6 shadow-pop-sm md:col-span-2">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-ink shadow-pop-sm">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-ink shadow-pop-sm">
               <FileText className="h-4 w-4" />
             </span>
             <h3 className="mt-4 text-xl font-semibold text-ink">Auto Documentation</h3>
@@ -78,7 +78,7 @@ export function Bento() {
               {["Markdown", "Notion", "Confluence", "HTML"].map((fmt) => (
                 <span
                   key={fmt}
-                  className="rounded-full border border-ink/10 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-ink"
+                  className="rounded-full border border-ink/10 bg-card/80 px-2.5 py-1 text-[11px] font-semibold text-ink"
                 >
                   {fmt}
                 </span>
@@ -88,12 +88,12 @@ export function Bento() {
 
           {/* Secure */}
           <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-ink/10 bg-sage/30 p-6 shadow-pop-sm md:col-span-2">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-ink shadow-pop-sm">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-ink shadow-pop-sm">
               <ShieldCheck className="h-4 w-4" />
             </span>
             <h3 className="mt-4 text-xl font-semibold text-ink">Enterprise Secure</h3>
             <p className="mt-1 text-sm text-ink-soft">SOC 2 · End-to-end encrypted.</p>
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink">
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] font-semibold text-ink">
               SOC 2 Type II ✓
             </div>
           </div>
@@ -103,7 +103,7 @@ export function Bento() {
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="group relative overflow-hidden rounded-3xl border border-ink/10 bg-butter/40 p-6 shadow-pop-sm">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-ink shadow-pop-sm">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-ink shadow-pop-sm">
                 <BarChart3 className="h-4 w-4" />
               </span>
               <h3 className="text-xl font-semibold text-ink">Code Analytics</h3>
@@ -124,7 +124,7 @@ export function Bento() {
 
           <div className="group relative overflow-hidden rounded-3xl border border-ink/10 bg-coral-soft/50 p-6 shadow-pop-sm">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-ink shadow-pop-sm">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-ink shadow-pop-sm">
                 <MessagesSquare className="h-4 w-4" />
               </span>
               <h3 className="text-xl font-semibold text-ink">Chat Your Repo</h3>
@@ -136,7 +136,7 @@ export function Bento() {
               {["Explain this", "Find bugs", "Write tests", "Summarize PR"].map((q) => (
                 <span
                   key={q}
-                  className="cursor-pointer rounded-full border border-ink/15 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink transition-transform hover:-translate-y-0.5"
+                  className="cursor-pointer rounded-full border border-ink/15 bg-card px-2.5 py-1 text-[11px] font-semibold text-ink transition-transform hover:-translate-y-0.5"
                 >
                   {q}
                 </span>

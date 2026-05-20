@@ -40,7 +40,7 @@ const CommitLogs = () => {
               </div>
 
               {/* Card */}
-              <div className="flex-1 group relative rounded-2xl border border-ink/10 bg-white/80 backdrop-blur-sm p-5 hover-lift hover:border-ink/20 hover:shadow-lg transition-all">
+              <div className="flex-1 group relative rounded-2xl border border-ink/10 bg-card/80 backdrop-blur-sm p-5 hover-lift hover:border-ink/20 hover:shadow-lg transition-all">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-2">
                   <span className="text-sm font-semibold text-ink">
                     {commit.commitAuthorName}
@@ -92,7 +92,7 @@ const CommitLogs = () => {
 
       {/* Empty state */}
       {(!commits || commits.length === 0) && (
-        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-2xl border border-dashed border-ink/15 bg-white/50">
+        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-2xl border border-dashed border-ink/15 bg-card/50">
           <div className="h-14 w-14 rounded-2xl bg-ink text-cream grid place-items-center shadow-lg mb-4 animate-float">
             <Inbox className="h-6 w-6" />
           </div>

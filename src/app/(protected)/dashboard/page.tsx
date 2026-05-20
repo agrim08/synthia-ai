@@ -40,13 +40,13 @@ const DashboardPage = () => {
     <div className="relative min-h-screen bg-cream text-ink">
       {/* Decorative ambient blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-coral-soft/40 blur-3xl animate-blob" />
+        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-coral-soft/20 blur-3xl animate-blob" />
         <div
-          className="absolute top-40 -right-32 h-96 w-96 rounded-full bg-sky/30 blur-3xl animate-blob"
+          className="absolute top-40 -right-32 h-96 w-96 rounded-full bg-sky/15 blur-3xl animate-blob"
           style={{ animationDelay: "3s" }}
         />
         <div
-          className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-butter/40 blur-3xl animate-blob"
+          className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-butter/20 blur-3xl animate-blob"
           style={{ animationDelay: "6s" }}
         />
       </div>
@@ -85,7 +85,7 @@ const DashboardPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:text-ink hover:bg-stone-100 transition-all hover:rotate-90 duration-300"
+                  className="rounded-full hover:text-ink hover:bg-cream-deep transition-all hover:rotate-90 duration-300"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -94,7 +94,7 @@ const DashboardPage = () => {
                 align="end"
                 className="bg-cream border-ink/10 rounded-xl shadow-md w-52 mt-5"
               >
-                <DropdownMenuItem className="rounded-lg cursor-pointer hover:text-black/80">
+                <DropdownMenuItem className="rounded-lg cursor-pointer hover:text-ink">
                   <Settings className="mr-2 h-4 w-4" />
                   Project Settings
                 </DropdownMenuItem>
@@ -122,8 +122,8 @@ const DashboardPage = () => {
       {project?.id && <IndexingStatusBanner projectId={project.id} />}
 
       <div className="relative mx-auto max-w-6xl px-6 py-10 space-y-10">
-        {/* Hero (kept commented as in original) */}
-        {/* <AskOwnYourCodeHero /> */}
+        {/* Hero */}
+        <AskOwnYourCodeHero />
 
         {/* Activity Timeline */}
         <section className="animate-fade-up">
@@ -140,13 +140,13 @@ const DashboardPage = () => {
                 Skim what changed without opening the diff.
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 text-xs text-ink-soft bg-white/60 backdrop-blur border border-ink/10 rounded-full px-3 py-1.5 shadow-soft">
+            <div className="hidden md:flex items-center gap-2 text-xs text-ink-soft bg-card/60 backdrop-blur border border-ink/10 rounded-full px-3 py-1.5 shadow-soft">
               <GitBranch className="h-3.5 w-3.5" />
               main
             </div>
           </div>
 
-          <div className="relative rounded-3xl border border-ink/10 bg-white/70 backdrop-blur-sm shadow-soft p-6 md:p-8 hover-lift transition-all">
+          <div className="relative rounded-3xl border border-ink/10 bg-card/70 backdrop-blur-sm shadow-soft p-6 md:p-8 hover-lift transition-all">
             <div className="absolute -top-3 left-6 inline-flex items-center gap-1.5 bg-ink text-cream text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full shadow-pop-sm">
               <Activity className="h-3 w-3" />
               Timeline

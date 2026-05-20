@@ -17,7 +17,6 @@ import {
   Plus, 
   Home, 
   MessageSquare, 
-  Video,
   CreditCard
 } from "lucide-react";
 import Link from "next/link";
@@ -30,7 +29,7 @@ const PROJECT_COLORS = [
   { bg: "bg-sky/20", text: "text-sky" },
   { bg: "bg-sage/20", text: "text-sage" },
   { bg: "bg-butter/20", text: "text-butter" },
-  { bg: "bg-white/10", text: "text-cream" },
+  { bg: "bg-sidebar-foreground/10", text: "text-sidebar-foreground" },
 ];
 
 function getProjectColor(name: string) {
@@ -57,7 +56,6 @@ function ProjectAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
 const MAIN_NAV = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Q&A", url: "/qa", icon: MessageSquare },
-  // { title: "Meetings", url: "/meetings", icon: Video },
 ];
 
 const BOTTOM_NAV = [
@@ -76,12 +74,12 @@ export const AppSidebar = () => {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-ink/10 bg-ink text-cream"
+      className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
     >
       {/* Header */}
       <SidebarHeader
         className={cn(
-          "h-14 border-b border-white/10",
+          "h-14 border-b border-sidebar-border",
           open ? "px-4" : "items-center justify-center px-0"
         )}
       >
@@ -93,11 +91,11 @@ export const AppSidebar = () => {
           )}
         >
           {/* Logo container */}
-          <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-cream transition-colors group-hover:bg-white/20">
+          <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground transition-colors group-hover:bg-sidebar-foreground/20">
              <Logo width={18} height={18} />
           </div>
           {open && (
-            <span className="text-sm font-semibold tracking-tight text-white">
+            <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
               OwnYourCode
             </span>
           )}
@@ -121,8 +119,8 @@ export const AppSidebar = () => {
                     "flex items-center rounded-lg transition-all duration-150 group",
                     open ? "gap-3 px-3 py-2" : "size-10 justify-center",
                     isActive
-                      ? "bg-white/10 text-white font-medium shadow-pop-sm"
-                      : "text-cream/60 hover:bg-white/5 hover:text-white"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-pop-sm"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
                   <item.icon className={cn("shrink-0", open ? "size-4" : "size-5")} />
@@ -136,14 +134,14 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <div className="my-2 px-3">
-          <div className="h-px w-full bg-white/10" />
+          <div className="h-px w-full bg-sidebar-border" />
         </div>
 
         {/* Projects Section */}
         <SidebarGroup>
           {open && (
             <div className="mb-2 flex items-center justify-between px-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-cream/40">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
                 Projects
               </p>
             </div>
@@ -164,8 +162,8 @@ export const AppSidebar = () => {
                       ? "gap-3 px-3 py-1.5"
                       : "size-10 justify-center",
                     isActive
-                      ? "bg-white/5 text-white font-medium"
-                      : "text-cream/60 hover:bg-white/5 hover:text-white"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
                   {isActive && !open && (
@@ -192,7 +190,7 @@ export const AppSidebar = () => {
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="border-t border-white/10 p-3">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         {/* Bottom Nav Links */}
         <div className={cn("mb-3 space-y-0.5", !open && "flex flex-col items-center gap-1")}>
           {BOTTOM_NAV.map((item) => (
@@ -204,8 +202,8 @@ export const AppSidebar = () => {
                 "flex items-center rounded-lg transition-colors group",
                 open ? "gap-3 px-3 py-2" : "size-10 justify-center",
                 pathname === item.url
-                  ? "bg-white/10 text-white font-medium"
-                  : "text-cream/60 hover:bg-white/5 hover:text-white"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <item.icon className={cn("shrink-0", open ? "size-4" : "size-5")} />
@@ -219,7 +217,7 @@ export const AppSidebar = () => {
           <Button
             variant="ghost"
             className={cn(
-              "w-full rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all shadow-pop-sm border border-white/5",
+              "w-full rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20 transition-all shadow-pop-sm border border-sidebar-border",
               !open ? "size-10 p-0" : "h-9 px-3"
             )}
             size={!open ? "icon" : "default"}

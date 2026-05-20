@@ -30,7 +30,7 @@ export function Faq() {
     <section id="faq" className="px-6 py-28">
       <div className="mx-auto max-w-3xl">
         <div className="text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             FAQ
           </span>
           <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
@@ -45,7 +45,7 @@ export function Faq() {
                 key={i}
                 className={[
                   "overflow-hidden rounded-2xl border transition-all",
-                  isOpen ? "border-ink bg-white shadow-pop-sm" : "border-ink/10 bg-white/60",
+                  isOpen ? "border-ink bg-card shadow-pop-sm" : "border-ink/10 bg-card/60",
                 ].join(" ")}
               >
                 <button

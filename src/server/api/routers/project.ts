@@ -447,6 +447,31 @@ export const projectRouter = createTRPCRouter({
       });
     }),
 
+  getAllQuestions: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Find all projects user has access to
+      const links = await ctx.db.userToProject.findMany({
+        where: { userId: ctx.user.userId! },
+        select: { projectId: true, project: { select: { name: true } } },
+      });
+      
+      const projectIds = links.map(l => l.projectId);
+      const projectMap = links.reduce((acc, curr) => {
+        acc[curr.projectId] = curr.project.name;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const questions = await ctx.db.question.findMany({
+        where: { projectId: { in: projectIds } },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return questions.map(q => ({
+        ...q,
+        projectName: projectMap[q.projectId] || "Unknown Project"
+      }));
+    }),
+
   uploadMeeting: protectedProcedure
     .input(
       z.object({

@@ -34,7 +34,7 @@ export function Pricing() {
     <section id="pricing" className="px-6 py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             <CreditCard className="h-3 w-3 text-coral" />
             Pricing
           </span>
@@ -54,7 +54,7 @@ export function Pricing() {
                 "hover-lift relative flex flex-col rounded-3xl border p-7 transition-all",
                 t.popular
                   ? "border-ink bg-ink text-cream shadow-pop"
-                  : "border-ink/10 bg-white text-ink shadow-pop-sm hover:shadow-pop",
+                  : "border-ink/10 bg-card text-ink shadow-pop-sm hover:shadow-pop",
               ].join(" ")}
             >
               {t.popular && (

@@ -32,7 +32,7 @@ export function Testimonials() {
     <section className="px-6 py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             <Star className="h-3 w-3 fill-coral text-coral" />
             Loved by builders
           </span>
@@ -46,7 +46,7 @@ export function Testimonials() {
           {testimonials.map((t, i) => (
             <figure
               key={t.name}
-              className="hover-lift relative rounded-3xl border border-ink/10 bg-white p-6 shadow-pop-sm hover:shadow-pop"
+              className="hover-lift relative rounded-3xl border border-ink/10 bg-card p-6 shadow-pop-sm hover:shadow-pop"
               style={{ transform: `rotate(${i % 2 === 0 ? "-1" : "1"}deg)` }}
             >
               <div className="flex gap-0.5">

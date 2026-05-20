@@ -108,10 +108,10 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
       </DialogTrigger>
       <DialogContent className="max-w-md rounded-[32px] border-none p-8 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">
-            Sync Meeting Audio
+          <DialogTitle className="text-2xl font-black text-ink tracking-tight">
+            Upload Meeting Audio
           </DialogTitle>
-          <p className="text-sm text-slate-500 font-medium">
+          <p className="text-sm text-ink-soft font-medium">
             Upload voice recordings for analysis.
           </p>
         </DialogHeader>
@@ -119,8 +119,8 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
         <div
           {...getRootProps()}
           className={cn(
-            "mt-6 flex flex-col items-center justify-center border-2 border-dashed rounded-[24px] bg-slate-50 p-10 transition-all cursor-pointer",
-            isDragActive ? "border-indigo-400 bg-indigo-50/50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-100/50",
+            "mt-6 flex flex-col items-center justify-center border-2 border-dashed rounded-[24px] bg-card p-10 transition-all cursor-pointer",
+            isDragActive ? "border-coral bg-coral/10" : "border-ink/10 hover:border-ink/20 hover:bg-cream-deep/50",
             isUploading && "pointer-events-none opacity-50 cursor-wait"
           )}
         >
@@ -128,11 +128,11 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
           
           {!isUploading ? (
             <>
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-slate-400 mb-4 group-hover:text-indigo-600 transition-colors">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-card shadow-sm border border-ink/8 text-ink-soft/70 mb-4 group-hover:text-coral transition-colors">
                 <AudioLines className="size-7" />
               </div>
-              <p className="text-sm font-bold text-slate-700">Drop your file here</p>
-              <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">Supported: .mp3, .wav, .m4a</p>
+              <p className="text-sm font-bold text-ink">Drop your file here</p>
+              <p className="text-xs text-ink-soft/70 mt-1 uppercase tracking-widest font-black">Supported: .mp3, .wav, .m4a</p>
             </>
           ) : (
             <div className="flex flex-col items-center">
@@ -148,7 +148,7 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
                   })}
                 />
               </div>
-              <p className="text-sm font-bold text-slate-900">Uploading...</p>
+              <p className="text-sm font-bold text-ink">Uploading...</p>
             </div>
           )}
         </div>

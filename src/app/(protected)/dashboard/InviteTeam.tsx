@@ -42,7 +42,7 @@ const InviteTeam = ({ children }: { children?: React.ReactNode }) => {
           onClick={() => setOpen(true)}
           size="sm"
           disabled={!projectId}
-          className="group relative bg-black hover:bg-black/80 text-cream rounded-full px-4 h-9"
+          className="group relative bg-ink hover:bg-ink-soft text-cream rounded-full px-4 h-9"
         >
           <span className="font-medium">Invite Members</span>
         </Button>
@@ -63,7 +63,7 @@ const InviteTeam = ({ children }: { children?: React.ReactNode }) => {
         <div className="relative p-7">
           <DialogHeader className="space-y-3 text-left">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft shadow-soft">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-card/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft shadow-soft">
                 <Sparkles className="size-3 text-coral" />
                 Collaboration
               </span>
@@ -83,7 +83,7 @@ const InviteTeam = ({ children }: { children?: React.ReactNode }) => {
               Invite link
             </label>
 
-            <div className="group relative flex items-center gap-2 rounded-2xl border border-ink/10 bg-white p-1.5 pl-3 shadow-soft transition-all duration-300 focus-within:border-coral/60 focus-within:shadow-pop-sm hover:shadow-pop-sm">
+            <div className="group relative flex items-center gap-2 rounded-2xl border border-ink/10 bg-card p-1.5 pl-3 shadow-soft transition-all duration-300 focus-within:border-coral/60 focus-within:shadow-pop-sm hover:shadow-pop-sm">
               <Input
                 readOnly
                 onClick={handleCopy}

@@ -4,7 +4,7 @@ export default function DashboardSkeleton() {
   return (
     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-500">
       {/* 1. Context Bar Skeleton */}
-      <div className="sticky top-20 z-40 bg-[#f0f2f7]/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 flex items-center justify-between h-14">
+      <div className="sticky top-20 z-40 bg-card/80 backdrop-blur-md border-b border-ink/10 px-6 py-3 flex items-center justify-between h-14">
         <div className="flex items-center gap-4">
           <Skeleton className="size-8 rounded-lg" />
           <Skeleton className="h-4 w-[150px]" />
@@ -14,7 +14,7 @@ export default function DashboardSkeleton() {
              <Skeleton className="h-8 w-8 rounded-full" />
              <Skeleton className="h-8 w-32 rounded-lg" />
           </div>
-          <div className="h-4 w-px bg-slate-200" />
+          <div className="h-4 w-px bg-ink/10" />
           <div className="flex items-center gap-2">
             <Skeleton className="h-8 w-32 rounded-lg" />
             <Skeleton className="size-8 rounded-lg" />
@@ -34,7 +34,7 @@ export default function DashboardSkeleton() {
           
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-white/50">
+              <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-ink/8 bg-card/50">
                 <Skeleton className="size-10 rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-1/4" />

@@ -79,10 +79,10 @@ const MeetingCard = () => {
     <div
       {...getRootProps()}
       className={cn(
-        "relative flex flex-col items-center justify-center rounded-xl border bg-white px-8 py-10 text-center transition-colors duration-150 cursor-pointer select-none",
+        "relative flex flex-col items-center justify-center rounded-xl border bg-card px-8 py-10 text-center transition-colors duration-150 cursor-pointer select-none",
         isDragActive
-          ? "border-indigo-300 bg-indigo-50/40"
-          : "border-slate-200 border-dashed hover:border-indigo-300 hover:bg-slate-50/60",
+          ? "border-coral/40 bg-coral/10"
+          : "border-ink/10 border-dashed hover:border-coral/40 hover:bg-cream-deep/30",
         (isUploading || !project) && "pointer-events-none opacity-50 cursor-not-allowed"
       )}
     >
@@ -94,18 +94,18 @@ const MeetingCard = () => {
           <div className={cn(
             "flex size-10 items-center justify-center rounded-lg border transition-colors duration-150",
             isDragActive
-              ? "border-indigo-200 bg-indigo-50 text-indigo-500"
-              : "border-slate-100 bg-slate-50 text-slate-400"
+              ? "border-coral/20 bg-coral/10 text-coral"
+              : "border-ink/8 bg-cream-deep/30 text-ink-soft/70"
           )}>
             <AudioLines className="size-4" />
           </div>
 
           {/* Text */}
           <div className="space-y-1">
-            <p className="text-[14px] font-medium text-slate-800">
+            <p className="text-[14px] font-medium text-ink">
               {project ? (isDragActive ? "Drop to upload" : "Upload a recording") : "No project selected"}
             </p>
-            <p className="text-[12px] text-slate-400">
+            <p className="text-[12px] text-ink-soft/70">
               {project ? "MP3, WAV or M4A · max 50 MB" : "Link a project first to upload meetings"}
             </p>
           </div>
@@ -113,7 +113,7 @@ const MeetingCard = () => {
           {/* CTA */}
           <Button
             size="sm"
-            className="mt-1 h-8 rounded-md bg-indigo-600 px-4 text-[13px] font-medium text-white shadow-none hover:bg-indigo-700 transition-colors"
+            className="mt-1 h-8 rounded-md bg-coral px-4 text-[13px] font-medium text-white shadow-none hover:bg-coral-soft transition-colors"
             asChild
             disabled={!project}
           >
@@ -139,8 +139,8 @@ const MeetingCard = () => {
             />
           </div>
           <div className="space-y-0.5">
-            <p className="text-[14px] font-medium text-slate-800">Uploading…</p>
-            <p className="text-[12px] text-slate-400">Do not close this tab</p>
+            <p className="text-[14px] font-medium text-ink">Uploading…</p>
+            <p className="text-[12px] text-ink-soft/70">Do not close this tab</p>
           </div>
         </div>
       )}

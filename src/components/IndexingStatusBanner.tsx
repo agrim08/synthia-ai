@@ -87,13 +87,21 @@ export default function IndexingStatusBanner({ projectId }: Props) {
       setSyncWatch(false);
       toast.success("Repository synced with the latest GitHub changes.");
     } else if (prev === "INDEXING" && curr === "PARTIAL") {
-      toast.warning("Indexing paused due to rate limits. Use 'Resume' to continue.");
+      toast.warning("Indexing paused due to rate limits.", {
+        action: { label: "Resume", onClick: () => retrigger.mutate({ projectId }) }
+      });
     } else if (prev === "SYNCING" && curr === "PARTIAL") {
-      toast.warning("Sync paused (time or rate limit). Resuming automatically…");
+      toast.warning("Sync paused (time or rate limit).", {
+        action: { label: "Resume", onClick: () => retrigger.mutate({ projectId }) }
+      });
     } else if (prev === "INDEXING" && curr === "FAILED") {
-      toast.error("Indexing failed. Check the error below.");
+      toast.error("Indexing failed. Check the error below.", {
+        action: { label: "Retry", onClick: () => retrigger.mutate({ projectId }) }
+      });
     } else if (prev === "SYNCING" && curr === "FAILED") {
-      toast.error("Sync failed. Check the error below.");
+      toast.error("Sync failed. Check the error below.", {
+        action: { label: "Retry", onClick: () => retrigger.mutate({ projectId }) }
+      });
     }
     prevStatus.current = curr;
   }, [data]);

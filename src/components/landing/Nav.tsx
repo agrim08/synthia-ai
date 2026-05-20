@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Github } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -53,6 +54,7 @@ export function Nav() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <a
             href="https://github.com/agrim08/ownyourcode-ai"
             target="_blank"

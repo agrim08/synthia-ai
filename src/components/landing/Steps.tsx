@@ -29,7 +29,7 @@ export function Steps() {
     <section id="how-it-works" className="relative px-6 py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             <span className="h-1.5 w-1.5 rounded-full bg-coral" />
             How it works
           </span>
@@ -44,7 +44,7 @@ export function Steps() {
             return (
               <div
                 key={i}
-                className={`group hover-lift relative rounded-3xl border border-ink/10 bg-white p-6 shadow-pop-sm hover:shadow-pop`}
+                className={`group hover-lift relative rounded-3xl border border-ink/10 bg-card p-6 shadow-pop-sm hover:shadow-pop`}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <span

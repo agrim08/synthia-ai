@@ -13,6 +13,8 @@ import { usePathname } from "next/navigation";
 import AudioUploadBtn from "./dashboard/AudioUploadBtn";
 import InviteTeam from "./dashboard/InviteTeam";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export default function Header() {
   const { project, projects, setProjectId } = useProject();
@@ -23,7 +25,6 @@ export default function Header() {
   const navItems = [
     { title: "Dashboard", url: "/dashboard" },
     { title: "Q&A", url: "/qa" },
-    { title: "Meetings", url: "/meetings" },
     { title: "Billing", url: "/billing" },
   ];
 
@@ -36,19 +37,7 @@ export default function Header() {
 
         {/* Center: Global Search Bar */}
         <div className="hidden flex-1 items-center justify-center px-6 md:flex">
-          <div className="relative w-full max-w-md group">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft group-focus-within:text-ink transition-colors" />
-            <input
-              type="text"
-              placeholder="Search projects, chats, prompts..."
-              className="h-9 w-full rounded-full border border-ink/15 bg-white pl-9 pr-12 text-sm text-ink placeholder:text-ink-soft/70 focus:border-ink/30 focus:outline-none focus:ring-2 focus:ring-ink/10 transition-all shadow-md"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <kbd className="hidden rounded bg-cream-deep px-1.5 py-0.5 text-[10px] font-medium text-ink-soft sm:inline-block border border-ink/10">
-                ⌘K
-              </kbd>
-            </div>
-          </div>
+          <GlobalSearch />
         </div>
 
         {/* Right side icons & buttons */}
@@ -69,10 +58,11 @@ export default function Header() {
             <Bell className="h-4 w-4" />
             <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-coral"></span>
           </Button>
+          <ThemeToggle />
           
           <div className="h-4 w-px bg-ink/10 hidden sm:block mx-1" />
 
-          <Link href="/qa" className="hidden sm:flex items-center gap-1.5 rounded-full bg-black hover:bg-black/80 px-4 py-1.5 text-xs font-semibold text-cream shadow-pop-sm transition-all">
+          <Link href="/qa" className="hidden sm:flex items-center gap-1.5 rounded-full bg-ink hover:bg-ink-soft px-4 py-1.5 text-xs font-semibold text-cream shadow-pop-sm transition-all">
             <Plus className="h-3.5 w-3.5" />
             New Chat
           </Link>
