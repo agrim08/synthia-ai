@@ -1,321 +1,1084 @@
 "use client";
 
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { motion } from "motion/react";
-import {
-  Github,
-  Mic,
-  CreditCard,
-  Zap,
-  ChevronRight,
-  ExternalLink,
-  Brain,
-  Code,
-  Rocket as RocketLaunch,
-  ChevronLeft,
-} from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search,
+  Copy,
+  Check,
+  ChevronRight,
+  ArrowRight,
+  Github,
+  ExternalLink,
+  Menu,
+  X,
+  Play,
+  Cpu,
+  Brain,
+  Code,
+  Mic,
+  CreditCard,
+  Circle,
+} from "lucide-react";
 
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface NavItem {
+  id: string;
+  label: string;
+  group: string;
+  icon: React.ComponentType<{ className?: string }>;
+  sections: { id: string; label: string }[];
+}
+
+// ─── Navigation structure ─────────────────────────────────────────────────
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    id: "getting-started",
+    label: "Getting Started",
+    group: "Introduction",
+    icon: Play,
+    sections: [
+      { id: "overview", label: "Overview" },
+      { id: "connect-repo", label: "Connect a Repository" },
+      { id: "first-index", label: "Your First Index" },
+      { id: "local-setup", label: "Local Development" },
+    ],
+  },
+  {
+    id: "code-indexing",
+    label: "Codebase Indexing",
+    group: "Core Concepts",
+    icon: Cpu,
+    sections: [
+      { id: "how-it-works", label: "How It Works" },
+      { id: "chunking", label: "File Chunking" },
+      { id: "embeddings", label: "Vector Embeddings" },
+      { id: "incremental", label: "Incremental Sync" },
+    ],
+  },
+  {
+    id: "codebase-qa",
+    label: "Codebase Q&A",
+    group: "Features",
+    icon: Brain,
+    sections: [
+      { id: "rag-overview", label: "RAG Pipeline" },
+      { id: "asking-questions", label: "Asking Questions" },
+      { id: "file-references", label: "File References" },
+      { id: "conversation-history", label: "Conversation History" },
+    ],
+  },
+  {
+    id: "commit-intelligence",
+    label: "Commit Intelligence",
+    group: "Features",
+    icon: Code,
+    sections: [
+      { id: "commit-summaries", label: "AI Summaries" },
+      { id: "webhooks", label: "GitHub Webhooks" },
+      { id: "author-analytics", label: "Author Analytics" },
+    ],
+  },
+  {
+    id: "meetings",
+    label: "Meeting Synthesis",
+    group: "Features",
+    icon: Mic,
+    sections: [
+      { id: "upload", label: "Uploading Recordings" },
+      { id: "transcription", label: "Transcription" },
+      { id: "issue-extraction", label: "Issue Extraction" },
+    ],
+  },
+  {
+    id: "billing",
+    label: "Billing & Credits",
+    group: "Account",
+    icon: CreditCard,
+    sections: [
+      { id: "credit-model", label: "Credit Model" },
+      { id: "pricing", label: "Pricing" },
+      { id: "top-up", label: "Topping Up" },
+    ],
+  },
+];
+
+// ─── Content map ──────────────────────────────────────────────────────────
+
+const PAGE_CONTENT: Record<string, React.ReactNode> = {
+  "getting-started": <GettingStartedPage />,
+  "code-indexing": <CodeIndexingPage />,
+  "codebase-qa": <CodebaseQAPage />,
+  "commit-intelligence": <CommitIntelPage />,
+  meetings: <MeetingsPage />,
+  billing: <BillingPage />,
 };
 
-export default function Home() {
+// ─── Root Component ───────────────────────────────────────────────────────
+
+export default function DocumentationPage() {
+  const [activeId, setActiveId] = useState("getting-started");
+  const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeSectionId, setActiveSectionId] = useState("");
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const activeItem = NAV_ITEMS.find((n) => n.id === activeId)!;
+
+  // Filter nav based on search
+  const filtered =
+    search.trim() === ""
+      ? NAV_ITEMS
+      : NAV_ITEMS.filter(
+          (n) =>
+            n.label.toLowerCase().includes(search.toLowerCase()) ||
+            n.group.toLowerCase().includes(search.toLowerCase()) ||
+            n.sections.some((s) =>
+              s.label.toLowerCase().includes(search.toLowerCase())
+            )
+        );
+
+  // Group filtered items
+  const groups = Array.from(new Set(filtered.map((n) => n.group)));
+
+  // Scroll to top of content on page change
+  const handleNav = useCallback(
+    (id: string) => {
+      setActiveId(id);
+      setSidebarOpen(false);
+      setActiveSectionId("");
+      if (contentRef.current) {
+        contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    []
+  );
+
+  // Intersection observer for in-page TOC
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const headings = el.querySelectorAll("h2[id], h3[id]");
+    if (!headings.length) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((e) => e.isIntersecting);
+        if (visible) setActiveSectionId(visible.target.id);
+      },
+      { root: el, rootMargin: "0px 0px -60% 0px", threshold: 0 }
+    );
+    headings.forEach((h) => obs.observe(h));
+    return () => obs.disconnect();
+  }, [activeId]);
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <motion.div {...fadeIn} className="container mx-auto px-4 py-20">
-        <div className="flex flex-col items-center mb-16 text-center">
-          <Logo width={64} height={64} className="mb-8" />
-          <h1 className="mb-6 text-6xl font-bold">
-            <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              OwnYourCode AI
+    <div className="flex h-screen flex-col overflow-hidden bg-[#0a0a0a] text-zinc-100">
+      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 px-4 lg:px-6">
+        <div className="flex items-center gap-4">
+          {/* Mobile menu trigger */}
+          <button
+            className="lg:hidden text-zinc-400 hover:text-white"
+            onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-white text-zinc-950 shadow transition-transform group-hover:-rotate-6">
+              <Logo width={18} height={18} />
             </span>
-          </h1>
-          <p className="mx-auto max-w-3xl text-xl text-white/60">
-            Your intelligent companion for GitHub repository analysis, code
-            understanding, and meeting summarization. Built for developers who
-            value efficiency and precision.
-          </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <Link href={"/"}>
-              <Button
-                className="border-white/20 text-white hover:bg-white/10"
-                variant={"outline"}
-              >
-                <ChevronLeft className="ml-2 h-4 w-4" /> Back to home
-              </Button>
-            </Link>
-            <Link href={"/dashboard"}>
-              <Button className="bg-white text-black hover:bg-white/90">
-                Get Started <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Button
-              asChild
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <a
-                href="https://github.com/agrim08/ownyourcode-ai"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on GitHub <Github className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-          </div>
+            <span className="text-sm font-semibold text-white">OwnYourCode</span>
+            <span className="hidden text-zinc-600 sm:inline">/</span>
+            <span className="hidden text-sm text-zinc-400 sm:inline">docs</span>
+          </Link>
         </div>
 
-        {/* Key Metrics */}
-        <div className="mb-20 grid grid-cols-1 gap-6 md:grid-cols-4">
-          {[
-            { title: "Time Saved", value: "70%", desc: "in code review" },
-            { title: "Projects Analyzed", value: "500+", desc: "and counting" },
-            { title: "Meeting Hours", value: "1000+", desc: "summarized" },
-            {
-              title: "Developer Hours",
-              value: "200+",
-              desc: "saved per month",
-            },
-          ].map((metric, i) => (
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/agrim08/ownyourcode-ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden text-zinc-500 transition-colors hover:text-white sm:block"
+            aria-label="GitHub"
+          >
+            <Github className="h-4 w-4" />
+          </a>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-950 transition-opacity hover:opacity-90"
+          >
+            Dashboard <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </header>
+
+      {/* ── Body: sidebar + content + toc ────────────────────────────── */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* ── Left sidebar ──────────────────────────────────────────────── */}
+        {/* Mobile overlay */}
+        <AnimatePresence>
+          {sidebarOpen && (
             <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 * i }}
-              className="rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
-            >
-              <p className="mb-2 text-3xl font-bold text-white">
-                {metric.value}
-              </p>
-              <p className="mb-1 text-lg font-medium text-white/80">
-                {metric.title}
-              </p>
-              <p className="text-sm text-white/60">{metric.desc}</p>
-            </motion.div>
-          ))}
-        </div>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 z-20 bg-black/60 lg:hidden"
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Features Deep Dive */}
-        <motion.section {...fadeIn} className="mb-20">
-          <h2 className="mb-12 text-center text-4xl font-bold">
-            Features Deep Dive
-          </h2>
-
-          <div className="space-y-20">
-            {/* GitHub Analysis */}
-            <Card className="border-white/10 bg-white/5 p-8">
-              <div className="grid gap-8 md:grid-cols-2">
-                <div>
-                  <div className="mb-4 flex items-center">
-                    <Github className="mr-3 h-8 w-8 text-white" />
-                    <h3 className="text-2xl font-bold">
-                      AI-Powered GitHub Analysis
-                    </h3>
-                  </div>
-                  <div className="space-y-4 text-white/80">
-                    <p className="text-lg">
-                      Instantly understand complex codebases through AI-driven
-                      insights:
-                    </p>
-                    <ul className="list-disc space-y-2 pl-5">
-                      <li>Comprehensive summaries of last 15 commits</li>
-                      <li>
-                        File-by-file analysis with contextual understanding
-                      </li>
-                      <li>Development workflow pattern identification</li>
-                      <li>70% reduction in code review time</li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="relative aspect-video overflow-hidden rounded-lg bg-white/10">
-                  <Image
-                    src="/github-docs.png"
-                    alt="GitHub Analysis Demo"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* RAG Pipeline */}
-            <Card className="border-white/10 bg-white/5 p-8">
-              <div className="grid gap-8 md:grid-cols-2">
-                <div className="relative order-2 aspect-video overflow-hidden rounded-lg bg-white/10 md:order-1">
-                  <Image
-                    src="/rag-docs-2nd.png"
-                    alt="RAG Pipeline Demo"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="order-1 md:order-2">
-                  <div className="mb-4 flex items-center">
-                    <Brain className="mr-3 h-8 w-8 text-white" />
-                    <h3 className="text-2xl font-bold">
-                      Codebase Q&A with RAG Pipeline
-                    </h3>
-                  </div>
-                  <div className="space-y-4 text-white/80">
-                    <p className="text-lg">
-                      Hallucination-free answers powered by LangChain.js +
-                      Gemini API:
-                    </p>
-                    <ul className="list-disc space-y-2 pl-5">
-                      <li>Precise code snippet references</li>
-                      <li>Maintained conversation history</li>
-                      <li>Context-aware responses</li>
-                      <li>Integration with existing documentation</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Meeting Intelligence */}
-            <Card className="border-white/10 bg-white/5 p-8">
-              <div className="grid gap-8 md:grid-cols-2">
-                <div>
-                  <div className="mb-4 flex items-center">
-                    <Mic className="mr-3 h-8 w-8 text-white" />
-                    <h3 className="text-2xl font-bold">Meeting Intelligence</h3>
-                  </div>
-                  <div className="space-y-4 text-white/80">
-                    <p className="text-lg">
-                      Transform meetings into actionable insights:
-                    </p>
-                    <ul className="list-disc space-y-2 pl-5">
-                      <li>5 key takeaways per meeting</li>
-                      <li>Assigned action items with owner tracking</li>
-                      <li>Word-level timestamp searching</li>
-                      <li>Automated follow-up generation</li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="relative aspect-video overflow-hidden rounded-lg bg-white/10">
-                  <Image
-                    src="/meeting-analytics.png"
-                    alt="Meeting Intelligence Demo"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-            </Card>
-          </div>
-        </motion.section>
-
-        {/* Tech Stack & Pricing */}
-        <motion.section {...fadeIn} className="mb-20 grid gap-8 md:grid-cols-2">
-          <Card className="border-white/10 bg-white/5 p-8">
-            <h3 className="mb-6 flex items-center text-2xl font-bold">
-              <Code className="mr-2 h-6 w-6" />
-              Technology Stack
-            </h3>
-            <div className="space-y-6">
-              {[
-                { tech: "T3 Stack", desc: "Type-safe full-stack framework" },
-                { tech: "Clerk", desc: "Pre-built auth components" },
-                { tech: "Neon DB", desc: "Serverless PostgreSQL" },
-                { tech: "Langchain.js", desc: "Modular RAG pipeline" },
-                { tech: "Firebase", desc: "Scalable storage solution" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start space-x-3">
-                  <Zap className="mt-1 h-5 w-5 text-white/60" />
-                  <div>
-                    <p className="font-medium">{item.tech}</p>
-                    <p className="text-sm text-white/60">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
+        <aside
+          className={[
+            "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-zinc-800/60 bg-[#0a0a0a] pt-14 transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:pt-0",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          ].join(" ")}
+        >
+          {/* Search */}
+          <div className="shrink-0 border-b border-zinc-800/60 px-4 py-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-600" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search docs…"
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-8 pr-3 text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-zinc-600"
+              />
             </div>
-          </Card>
+          </div>
 
-          <Card className="border-white/10 bg-white/5 p-8">
-            <h3 className="mb-6 flex items-center text-2xl font-bold">
-              <CreditCard className="mr-2 h-6 w-6" />
-              Transparent Pricing
-            </h3>
-            <div className="space-y-6">
-              <div className="rounded-lg bg-white/10 p-4">
-                <p className="mb-2 text-xl font-semibold">1 Credit = ₹1</p>
-                <p className="text-white/60">Simple, straightforward pricing</p>
-              </div>
-              <div className="space-y-3">
-                <p className="font-medium">What you get:</p>
-                <ul className="space-y-2 text-white/80">
-                  <li className="flex items-center">
-                    <span className="mr-2 h-1.5 w-1.5 rounded-full bg-white/60"></span>
-                    1 credit per file analyzed
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2 h-1.5 w-1.5 rounded-full bg-white/60"></span>
-                    Unlimited project storage
-                  </li>
+          {/* Nav tree */}
+          <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Documentation navigation">
+            {filtered.length === 0 && (
+              <p className="px-2 text-xs text-zinc-600">No results</p>
+            )}
+            {groups.map((group) => (
+              <div key={group} className="mb-5">
+                <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                  {group}
+                </p>
+                <ul className="space-y-0.5">
+                  {filtered
+                    .filter((n) => n.group === group)
+                    .map((item) => {
+                      const isActive = item.id === activeId;
+                      return (
+                        <li key={item.id}>
+                          <button
+                            onClick={() => handleNav(item.id)}
+                            className={[
+                              "relative w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors",
+                              isActive
+                                ? "bg-zinc-800/70 font-medium text-white"
+                                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200",
+                            ].join(" ")}
+                          >
+                            {isActive && (
+                              <motion.span
+                                layoutId="activeNavBar"
+                                className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-white"
+                                transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                              />
+                            )}
+                            <span className="ml-1">{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
                 </ul>
               </div>
-            </div>
-          </Card>
-        </motion.section>
-
-        {/* Future Roadmap */}
-        <motion.section {...fadeIn} className="mb-20">
-          <h2 className="mb-8 text-center text-3xl font-bold">
-            Future Roadmap
-          </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                quarter: "Q2 2025",
-                feature: "Team Knowledge Base",
-                desc: "AI-powered insights from chat history",
-              },
-              {
-                quarter: "Q3 2025",
-                feature: "RFC Generator",
-                desc: "Automated technical documentation from meetings",
-              },
-              {
-                quarter: "Q4 2025",
-                feature: "Job Assistant",
-                desc: "AI powered resume building and mock interview platform",
-              },
-            ].map((item, i) => (
-              <Card key={i} className="border-white/10 bg-white/5 p-6">
-                <p className="mb-2 text-white/60">{item.quarter}</p>
-                <h3 className="mb-2 text-xl font-bold">{item.feature}</h3>
-                <p className="text-white/80">{item.desc}</p>
-              </Card>
             ))}
-          </div>
-        </motion.section>
+          </nav>
 
-        {/* Call to Action */}
-        <motion.div
-          {...fadeIn}
-          className="rounded-lg bg-gradient-to-b from-white/10 to-white/5 p-12 text-center"
+          {/* Footer links in sidebar */}
+          <div className="shrink-0 border-t border-zinc-800/60 px-4 py-3">
+            <a
+              href="https://github.com/agrim08/ownyourcode-ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+            >
+              <Github className="h-3.5 w-3.5" /> View on GitHub
+              <ExternalLink className="ml-auto h-3 w-3" />
+            </a>
+          </div>
+        </aside>
+
+        {/* ── Main content area ──────────────────────────────────────────── */}
+        <main
+          ref={contentRef}
+          className="flex-1 overflow-y-auto"
         >
-          <h2 className="mb-4 text-3xl font-bold">
-            Ready to Transform Your Development Workflow?
-          </h2>
-          <p className="mx-auto mb-6 max-w-2xl text-white/60">
-            Join forward-thinking developers who are using OwnYourCode AI to build
-            better software, faster.
-          </p>
-          <Link href={"/dashboard"}>
-            <Button className="bg-white text-black hover:bg-white/90">
-              Get Started Now <ExternalLink className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </motion.div>
-      </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeId}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="mx-auto max-w-3xl px-6 py-12 lg:px-12"
+            >
+              {/* Breadcrumb */}
+              <nav className="mb-8 flex items-center gap-1.5 text-xs text-zinc-600">
+                <span>Docs</span>
+                <ChevronRight className="h-3 w-3" />
+                <span className="text-zinc-400">{activeItem.group}</span>
+                <ChevronRight className="h-3 w-3" />
+                <span className="text-zinc-300">{activeItem.label}</span>
+              </nav>
+
+              {PAGE_CONTENT[activeId]}
+
+              {/* Next / Prev */}
+              <div className="mt-16 flex gap-4 border-t border-zinc-800/60 pt-8">
+                {NAV_ITEMS.findIndex((n) => n.id === activeId) > 0 && (
+                  <button
+                    onClick={() =>
+                      handleNav(
+                        NAV_ITEMS[
+                          NAV_ITEMS.findIndex((n) => n.id === activeId) - 1
+                        ]!.id
+                      )
+                    }
+                    className="flex flex-col gap-1 rounded-lg border border-zinc-800 px-4 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+                  >
+                    <span className="text-[10px] text-zinc-600">← Previous</span>
+                    <span className="text-sm font-medium text-zinc-300">
+                      {
+                        NAV_ITEMS[
+                          NAV_ITEMS.findIndex((n) => n.id === activeId) - 1
+                        ]!.label
+                      }
+                    </span>
+                  </button>
+                )}
+                {NAV_ITEMS.findIndex((n) => n.id === activeId) <
+                  NAV_ITEMS.length - 1 && (
+                  <button
+                    onClick={() =>
+                      handleNav(
+                        NAV_ITEMS[
+                          NAV_ITEMS.findIndex((n) => n.id === activeId) + 1
+                        ]!.id
+                      )
+                    }
+                    className="ml-auto flex flex-col gap-1 rounded-lg border border-zinc-800 px-4 py-3 text-right transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+                  >
+                    <span className="text-[10px] text-zinc-600">Next →</span>
+                    <span className="text-sm font-medium text-zinc-300">
+                      {
+                        NAV_ITEMS[
+                          NAV_ITEMS.findIndex((n) => n.id === activeId) + 1
+                        ]!.label
+                      }
+                    </span>
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+
+        {/* ── Right in-page TOC ─────────────────────────────────────────── */}
+        <aside className="hidden w-56 shrink-0 xl:block">
+          <div className="sticky top-0 px-4 py-12">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+              On this page
+            </p>
+            <ul className="space-y-1.5">
+              {activeItem.sections.map((s) => (
+                <li key={s.id}>
+                  <a
+                    href={`#${s.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const el = contentRef.current?.querySelector(`#${s.id}`);
+                      if (el)
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className={[
+                      "block text-xs leading-relaxed transition-colors",
+                      activeSectionId === s.id
+                        ? "font-medium text-white"
+                        : "text-zinc-600 hover:text-zinc-300",
+                    ].join(" ")}
+                  >
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      </div>
     </div>
+  );
+}
+
+// ─── Shared UI primitives ─────────────────────────────────────────────────
+
+function DocHeading1({ children, id }: { children: React.ReactNode; id?: string }) {
+  return (
+    <h1
+      id={id}
+      className="mb-4 scroll-mt-8 text-3xl font-semibold tracking-tight text-white"
+    >
+      {children}
+    </h1>
+  );
+}
+
+function DocHeading2({ children, id }: { children: React.ReactNode; id: string }) {
+  return (
+    <h2
+      id={id}
+      className="mb-3 mt-12 scroll-mt-8 text-lg font-semibold text-white"
+    >
+      {children}
+    </h2>
+  );
+}
+
+function DocHeading3({ children, id }: { children: React.ReactNode; id?: string }) {
+  return (
+    <h3
+      id={id}
+      className="mb-2 mt-8 scroll-mt-8 text-base font-semibold text-zinc-200"
+    >
+      {children}
+    </h3>
+  );
+}
+
+function DocPara({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-4 text-[15px] leading-7 text-zinc-400">{children}</p>
+  );
+}
+
+function DocList({ items }: { items: (string | React.ReactNode)[] }) {
+  return (
+    <ul className="mb-4 space-y-2 pl-1">
+      {items.map((item, i) => (
+        <li key={i} className="flex gap-3 text-[15px] leading-7 text-zinc-400">
+          <Circle className="mt-2 h-1.5 w-1.5 shrink-0 fill-zinc-600 text-zinc-600" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DocCallout({
+  type = "note",
+  children,
+}: {
+  type?: "note" | "tip" | "warning";
+  children: React.ReactNode;
+}) {
+  const styles = {
+    note: "border-zinc-700 bg-zinc-900/60 text-zinc-400",
+    tip: "border-emerald-800/60 bg-emerald-950/40 text-emerald-300/80",
+    warning: "border-amber-800/60 bg-amber-950/30 text-amber-300/80",
+  };
+  const labels = { note: "Note", tip: "Tip", warning: "Warning" };
+  return (
+    <div className={`my-6 rounded-lg border px-4 py-3.5 text-sm leading-relaxed ${styles[type]}`}>
+      <span className="mr-2 font-semibold">{labels[type]}:</span>
+      {children}
+    </div>
+  );
+}
+
+function CodeBlock({
+  code,
+  lang = "bash",
+}: {
+  code: string;
+  lang?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <div className="group relative my-5 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      {/* Header bar */}
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+        <span className="text-[11px] font-medium text-zinc-600">{lang}</span>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          aria-label="Copy code"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {copied ? (
+              <motion.span
+                key="c"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-1 text-emerald-400"
+              >
+                <Check className="h-3 w-3" /> Copied
+              </motion.span>
+            ) : (
+              <motion.span
+                key="u"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-1"
+              >
+                <Copy className="h-3 w-3" /> Copy
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+      </div>
+      <pre className="overflow-x-auto px-5 py-4 text-[13px] leading-relaxed text-zinc-300">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function StepList({
+  steps,
+}: {
+  steps: { title: string; body: React.ReactNode }[];
+}) {
+  return (
+    <ol className="my-6 space-y-6">
+      {steps.map((step, i) => (
+        <li key={i} className="flex gap-4">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-[11px] font-bold text-zinc-400">
+            {i + 1}
+          </div>
+          <div className="flex-1 pt-0.5">
+            <p className="mb-1.5 text-sm font-semibold text-zinc-200">{step.title}</p>
+            <div className="text-[14px] leading-relaxed text-zinc-400">{step.body}</div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function PropTable({
+  rows,
+}: {
+  rows: { name: string; type: string; desc: string }[];
+}) {
+  return (
+    <div className="my-6 overflow-hidden rounded-xl border border-zinc-800">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-zinc-800 bg-zinc-900/60">
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Field</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Type</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr
+              key={i}
+              className={`border-b border-zinc-800/50 ${i % 2 === 0 ? "" : "bg-zinc-900/20"}`}
+            >
+              <td className="px-4 py-3 font-mono text-[12px] text-zinc-300">{r.name}</td>
+              <td className="px-4 py-3 font-mono text-[12px] text-zinc-500">{r.type}</td>
+              <td className="px-4 py-3 text-[13px] text-zinc-400">{r.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Page: Getting Started ────────────────────────────────────────────────
+
+function GettingStartedPage() {
+  return (
+    <article>
+      <DocHeading1 id="overview">Getting Started</DocHeading1>
+      <DocPara>
+        OwnYourCode connects to your GitHub repositories and gives you an
+        AI-powered interface to understand, query, and review your codebase.
+        You can ask questions in plain English, review commit summaries, and
+        turn meeting audio into structured issues — all without leaving the
+        platform.
+      </DocPara>
+
+      <DocCallout type="tip">
+        New accounts receive <strong>150 free credits</strong> to index your
+        first repository. No credit card required.
+      </DocCallout>
+
+      <DocHeading2 id="connect-repo">Connect a Repository</DocHeading2>
+      <DocPara>
+        After signing in, navigate to <strong>Create Project</strong> from the
+        dashboard sidebar. Paste your GitHub repository URL and give the project
+        a name.
+      </DocPara>
+
+      <StepList
+        steps={[
+          {
+            title: "Sign in with Clerk",
+            body: "Visit the sign-in page. Authentication is handled by Clerk — you can use GitHub OAuth or an email magic link.",
+          },
+          {
+            title: "Create a new project",
+            body: 'From the dashboard, click "Create Project". Enter the full GitHub URL of the repository you want to index.',
+          },
+          {
+            title: "Confirm indexing",
+            body: "Click Confirm. The indexing pipeline starts immediately. You will see a progress indicator in the sidebar — larger repositories may take a few minutes.",
+          },
+          {
+            title: "Start querying",
+            body: 'Once the status changes to "Completed", navigate to the Q&A tab and ask your first question.',
+          },
+        ]}
+      />
+
+      <DocCallout type="note">
+        Private repositories are fully supported. We never store your raw
+        source code — only vector embeddings are persisted after indexing.
+      </DocCallout>
+
+      <DocHeading2 id="first-index">Your First Index</DocHeading2>
+      <DocPara>
+        Indexing cost is <strong>1 credit per file</strong>. Before confirming,
+        OwnYourCode shows you an estimate of total files in the repository so
+        you can review credit usage up front.
+      </DocPara>
+      <DocPara>
+        You can optionally enable <strong>Skip UI Components</strong> in project
+        settings to ignore asset-heavy directories like{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          /public
+        </code>{" "}
+        or{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          /assets
+        </code>
+        , reducing cost significantly.
+      </DocPara>
+
+      <DocHeading2 id="local-setup">Local Development</DocHeading2>
+      <DocPara>
+        To run OwnYourCode locally, clone the repository and install
+        dependencies:
+      </DocPara>
+
+      <CodeBlock lang="bash" code={`git clone https://github.com/agrim08/ownyourcode-ai.git
+cd ownyourcode-ai
+npm install`} />
+
+      <DocPara>
+        Copy the example environment file and fill in your API keys:
+      </DocPara>
+
+      <CodeBlock lang="bash" code={`cp .env.example .env`} />
+
+      <DocPara>Push the Prisma schema to your database and start the server:</DocPara>
+
+      <CodeBlock lang="bash" code={`npx prisma db push
+npm run dev`} />
+
+      <DocPara>
+        Open{" "}
+        <a
+          href="http://localhost:3000"
+          className="text-white underline underline-offset-2 hover:text-zinc-300"
+        >
+          http://localhost:3000
+        </a>{" "}
+        in your browser.
+      </DocPara>
+    </article>
+  );
+}
+
+// ─── Page: Code Indexing ──────────────────────────────────────────────────
+
+function CodeIndexingPage() {
+  return (
+    <article>
+      <DocHeading1 id="how-it-works">Codebase Indexing</DocHeading1>
+      <DocPara>
+        The indexing pipeline converts your raw source files into a semantic
+        vector store that the AI can query instantly. This process runs
+        asynchronously in the background and updates automatically on every
+        commit.
+      </DocPara>
+
+      <DocHeading2 id="chunking">File Chunking</DocHeading2>
+      <DocPara>
+        Each file is read and split into semantically meaningful chunks. Rather
+        than splitting on arbitrary character counts, OwnYourCode uses
+        structure-aware boundaries — function definitions, class declarations,
+        and logical blocks are kept intact wherever possible.
+      </DocPara>
+      <DocPara>
+        This means answers to questions like{" "}
+        <em>"where is this function called?"</em> always return results with
+        full context, not truncated snippets.
+      </DocPara>
+
+      <DocHeading2 id="embeddings">Vector Embeddings</DocHeading2>
+      <DocPara>
+        Each chunk is sent to the{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          gemini-embedding-004
+        </code>{" "}
+        model to produce a 768-dimensional float vector. These vectors are
+        stored in a PostgreSQL database using the{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          pgvector
+        </code>{" "}
+        extension.
+      </DocPara>
+
+      <CodeBlock
+        lang="prisma"
+        code={`model SourceCodeEmbeddings {
+  id                String                      @id @default(uuid())
+  summaryEmbeddings Unsupported("vector(768)")?
+  sourceCode        String
+  fileName          String
+  summary           String
+  projectId         String
+}`}
+      />
+
+      <DocHeading2 id="incremental">Incremental Sync</DocHeading2>
+      <DocPara>
+        After the initial index, OwnYourCode listens for GitHub webhooks on
+        every push event. Only the files that were added, modified, or deleted
+        in that commit are re-embedded — keeping credit usage low and the
+        vector store always in sync.
+      </DocPara>
+      <DocPara>
+        The last indexed commit SHA is stored in{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          lastIndexedCommitSha
+        </code>{" "}
+        on the project record. A sync operation re-checks this SHA against the
+        current HEAD before deciding what to process.
+      </DocPara>
+
+      <DocCallout type="note">
+        Incremental sync does <strong>not</strong> consume credits for files
+        that were not touched in a push. Only changed files are re-embedded.
+      </DocCallout>
+
+      <PropTable
+        rows={[
+          { name: "PENDING", type: "IndexingStatus", desc: "Repository queued, not yet started." },
+          { name: "INDEXING", type: "IndexingStatus", desc: "Pipeline is actively embedding files." },
+          { name: "SYNCING", type: "IndexingStatus", desc: "Applying incremental changes from a new commit." },
+          { name: "COMPLETED", type: "IndexingStatus", desc: "All files successfully embedded." },
+          { name: "PARTIAL", type: "IndexingStatus", desc: "Completed with some files skipped due to rate limits." },
+          { name: "FAILED", type: "IndexingStatus", desc: "Pipeline encountered a fatal error. Check indexingError field." },
+        ]}
+      />
+    </article>
+  );
+}
+
+// ─── Page: Codebase Q&A ───────────────────────────────────────────────────
+
+function CodebaseQAPage() {
+  return (
+    <article>
+      <DocHeading1 id="rag-overview">Codebase Q&A</DocHeading1>
+      <DocPara>
+        The Q&A interface lets you ask any question about your codebase in
+        plain English. Answers are generated using a Retrieval-Augmented
+        Generation (RAG) pipeline — meaning the AI only uses your actual code
+        to respond, never generic assumptions.
+      </DocPara>
+
+      <DocHeading2 id="asking-questions">Asking Questions</DocHeading2>
+      <DocPara>
+        Navigate to the <strong>Q&A</strong> section of your project. Type a
+        question in the input box and press Enter. Some effective question
+        patterns:
+      </DocPara>
+
+      <DocList
+        items={[
+          "Where is user authentication handled?",
+          "How does the billing credit system work?",
+          "What happens when a new commit is pushed?",
+          "Explain the meeting transcription flow.",
+          "Where are environment variables validated?",
+        ]}
+      />
+
+      <DocCallout type="tip">
+        Be specific. Questions like "explain everything" yield generic answers.
+        Questions scoped to a feature or flow return precise references.
+      </DocCallout>
+
+      <DocHeading2 id="file-references">File References</DocHeading2>
+      <DocPara>
+        Every answer includes the source files that were retrieved to generate
+        it. These are displayed as clickable file chips below the response. You
+        can click any chip to view the relevant chunk of that file in the code
+        viewer panel.
+      </DocPara>
+      <DocPara>
+        If an answer cites a file that seems unrelated, it usually means the
+        embedding for that file is semantically close to your question — not
+        that the AI hallucinated.
+      </DocPara>
+
+      <DocHeading2 id="conversation-history">Conversation History</DocHeading2>
+      <DocPara>
+        The Q&A session maintains conversation history within the same project
+        context. You can ask follow-up questions naturally:
+      </DocPara>
+
+      <CodeBlock
+        lang="text"
+        code={`You: Where is the Clerk middleware configured?
+AI: It's in src/middleware.ts, lines 12–34. The matcher…
+
+You: And where does it redirect on auth failure?
+AI: Still in src/middleware.ts — the redirect target is…`}
+      />
+
+      <DocPara>
+        Saved questions appear in the <strong>Saved Q&A</strong> panel and are
+        associated with the project, so your team can review them later.
+      </DocPara>
+    </article>
+  );
+}
+
+// ─── Page: Commit Intelligence ────────────────────────────────────────────
+
+function CommitIntelPage() {
+  return (
+    <article>
+      <DocHeading1 id="commit-summaries">Commit Intelligence</DocHeading1>
+      <DocPara>
+        OwnYourCode automatically processes every commit pushed to your
+        repository and generates a plain-English AI summary explaining what
+        changed and why it matters.
+      </DocPara>
+
+      <DocHeading2 id="commit-summaries">AI Summaries</DocHeading2>
+      <DocPara>
+        When a webhook fires for a new push, the pipeline:
+      </DocPara>
+
+      <StepList
+        steps={[
+          {
+            title: "Retrieves the diff",
+            body: "We fetch the changed files and line-level diffs from the GitHub API using Octokit.",
+          },
+          {
+            title: "Generates a summary",
+            body: "The diff is sent to the Gemini API with a structured prompt that extracts the intent, affected areas, and potential impact of the change.",
+          },
+          {
+            title: "Stores the commit record",
+            body: "The summary, author, timestamp, and SHA are saved to the GitCommit table and displayed in your project's commit feed.",
+          },
+        ]}
+      />
+
+      <CodeBlock
+        lang="prisma"
+        code={`model GitCommit {
+  id                 String    @id @default(uuid())
+  commitMessage      String
+  commitHash         String
+  commitAuthorName   String
+  commitDate         DateTime
+  commitSummary      String    // AI-generated
+  projectId          String
+}`}
+      />
+
+      <DocHeading2 id="webhooks">GitHub Webhooks</DocHeading2>
+      <DocPara>
+        Commit summaries are driven by push webhooks from GitHub. When you
+        create a project, OwnYourCode registers a webhook on the repository
+        automatically (requires repository write access in your OAuth scope).
+      </DocPara>
+      <DocPara>
+        Webhooks are processed asynchronously via{" "}
+        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+          QStash
+        </code>{" "}
+        to avoid blocking the GitHub callback and to handle bursts of rapid
+        pushes gracefully.
+      </DocPara>
+
+      <DocHeading2 id="author-analytics">Author Analytics</DocHeading2>
+      <DocPara>
+        The commit feed groups summaries by author and date, giving team leads
+        a clear view of who changed what. Filter by date range or author name
+        from the dashboard controls.
+      </DocPara>
+    </article>
+  );
+}
+
+// ─── Page: Meetings ───────────────────────────────────────────────────────
+
+function MeetingsPage() {
+  return (
+    <article>
+      <DocHeading1 id="upload">Meeting Synthesis</DocHeading1>
+      <DocPara>
+        Upload recordings of standups, retros, or design reviews and
+        OwnYourCode will transcribe them word-for-word, identify key decisions,
+        and surface action items as structured issue tickets.
+      </DocPara>
+
+      <DocHeading2 id="upload">Uploading Recordings</DocHeading2>
+      <DocPara>
+        Supported formats: <strong>MP3, MP4, WAV, M4A</strong>. Navigate to
+        the Meetings section of your project and click{" "}
+        <strong>Upload Recording</strong>. Files are streamed directly to
+        AssemblyAI — they are not stored on our servers.
+      </DocPara>
+
+      <DocCallout type="warning">
+        Meetings consume <strong>15 credits per minute</strong> of audio
+        processed. A 30-minute standup costs 450 credits.
+      </DocCallout>
+
+      <DocHeading2 id="transcription">Transcription</DocHeading2>
+      <DocPara>
+        Transcription is powered by AssemblyAI's Universal-2 model, which
+        provides:
+      </DocPara>
+
+      <DocList
+        items={[
+          "Word-level timestamps for every spoken token",
+          "Speaker diarization — sentences are attributed to distinct speakers",
+          "Searchable transcript with timestamp-linked jumps",
+          "High accuracy on technical vocabulary (function names, library names, etc.)",
+        ]}
+      />
+
+      <DocPara>
+        Processing typically completes in 20–40% of the recording's actual
+        duration (a 10-minute meeting usually takes 2–4 minutes to transcribe).
+      </DocPara>
+
+      <DocHeading2 id="issue-extraction">Issue Extraction</DocHeading2>
+      <DocPara>
+        Once transcription finishes, the full transcript is sent to Gemini with
+        a structured extraction prompt. The output is a set of issue tickets,
+        each with:
+      </DocPara>
+
+      <PropTable
+        rows={[
+          { name: "headline", type: "string", desc: "Short, actionable title for the issue." },
+          { name: "gist", type: "string", desc: "One-sentence summary of what needs to happen." },
+          { name: "summary", type: "string", desc: "Full description with context from the meeting." },
+          { name: "start", type: "string", desc: "Timestamp in the recording where this topic began." },
+          { name: "end", type: "string", desc: "Timestamp where this topic concluded." },
+        ]}
+      />
+
+      <DocPara>
+        Issues are displayed in the Meeting detail view. Click any issue to
+        jump to the relevant timestamp in the transcript player.
+      </DocPara>
+    </article>
+  );
+}
+
+// ─── Page: Billing ────────────────────────────────────────────────────────
+
+function BillingPage() {
+  return (
+    <article>
+      <DocHeading1 id="credit-model">Billing & Credits</DocHeading1>
+      <DocPara>
+        OwnYourCode uses a pay-as-you-go credit system. There are no monthly
+        subscriptions or seat licenses — you only pay for what you use.
+      </DocPara>
+
+      <DocHeading2 id="credit-model">Credit Model</DocHeading2>
+      <DocPara>
+        Credits are the currency for all AI operations on the platform. Every
+        new account receives <strong>150 free credits</strong> on sign-up.
+      </DocPara>
+
+      <PropTable
+        rows={[
+          { name: "Index a file", type: "1 credit", desc: "Per file processed during initial indexing or re-sync." },
+          { name: "Ask a Q&A question", type: "0 credits", desc: "Querying is always free — only indexing costs credits." },
+          { name: "Transcribe meeting audio", type: "15 credits / min", desc: "Charged per minute of audio uploaded." },
+          { name: "Incremental sync (unchanged file)", type: "0 credits", desc: "Files not touched in a commit are never re-charged." },
+        ]}
+      />
+
+      <DocHeading2 id="pricing">Pricing</DocHeading2>
+      <DocPara>
+        Credits are priced at a flat rate of <strong>₹1 per credit</strong>. 
+        There is no volume discount tier — the price is always the same 
+        regardless of how many you purchase.
+      </DocPara>
+
+      <CodeBlock
+        lang="text"
+        code={`500 credits  →  ₹500
+1,000 credits →  ₹1,000
+5,000 credits →  ₹5,000`}
+      />
+
+      <DocHeading2 id="top-up">Topping Up</DocHeading2>
+      <DocPara>
+        Purchase credits from the <strong>Billing</strong> page in your
+        account settings. Payment is processed through PayPal — credit card,
+        PayPal balance, and UPI are all supported.
+      </DocPara>
+
+      <StepList
+        steps={[
+          {
+            title: "Navigate to Billing",
+            body: 'Open the sidebar, click your account name, then select "Billing".',
+          },
+          {
+            title: "Choose an amount",
+            body: "Enter the number of credits you want to purchase. The INR equivalent is shown in real-time.",
+          },
+          {
+            title: "Complete payment",
+            body: "Click Pay with PayPal. After approval, credits are added to your balance immediately.",
+          },
+        ]}
+      />
+
+      <DocCallout type="note">
+        Credits never expire. Unused credits roll over indefinitely.
+      </DocCallout>
+    </article>
   );
 }

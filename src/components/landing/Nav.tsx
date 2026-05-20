@@ -44,6 +44,12 @@ export function Nav() {
               {item}
             </a>
           ))}
+          <Link
+            href="/documentation"
+            className="rounded-full px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink"
+          >
+            Docs
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
