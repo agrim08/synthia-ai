@@ -49,6 +49,102 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 
+function useSmoothStream(text: string, isStreaming: boolean) {
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setDisplayedText(text);
+      return;
+    }
+    
+    // If text was reset, reset displayed text
+    if (text.length < displayedText.length) {
+      setDisplayedText(text);
+      return;
+    }
+
+    if (displayedText.length < text.length) {
+      const timeout = setTimeout(() => {
+        // Add chunks of characters based on how far behind we are
+        const diff = text.length - displayedText.length;
+        const chunkSize = Math.max(1, Math.floor(diff / 5));
+        setDisplayedText((prev) => text.slice(0, prev.length + chunkSize));
+      }, 20); // 20ms per tick
+      return () => clearTimeout(timeout);
+    }
+  }, [text, displayedText, isStreaming]);
+
+  return displayedText;
+}
+
+function StreamingMarkdown({ content, isStreaming }: { content: string, isStreaming: boolean }) {
+  const displayedContent = useSmoothStream(content, isStreaming);
+
+  return (
+    <div className="prose prose-sm max-w-none
+      prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-ink prose-p:my-2
+      prose-headings:text-ink prose-headings:font-semibold prose-headings:my-3
+      prose-strong:text-ink prose-strong:font-semibold
+      prose-code:text-coral prose-code:bg-coral/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
+      prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
+      prose-ul:my-2 prose-li:text-[14px] prose-li:text-ink prose-li:my-1
+    ">
+      <div className="markdown-body dark:bg-transparent bg-transparent">
+        <MDEditor.Markdown
+          source={displayedContent}
+          style={{ background: "transparent", color: "inherit", fontSize: "14px" }}
+          components={{
+            code: ({ inline, className, children, ...props }: any) => {
+              const match = /language-(\w+)/.exec(className || "");
+              const extractText = (child: any): string => {
+                if (typeof child === "string" || typeof child === "number") return String(child);
+                if (Array.isArray(child)) return child.map(extractText).join("");
+                if (child && child.props && child.props.children) return extractText(child.props.children);
+                return "";
+              };
+              const codeContent = extractText(children).replace(/\n$/, "");
+
+              const hasNewlines = String(codeContent).includes('\n');
+              const isBlock = !inline && (match || hasNewlines);
+
+              // Render block code (with or without a language) using a dark container
+              if (isBlock) {
+                return (
+                  <div className="rounded-xl overflow-x-auto shadow-sm border border-[#1e293b] my-3 bg-[#0d1117] p-4">
+                    {match ? (
+                      <SyntaxHighlighter
+                        style={atomDark}
+                        language={match[1]}
+                        PreTag="div"
+                        customStyle={{ background: "transparent", padding: 0, margin: 0 }}
+                        {...props}
+                      >
+                        {codeContent}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <pre className="text-[#e6edf3] font-mono text-[13px] m-0 p-0 bg-transparent">
+                        <code {...props}>{codeContent}</code>
+                      </pre>
+                    )}
+                  </div>
+                );
+              }
+
+              // Render inline code
+              return (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            },
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Code Viewer Panel ──────────────────────────────────────────────
 function CodeViewerPanel({
   file,
@@ -189,12 +285,12 @@ export default function QandA() {
     }
   }, [activeQuestion]);
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages are added, but not during stream updates
   useEffect(() => {
     if (messages.length > 0) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, loading]);
+  }, [messages.length]);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -495,63 +591,10 @@ export default function QandA() {
                                   <span className="text-xs">Thinking…</span>
                                 </div>
                               ) : (
-                                <div className="prose prose-sm max-w-none
-                                  prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-ink prose-p:my-2
-                                  prose-headings:text-ink prose-headings:font-semibold prose-headings:my-3
-                                  prose-strong:text-ink prose-strong:font-semibold
-                                  prose-code:text-coral prose-code:bg-coral/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
-                                  prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
-                                  prose-ul:my-2 prose-li:text-[14px] prose-li:text-ink prose-li:my-1
-                                ">
-                                  <div className="markdown-body dark:bg-transparent bg-transparent">
-                                    <MDEditor.Markdown
-                                      source={msg.content}
-                                      style={{ background: "transparent", color: "inherit", fontSize: "14px" }}
-                                      components={{
-                                        code: ({ inline, className, children, ...props }: any) => {
-                                          const match = /language-(\w+)/.exec(className || "");
-                                          const extractText = (child: any): string => {
-                                            if (typeof child === "string" || typeof child === "number") return String(child);
-                                            if (Array.isArray(child)) return child.map(extractText).join("");
-                                            if (child && child.props && child.props.children) return extractText(child.props.children);
-                                            return "";
-                                          };
-                                          const codeContent = extractText(children).replace(/\n$/, "");
-
-                                          // Render block code (with or without a language) using a dark container
-                                          if (!inline) {
-                                            return (
-                                              <div className="rounded-xl overflow-x-auto shadow-sm border border-[#1e293b] my-3 bg-[#0d1117] p-4">
-                                                {match ? (
-                                                  <SyntaxHighlighter
-                                                    style={atomDark}
-                                                    language={match[1]}
-                                                    PreTag="div"
-                                                    customStyle={{ background: "transparent", padding: 0, margin: 0 }}
-                                                    {...props}
-                                                  >
-                                                    {codeContent}
-                                                  </SyntaxHighlighter>
-                                                ) : (
-                                                  <pre className="text-[#e6edf3] font-mono text-[13px] m-0 p-0 bg-transparent">
-                                                    <code {...props}>{codeContent}</code>
-                                                  </pre>
-                                                )}
-                                              </div>
-                                            );
-                                          }
-
-                                          // Render inline code
-                                          return (
-                                            <code className={className} {...props}>
-                                              {children}
-                                            </code>
-                                          );
-                                        },
-                                      }}
-                                    />
-                                  </div>
-                                </div>
+                                <StreamingMarkdown 
+                                  content={msg.content} 
+                                  isStreaming={loading && idx === messages.length - 1} 
+                                />
                               )}
 
                               {/* File references — open in right panel */}

@@ -26,8 +26,8 @@ export default function RootLayout({
         <body className="antialiased font-sans">
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
           >
             <TRPCReactProvider>{children}</TRPCReactProvider>

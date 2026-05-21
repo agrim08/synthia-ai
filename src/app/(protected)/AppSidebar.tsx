@@ -64,11 +64,25 @@ const BOTTOM_NAV = [
 
 export const AppSidebar = () => {
   const { open } = useSidebar();
-  const { projects, projectId, setProjectId } = useProject();
+  const { projects, projectId, setProjectId, recentProjects } = useProject();
   const pathname = usePathname();
 
   const sortedProjects = projects
-    ? [...projects].sort((a, b) => (a.id === projectId ? -1 : b.id === projectId ? 1 : 0))
+    ? [...projects].sort((a, b) => {
+        // Find indices in recentProjects array (lower index means more recently accessed)
+        const idxA = recentProjects?.indexOf(a.id) ?? -1;
+        const idxB = recentProjects?.indexOf(b.id) ?? -1;
+        
+        // If both are in the recent array, sort by their index
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        // If only a is in recent, a comes first
+        if (idxA !== -1) return -1;
+        // If only b is in recent, b comes first
+        if (idxB !== -1) return 1;
+        
+        // Fallback to alphabetical order or creation order
+        return 0;
+      })
     : [];
 
   return (
@@ -119,7 +133,7 @@ export const AppSidebar = () => {
                     "flex items-center rounded-lg transition-all duration-150 group",
                     open ? "gap-3 px-3 py-2" : "size-10 justify-center",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-pop-sm"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                       : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >

@@ -60,9 +60,7 @@ export async function askChatBot(
         .map((i) => result[i])
         .filter((f): f is (typeof result)[0] => !!f);
 
-      if (relevantFiles.length > 0) {
-        finalResult = relevantFiles;
-      }
+      finalResult = relevantFiles;
     } catch (err) {
       console.error("Smart filtering failed in askChatBot", err);
     }
