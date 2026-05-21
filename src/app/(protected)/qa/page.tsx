@@ -232,17 +232,19 @@ function CodeViewerPanel({
   );
 }
 
+import { ChevronRight } from "lucide-react";
+
 function ThinkingState() {
   const [phase, setPhase] = useState("Analyzing request...");
 
   useEffect(() => {
     const phases = [
-      "Analyzing request...",
-      "Searching codebase...",
-      "Filtering relevant files...",
-      "Reading source code...",
-      "Formulating response...",
-      "Almost there..."
+      "Analyzing request",
+      "Searching codebase",
+      "Filtering relevant files",
+      "Reading source code",
+      "Formulating response",
+      "Almost there"
     ];
     let idx = 0;
 
@@ -261,8 +263,8 @@ function ThinkingState() {
 
   return (
     <div className="flex items-center gap-2 py-1 text-ink-soft">
-      <Loader2 className="size-3.5 animate-spin" />
-      <span className="text-xs transition-opacity duration-300">{phase}</span>
+      <span className="text-sm transition-opacity duration-300">{phase}</span>
+      <ChevronRight className="size-3.5 animate-pulse" />
     </div>
   );
 }
@@ -372,21 +374,29 @@ export default function QandA() {
     try {
       setMessages((prev) => [...prev, { role: "bot", content: "" }]);
 
+      const startTime = Date.now();
       const { output, filesReferences } = await askChatBot(userMessage, projectId, messages);
+      const thinkingTime = (Date.now() - startTime) / 1000;
 
       let fullAnswer = "";
+
       for await (const delta of readStreamableValue(output)) {
         if (delta) {
           fullAnswer += delta;
           setMessages((prev) => {
             const updated = [...prev];
-            updated[updated.length - 1] = { role: "bot", content: fullAnswer, filesReferences };
+            updated[updated.length - 1] = { 
+              role: "bot", 
+              content: fullAnswer, 
+              filesReferences,
+              thinkingTime
+            };
             return updated;
           });
         }
       }
 
-      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences }];
+      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences, thinkingTime }];
 
       if (!currentQuestionId) {
         saveAnswer.mutate(
@@ -606,28 +616,35 @@ export default function QandA() {
                           </div>
                         )}
 
-                        <div
-                          className={cn(
-                            "max-w-[82%]",
-                            msg.role === "user"
-                              ? "bg-coral text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm"
-                              : "bg-cream-deep px-5 py-4 rounded-2xl rounded-tl-sm border border-ink/8 shadow-sm"
+                        <div className="flex flex-col gap-1.5 max-w-[82%]">
+                          {msg.role !== "user" && msg.thinkingTime !== undefined && msg.content !== "" && (
+                            <div className="text-[11px] font-medium text-ink-soft/50 pl-1">
+                              Thought for {msg.thinkingTime.toFixed(1)} seconds
+                            </div>
                           )}
-                        >
-                          {msg.role === "user" ? (
-                            <p className="text-[14px] leading-relaxed whitespace-pre-wrap font-normal">
-                              {msg.content}
-                            </p>
-                          ) : (
-                            <div>
-                              {msg.content === "" ? (
-                                <ThinkingState />
-                              ) : (
-                                <StreamingMarkdown 
-                                  content={msg.content} 
-                                  isStreaming={loading && idx === messages.length - 1} 
-                                />
-                              )}
+                          <div
+                            className={cn(
+                              msg.role === "user"
+                                ? "bg-coral text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm"
+                                : msg.content === "" 
+                                  ? "py-1.5 flex items-center" 
+                                  : "bg-cream-deep px-5 py-4 rounded-2xl rounded-tl-sm border border-ink/8 shadow-sm"
+                            )}
+                          >
+                            {msg.role === "user" ? (
+                              <p className="text-[14px] leading-relaxed whitespace-pre-wrap font-normal">
+                                {msg.content}
+                              </p>
+                            ) : (
+                              <div>
+                                {msg.content === "" ? (
+                                  <ThinkingState />
+                                ) : (
+                                  <StreamingMarkdown 
+                                    content={msg.content} 
+                                    isStreaming={loading && idx === messages.length - 1} 
+                                  />
+                                )}
 
                               {/* File references — open in right panel */}
                               {msg.filesReferences && msg.filesReferences.length > 0 && (
@@ -653,6 +670,7 @@ export default function QandA() {
                             </div>
                           )}
                         </div>
+                      </div>
 
                         {/* User avatar */}
                         {msg.role === "user" && (
