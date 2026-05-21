@@ -232,6 +232,41 @@ function CodeViewerPanel({
   );
 }
 
+function ThinkingState() {
+  const [phase, setPhase] = useState("Analyzing request...");
+
+  useEffect(() => {
+    const phases = [
+      "Analyzing request...",
+      "Searching codebase...",
+      "Filtering relevant files...",
+      "Reading source code...",
+      "Formulating response...",
+      "Almost there..."
+    ];
+    let idx = 0;
+
+    const interval = setInterval(() => {
+      idx++;
+      if (idx >= phases.length - 1) {
+        setPhase(phases[phases.length - 1]);
+        clearInterval(interval);
+      } else {
+        setPhase(phases[idx]);
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 py-1 text-ink-soft">
+      <Loader2 className="size-3.5 animate-spin" />
+      <span className="text-xs transition-opacity duration-300">{phase}</span>
+    </div>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────
 export default function QandA() {
   const { projectId } = useProject();
@@ -586,10 +621,7 @@ export default function QandA() {
                           ) : (
                             <div>
                               {msg.content === "" ? (
-                                <div className="flex items-center gap-2 py-1 text-ink-soft">
-                                  <Loader2 className="size-3.5 animate-spin" />
-                                  <span className="text-xs">Thinking…</span>
-                                </div>
+                                <ThinkingState />
                               ) : (
                                 <StreamingMarkdown 
                                   content={msg.content} 
