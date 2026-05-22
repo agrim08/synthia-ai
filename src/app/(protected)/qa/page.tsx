@@ -26,6 +26,8 @@ import {
   X,
   PanelRightOpen,
   Check,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -83,13 +85,13 @@ function StreamingMarkdown({ content, isStreaming }: { content: string, isStream
   const displayedContent = useSmoothStream(content, isStreaming);
 
   return (
-    <div className="prose prose-sm max-w-none
-      prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-ink prose-p:my-2
-      prose-headings:text-ink prose-headings:font-semibold prose-headings:my-3
+    <div className="prose prose-sm max-w-none font-[Inter,sans-serif]
+      prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-ink prose-p:my-2 prose-p:font-[Inter,sans-serif]
+      prose-headings:text-ink prose-headings:font-semibold prose-headings:my-3 prose-headings:font-[Inter,sans-serif]
       prose-strong:text-ink prose-strong:font-semibold
       prose-code:text-coral prose-code:bg-coral/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
       prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
-      prose-ul:my-2 prose-li:text-[14px] prose-li:text-ink prose-li:my-1
+      prose-ul:my-2 prose-li:text-[14px] prose-li:text-ink prose-li:my-1 prose-li:font-[Inter,sans-serif]
     ">
       <div className="markdown-body dark:bg-transparent bg-transparent">
         <MDEditor.Markdown
@@ -197,7 +199,7 @@ function CodeViewerPanel({
           <button
             onClick={onClose}
             title="Close code viewer"
-            className="flex items-center justify-center p-1.5 rounded-md text-coral/80 hover:text-white hover:bg-coral/20 bg-coral/10 transition-colors"
+            className="flex items-center justify-center p-1.5 rounded-md text-white hover:text-white hover:bg-coral/30 bg-coral/20 border border-coral/30 transition-colors"
           >
             <X className="size-4" />
           </button>
@@ -233,7 +235,7 @@ function CodeViewerPanel({
   );
 }
 
-import { ChevronRight } from "lucide-react";
+
 
 function ThinkingState() {
   const [phase, setPhase] = useState("Analyzing request...");
@@ -292,6 +294,7 @@ export default function QandA() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<{ fileName: string; sourceCode: string } | null>(null);
   const [chatMode, setChatMode] = useLocalStorage<"learn" | "interview">("synthia-chat-mode", "learn");
+  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -729,11 +732,91 @@ export default function QandA() {
                     disabled={!projectId}
                     className="flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-soft/50 focus:outline-none resize-none min-h-[24px] max-h-40 leading-relaxed py-0.5 disabled:cursor-not-allowed"
                   />
+
+                  {/* Mode select — between input and send */}
+                  <div className="shrink-0 relative">
+                    <AnimatePresence>
+                      {isModeDropdownOpen && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsModeDropdownOpen(false)}
+                          />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute bottom-full right-0 mb-3 w-56 bg-cream border border-ink/10 rounded-2xl shadow-xl p-2 flex flex-col gap-1 z-50 origin-bottom-right"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChatMode("learn");
+                                setIsModeDropdownOpen(false);
+                              }}
+                              className={cn(
+                                "flex flex-col text-left px-3 py-2.5 rounded-xl transition-colors",
+                                chatMode === "learn" ? "bg-coral/10" : "hover:bg-ink/5"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={cn("size-2 rounded-full", chatMode === "learn" ? "bg-coral" : "bg-ink-soft/40")} />
+                                <span className={cn("text-[13px] font-semibold", chatMode === "learn" ? "text-coral" : "text-ink")}>
+                                  Learn Mode
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-ink-soft leading-relaxed pl-4">
+                                Standard AI answers using your connected codebase.
+                              </span>
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChatMode("interview");
+                                setIsModeDropdownOpen(false);
+                              }}
+                              className={cn(
+                                "flex flex-col text-left px-3 py-2.5 rounded-xl transition-colors",
+                                chatMode === "interview" ? "bg-coral/10" : "hover:bg-ink/5"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={cn("size-2 rounded-full", chatMode === "interview" ? "bg-coral animate-pulse" : "bg-ink-soft/40")} />
+                                <span className={cn("text-[13px] font-semibold", chatMode === "interview" ? "text-coral" : "text-ink")}>
+                                  Interview Mode
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-ink-soft leading-relaxed pl-4">
+                                AI acts as a technical interviewer with structured feedback.
+                              </span>
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
+                      title="Switch mode"
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold tracking-tight transition-all duration-200 select-none",
+                        isModeDropdownOpen ? "bg-ink/5" : "bg-transparent hover:bg-ink/5",
+                        chatMode === "interview" ? "text-coral" : "text-ink-soft hover:text-ink"
+                      )}
+                    >
+                      {chatMode === "interview" ? "Interview" : "Learn"}
+                      <ChevronDown className="size-3.5 opacity-50" />
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => handleSubmit()}
                     disabled={loading || !input.trim() || !projectId}
                     className={cn(
-                      "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
+                      "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ml-1",
                       input.trim() && !loading && projectId
                         ? "bg-coral hover:bg-coral/90 text-white shadow-sm hover:scale-105 active:scale-95"
                         : "bg-cream-deep text-ink-soft cursor-not-allowed"
@@ -745,34 +828,6 @@ export default function QandA() {
                       <ArrowUp className="size-3.5" />
                     )}
                   </button>
-
-                  {/* Mode toggle — right of send, like Gemini model switcher */}
-                  <div className="shrink-0 flex items-center">
-                    <div className="w-px h-5 bg-ink/10 mx-1.5" />
-                    <button
-                      type="button"
-                      onClick={() => setChatMode(chatMode === "learn" ? "interview" : "learn")}
-                      title={chatMode === "learn" ? "Switch to Interview Mode" : "Switch to Learn Mode"}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold tracking-tight transition-all duration-200 select-none",
-                        chatMode === "interview"
-                          ? "bg-coral/15 text-coral border border-coral/30 hover:bg-coral/25"
-                          : "bg-cream-deep text-ink-soft border border-ink/10 hover:border-ink/20 hover:text-ink"
-                      )}
-                    >
-                      {chatMode === "interview" ? (
-                        <>
-                          <span className="size-1.5 rounded-full bg-coral animate-pulse inline-block" />
-                          Interview
-                        </>
-                      ) : (
-                        <>
-                          <span className="size-1.5 rounded-full bg-ink-soft/40 inline-block" />
-                          Learn
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
                 <p className="text-center text-[11px] text-ink-soft/60 mt-2">
                   {chatMode === "interview"
