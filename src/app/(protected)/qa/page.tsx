@@ -9,6 +9,7 @@ import {
 import useProject from "@/hooks/useProject";
 import { api } from "@/trpc/react";
 import React, { useState, useRef, useEffect } from "react";
+import { useLocalStorage } from "usehooks-ts";
 import Image from "next/image";
 import MDEditor from "@uiw/react-md-editor";
 import { Logo } from "@/components/Logo";
@@ -285,11 +286,12 @@ export default function QandA() {
   const updateQuestion = api.project.updateQuestion.useMutation();
 
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[] }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<{ fileName: string; sourceCode: string } | null>(null);
+  const [chatMode, setChatMode] = useLocalStorage<"learn" | "interview">("synthia-chat-mode", "learn");
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -375,7 +377,7 @@ export default function QandA() {
       setMessages((prev) => [...prev, { role: "bot", content: "" }]);
 
       const startTime = Date.now();
-      const { output, filesReferences } = await askChatBot(userMessage, projectId, messages);
+      const { output, filesReferences } = await askChatBot(userMessage, projectId, messages, chatMode);
       const thinkingTime = (Date.now() - startTime) / 1000;
 
       let fullAnswer = "";
@@ -389,14 +391,15 @@ export default function QandA() {
               role: "bot", 
               content: fullAnswer, 
               filesReferences,
-              thinkingTime
+              thinkingTime,
+              mode: chatMode,
             };
             return updated;
           });
         }
       }
 
-      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences, thinkingTime }];
+      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences, thinkingTime, mode: chatMode }];
 
       if (!currentQuestionId) {
         saveAnswer.mutate(
@@ -617,6 +620,14 @@ export default function QandA() {
                         )}
 
                         <div className="flex flex-col gap-1.5 max-w-[82%]">
+                          {msg.role !== "user" && (msg as any).mode === "interview" && msg.content !== "" && (
+                            <div className="flex items-center gap-1.5 pl-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-coral/10 border border-coral/25 text-[10px] font-semibold text-coral tracking-wide">
+                                <span className="size-1 rounded-full bg-coral animate-pulse inline-block" />
+                                Interview Mode
+                              </span>
+                            </div>
+                          )}
                           {msg.role !== "user" && msg.thinkingTime !== undefined && msg.content !== "" && (
                             <div className="text-[11px] font-medium text-ink-soft/50 pl-1">
                               Thought for {msg.thinkingTime.toFixed(1)} seconds
@@ -734,9 +745,39 @@ export default function QandA() {
                       <ArrowUp className="size-3.5" />
                     )}
                   </button>
+
+                  {/* Mode toggle — right of send, like Gemini model switcher */}
+                  <div className="shrink-0 flex items-center">
+                    <div className="w-px h-5 bg-ink/10 mx-1.5" />
+                    <button
+                      type="button"
+                      onClick={() => setChatMode(chatMode === "learn" ? "interview" : "learn")}
+                      title={chatMode === "learn" ? "Switch to Interview Mode" : "Switch to Learn Mode"}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold tracking-tight transition-all duration-200 select-none",
+                        chatMode === "interview"
+                          ? "bg-coral/15 text-coral border border-coral/30 hover:bg-coral/25"
+                          : "bg-cream-deep text-ink-soft border border-ink/10 hover:border-ink/20 hover:text-ink"
+                      )}
+                    >
+                      {chatMode === "interview" ? (
+                        <>
+                          <span className="size-1.5 rounded-full bg-coral animate-pulse inline-block" />
+                          Interview
+                        </>
+                      ) : (
+                        <>
+                          <span className="size-1.5 rounded-full bg-ink-soft/40 inline-block" />
+                          Learn
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <p className="text-center text-[11px] text-ink-soft/60 mt-2">
-                  Our AI answers from your connected codebase ·{" "}
+                  {chatMode === "interview"
+                    ? "Interview Mode · AI will guide you like a technical interviewer"
+                    : "Learn Mode · AI answers from your connected codebase"}{" "}
                   <kbd className="text-[10px] bg-cream-deep px-1.5 py-0.5 rounded font-mono border border-ink/8">
                     ↵
                   </kbd>{" "}
