@@ -287,7 +287,7 @@ export default function QandA() {
   const saveAnswer = api.project.saveAnswer.useMutation();
   const updateQuestion = api.project.updateQuestion.useMutation();
 
-  const [currentQuestionId, setCurrentQuestionId] = useLocalStorage<string | null>("synthia-current-question-id", null);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -299,10 +299,37 @@ export default function QandA() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hasRestoredRef = useRef(false);
 
-  const { data: activeQuestion } = api.project.getQuestionById.useQuery(
+  // Restore question ID from localStorage on mount / project switch
+  useEffect(() => {
+    hasRestoredRef.current = false;
+    if (!projectId) return;
+    try {
+      const saved = localStorage.getItem(`synthia-qa-id-${projectId}`);
+      if (saved) {
+        setCurrentQuestionId(saved);
+      }
+    } catch {}
+    // Mark restore as done AFTER this render cycle so the save effect doesn't
+    // clear the value before the load has set it.
+    const t = setTimeout(() => { hasRestoredRef.current = true; }, 0);
+    return () => clearTimeout(t);
+  }, [projectId]);
+
+  // Persist question ID to localStorage — only after initial restore
+  useEffect(() => {
+    if (!projectId || !hasRestoredRef.current) return;
+    if (currentQuestionId) {
+      localStorage.setItem(`synthia-qa-id-${projectId}`, currentQuestionId);
+    } else {
+      localStorage.removeItem(`synthia-qa-id-${projectId}`);
+    }
+  }, [currentQuestionId, projectId]);
+
+  const { data: activeQuestion, isError: isQuestionError } = api.project.getQuestionById.useQuery(
     { questionId: currentQuestionId as string },
-    { enabled: !!currentQuestionId }
+    { enabled: !!currentQuestionId, retry: false }
   );
 
   useEffect(() => {
@@ -327,14 +354,7 @@ export default function QandA() {
     }
   }, [activeQuestion]);
 
-  useEffect(() => {
-    if (questions && currentQuestionId) {
-      const exists = questions.some((q) => q.id === currentQuestionId);
-      if (!exists) {
-        setCurrentQuestionId(null);
-      }
-    }
-  }, [questions, currentQuestionId, setCurrentQuestionId]);
+
 
   // Scroll to bottom when new messages are added, but not during stream updates
   useEffect(() => {

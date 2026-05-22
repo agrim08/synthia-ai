@@ -1,6 +1,7 @@
 "use client";
 
 import useProject from "@/hooks/useProject";
+import { api } from "@/trpc/react";
 import {
   Github,
   MoreHorizontal,
@@ -30,7 +31,12 @@ import {
 import DashboardSkeleton from "./DashboardSkeleton";
 
 const DashboardPage = () => {
-  const { project, isLoading } = useProject();
+  const { project, projectId, isLoading } = useProject();
+
+  const { data: commits } = api.project.getCommits.useQuery(
+    { projectId: projectId as string },
+    { enabled: !!projectId }
+  );
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -133,8 +139,13 @@ const DashboardPage = () => {
                 <span className="h-1.5 w-1.5 rounded-full bg-coral animate-pulse-soft" />
                 Live activity
               </div>
-              <h2 className="font-display text-4xl md:text-5xl text-ink leading-[1.05]">
-                Commits <span className="marker-highlight">history</span>
+              <h2 className="font-display text-4xl md:text-5xl text-ink leading-[1.05] flex items-center gap-4">
+                <span>Commits <span className="marker-highlight">history</span></span>
+                {commits && commits.length > 0 && (
+                  <span className="text-sm rounded-full bg-ink/5 text-ink-soft px-3 py-1 font-sans border border-ink/10 shadow-sm inline-flex items-center">
+                    {commits.length} {commits.length === 1 ? 'commit' : 'commits'}
+                  </span>
+                )}
               </h2>
               <p className="text-ink-soft text-sm max-w-md">
                 Skim what changed without opening the diff.
