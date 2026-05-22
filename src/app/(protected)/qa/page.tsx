@@ -287,7 +287,7 @@ export default function QandA() {
   const saveAnswer = api.project.saveAnswer.useMutation();
   const updateQuestion = api.project.updateQuestion.useMutation();
 
-  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [currentQuestionId, setCurrentQuestionId] = useLocalStorage<string | null>("synthia-current-question-id", null);
   const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -326,6 +326,15 @@ export default function QandA() {
       setMessages(parsedMessages);
     }
   }, [activeQuestion]);
+
+  useEffect(() => {
+    if (questions && currentQuestionId) {
+      const exists = questions.some((q) => q.id === currentQuestionId);
+      if (!exists) {
+        setCurrentQuestionId(null);
+      }
+    }
+  }, [questions, currentQuestionId, setCurrentQuestionId]);
 
   // Scroll to bottom when new messages are added, but not during stream updates
   useEffect(() => {
