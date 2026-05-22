@@ -86,12 +86,12 @@ function StreamingMarkdown({ content, isStreaming }: { content: string, isStream
 
   return (
     <div className="prose prose-sm max-w-none font-[Inter,sans-serif]
-      prose-p:text-[14px] prose-p:leading-relaxed prose-p:text-ink prose-p:my-2 prose-p:font-[Inter,sans-serif]
+      prose-p:text-[14px] prose-p:leading-[26px] prose-p:text-ink prose-p:my-2 prose-p:font-[Inter,sans-serif]
       prose-headings:text-ink prose-headings:font-semibold prose-headings:my-3 prose-headings:font-[Inter,sans-serif]
       prose-strong:text-ink prose-strong:font-semibold
       prose-code:text-coral prose-code:bg-coral/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-[13px] prose-code:before:content-none prose-code:after:content-none
       prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none prose-pre:shadow-none
-      prose-ul:my-2 prose-li:text-[14px] prose-li:text-ink prose-li:my-1 prose-li:font-[Inter,sans-serif]
+      prose-ul:my-2 prose-li:text-[14px] prose-li:leading-[26px] prose-li:text-ink prose-li:my-1 prose-li:font-[Inter,sans-serif]
     ">
       <div className="markdown-body dark:bg-transparent bg-transparent">
         <MDEditor.Markdown
