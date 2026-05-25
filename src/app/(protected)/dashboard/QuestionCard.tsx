@@ -85,8 +85,8 @@ const QuestionCard = () => {
                           toast.success("Analysis saved");
                           refetch();
                         },
-                        onError: () => {
-                          toast.error("Failed to save analysis");
+                        onError: (error) => {
+                          toast.error(error.message);
                         },
                       },
                     );

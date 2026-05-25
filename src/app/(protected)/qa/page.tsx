@@ -370,8 +370,8 @@ export default function QandA() {
       toast.success("Conversation deleted");
       if (currentQuestionId === id) startNewChat();
       utils.project.getQuestions.invalidate();
-    } catch {
-      toast.error("Failed to delete");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete");
     }
   };
 
@@ -444,16 +444,24 @@ export default function QandA() {
           },
           {
             onSuccess: (data) => {
+              toast.success("Conversation saved");
               setCurrentQuestionId(data.id);
               utils.project.getQuestions.invalidate();
               refetch();
             },
+            onError: (error) => toast.error(error.message),
           }
         );
       } else {
         updateQuestion.mutate(
           { questionId: currentQuestionId, messages: finalMessages },
-          { onSuccess: () => utils.project.getQuestions.invalidate() }
+          {
+            onSuccess: () => {
+              toast.success("Conversation updated");
+              utils.project.getQuestions.invalidate();
+            },
+            onError: (error) => toast.error(error.message),
+          }
         );
       }
     } catch {

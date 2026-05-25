@@ -64,7 +64,11 @@ const AskOwnYourCodeHero = () => {
         },
         {
           onSuccess: () => {
+            toast.success("Answer saved successfully");
             refetch();
+          },
+          onError: (error) => {
+            toast.error(error.message);
           },
         }
       );

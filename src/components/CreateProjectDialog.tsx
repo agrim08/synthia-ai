@@ -19,6 +19,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useLocalStorage } from "usehooks-ts";
+import { useRouter } from "next/navigation";
 
 type FormFields = {
   repoUrl: string;
@@ -28,6 +30,8 @@ type FormFields = {
 };
 
 export const CreateProjectDialog = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  const [_, setProjectId] = useLocalStorage("OwnYourCode-Project-key", "");
   const [open, setOpen] = useState(false);
   const { register, handleSubmit, reset, watch } = useForm<FormFields>({
     defaultValues: {
@@ -35,7 +39,19 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     }
   });
   const createProject = api.project.createProject.useMutation();
-  const checkCredits = api.project.checkCreditNeeded.useMutation();
+  const checkCredits = api.project.checkCreditNeeded.useMutation({
+    onSuccess: (res) => {
+      if (res.fileCount <= res.userCredits) {
+        toast.success(
+          `You have enough credits (${res.userCredits} available, cost ${res.fileCount}). Now proceed with linking.`
+        );
+      } else {
+        toast.error(
+          `Insufficient credits (${res.userCredits} available, cost ${res.fileCount}).`
+        );
+      }
+    }
+  });
   const refetch = useRefetch();
 
   const repoUrl = watch("repoUrl");
@@ -46,6 +62,14 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     checkCredits.reset();
   }, [repoUrl, skipUi]);
 
+  // Reset form and mutation states when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      reset();
+      checkCredits.reset();
+      createProject.reset();
+    }
+  }, [open, reset]);
 
   const onSubmit = (data: FormFields) => {
     if (!!checkCredits.data) {
@@ -57,11 +81,13 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           skipUiComponents: data.skipUiComponents,
         },
         {
-          onSuccess: () => {
+          onSuccess: (newProject) => {
             toast.success("Project indexed successfully");
+            setProjectId(newProject.id);
             refetch();
             reset();
             setOpen(false);
+            router.push("/dashboard");
           },
           onError: (err) => {
             toast.error(err.message || "Failed to create project");
@@ -69,11 +95,18 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
         },
       );
     } else {
-      checkCredits.mutate({
-        githubUrl: data.repoUrl,
-        githubToken: data.githubToken,
-        skipUiComponents: data.skipUiComponents,
-      });
+      checkCredits.mutate(
+        {
+          githubUrl: data.repoUrl,
+          githubToken: data.githubToken,
+          skipUiComponents: data.skipUiComponents,
+        },
+        {
+          onError: (err) => {
+            toast.error(err.message || "Failed to connect to repository. Check the URL and try again.");
+          },
+        },
+      );
     }
     return true;
   };

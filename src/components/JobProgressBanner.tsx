@@ -68,7 +68,8 @@ export type JobProgressBannerProps = {
   tone: JobProgressTone;
   iconMode: IconMode;
   title: string;
-  description: string;
+  description: React.ReactNode;
+  timerLine?: string;
   /** When true, show a pulsing bar (unknown total / connecting to GitHub). */
   indeterminate?: boolean;
   /** 0–100 when determinate; ignored if indeterminate */
@@ -79,6 +80,7 @@ export type JobProgressBannerProps = {
   showResume?: boolean;
   resumePending?: boolean;
   onResume?: () => void;
+  disabled?: boolean;
 };
 
 /**
@@ -89,6 +91,7 @@ export function JobProgressBanner({
   iconMode,
   title,
   description,
+  timerLine,
   indeterminate,
   pct = 0,
   progress = 0,
@@ -96,6 +99,7 @@ export function JobProgressBanner({
   showResume,
   resumePending,
   onResume,
+  disabled,
 }: JobProgressBannerProps) {
   const showCounts = total > 0;
   const safePct = indeterminate ? 0 : Math.min(100, Math.max(0, pct));
@@ -113,6 +117,9 @@ export function JobProgressBanner({
           <div className="sm:hidden">
             <h4 className="text-sm font-bold text-ink leading-tight">{title}</h4>
             <p className="mt-0.5 text-xs text-ink-soft leading-snug">{description}</p>
+            {timerLine && (
+              <p className="mt-1.5 text-xs text-coral font-bold">{timerLine}</p>
+            )}
           </div>
         </div>
 
@@ -120,6 +127,9 @@ export function JobProgressBanner({
           <div className="hidden sm:block">
             <h4 className="text-sm font-bold text-ink leading-tight">{title}</h4>
             <p className="mt-0.5 text-xs text-ink-soft leading-snug">{description}</p>
+            {timerLine && (
+              <p className="mt-1.5 text-xs text-coral font-bold">{timerLine}</p>
+            )}
           </div>
 
           {(indeterminate || (showCounts && total > 0)) && (
@@ -161,9 +171,9 @@ export function JobProgressBanner({
         {showResume && onResume && (
           <Button
             size="sm"
-            className="shrink-0 gap-1.5 text-xs font-semibold rounded-full bg-ink text-cream border border-ink shadow-pop-sm hover:shadow-pop hover:-translate-y-0.5 transition-all"
+            className="shrink-0 gap-1.5 text-xs font-semibold rounded-full bg-ink text-cream border border-ink shadow-pop-sm hover:shadow-pop hover:-translate-y-0.5 transition-all disabled:pointer-events-auto disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-pop-sm"
             onClick={onResume}
-            disabled={resumePending}
+            disabled={resumePending || disabled}
           >
             {resumePending ? (
               <Loader2 className="size-3.5 animate-spin" />

@@ -29,8 +29,8 @@ const ArchiveProject = ({ id }: { id?: string }) => {
                 toast.success("Project archived successfully");
                 refetch();
               },
-              onError: () => {
-                toast.error("Failed to archive project");
+              onError: (error) => {
+                toast.error(error.message);
               },
             },
           );

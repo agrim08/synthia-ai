@@ -35,6 +35,8 @@ const MeetingCard = () => {
       });
       return response.data;
     },
+    onSuccess: () => toast.success("Meeting processed successfully"),
+    onError: (error) => toast.error(error.message),
   });
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -64,7 +66,7 @@ const MeetingCard = () => {
                 meetingId: meeting!.id,
               });
             },
-            onError: () => toast.error("Failed to upload recording"),
+            onError: (error) => toast.error(error.message),
           },
         );
       } catch {

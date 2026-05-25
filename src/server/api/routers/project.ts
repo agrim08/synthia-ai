@@ -128,11 +128,20 @@ export const projectRouter = createTRPCRouter({
       console.log(
         `[createProject] Checking credits for repo... (skipUi=${input.skipUiComponents})`,
       );
-      const fileCount = await checkCredits(
-        input.githubUrl,
-        input.githubToken,
-        input.skipUiComponents,
-      );
+      let fileCount = 0;
+      try {
+        fileCount = await checkCredits(
+          input.githubUrl,
+          input.githubToken,
+          input.skipUiComponents,
+        );
+      } catch (err: any) {
+        console.error(`[createProject] checkCredits failed:`, err);
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Failed to access the GitHub repository. Make sure the URL is correct, and if it is private, provide a valid GitHub Token. Original error: ${err.message}`,
+        });
+      }
       const currentCredits = existingUser.credits || 0;
       console.log(
         `[createProject] fileCount=${fileCount}, userCredits=${currentCredits}`,
@@ -211,6 +220,7 @@ export const projectRouter = createTRPCRouter({
           indexingError: true,
           indexedAt: true,
           syncState: true,
+          updatedAt: true,
         } as any,
       });
       if (!project) {
@@ -227,6 +237,7 @@ export const projectRouter = createTRPCRouter({
         indexingError: p.indexingError,
         indexedAt: p.indexedAt,
         hasSyncCheckpoint: p.syncState != null,
+        updatedAt: p.updatedAt,
       };
     }),
 
@@ -626,7 +637,16 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const fileCount = await checkCredits(input.githubUrl, input.githubToken, input.skipUiComponents);
+      let fileCount = 0;
+      try {
+        fileCount = await checkCredits(input.githubUrl, input.githubToken, input.skipUiComponents);
+      } catch (err: any) {
+        console.error(`[checkCreditNeeded] checkCredits failed:`, err);
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Failed to access the GitHub repository. Make sure the URL is correct, and if it is private, provide a valid GitHub Token. Original error: ${err.message}`,
+        });
+      }
       const userCredits = await ctx.db.user.findUnique({
         where: { id: ctx.user.userId },
         select: { credits: true },

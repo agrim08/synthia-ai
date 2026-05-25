@@ -67,6 +67,38 @@ export default function IndexingStatusBanner({ projectId }: Props) {
       refetchIntervalInBackground: true,
     },
   );
+  
+  const [rateLimitTimeLeft, setRateLimitTimeLeft] = useState<string>("");
+  const [isResumeDisabled, setIsResumeDisabled] = useState(false);
+  const isRateLimitError = !!(data as any)?.indexingError?.toLowerCase().includes("rate limit");
+  const updatedAt = (data as any)?.updatedAt;
+
+  useEffect(() => {
+    if (!isRateLimitError || !updatedAt) {
+      setIsResumeDisabled(false);
+      setRateLimitTimeLeft("");
+      return;
+    }
+
+    const updateTimer = () => {
+      const resetTime = new Date(updatedAt).getTime() + 60 * 60 * 1000;
+      const diff = resetTime - Date.now();
+      if (diff <= 0) {
+        setIsResumeDisabled(false);
+        setRateLimitTimeLeft("");
+      } else {
+        setIsResumeDisabled(true);
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setRateLimitTimeLeft(`${minutes}:${seconds.toString().padStart(2, "0")}`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRateLimitError, updatedAt]);
 
   const retrigger = api.project.retriggerIndexing.useMutation({
     onSuccess: () => {
@@ -154,9 +186,15 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         iconMode="error"
         title={hasSyncCheckpoint ? "Sync failed" : "Indexing failed"}
         description={indexingError ?? "An unknown error occurred."}
+        timerLine={
+          isRateLimitError && rateLimitTimeLeft
+            ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+            : undefined
+        }
         showResume
         resumePending={retrigger.isPending}
-        onResume={() => retrigger.mutate({ projectId })}
+        disabled={isResumeDisabled}
+        onResume={() => !isResumeDisabled && retrigger.mutate({ projectId })}
       />
     );
   }
@@ -176,12 +214,18 @@ export default function IndexingStatusBanner({ projectId }: Props) {
             ? `${pg} of ${tot} files updated. Resume if sync does not continue.`
             : `${pg} of ${tot} files indexed. Click Resume to continue from where we left off.`
         }
+        timerLine={
+          isRateLimitError && rateLimitTimeLeft
+            ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+            : undefined
+        }
         pct={pct}
         progress={pg}
         total={tot}
         showResume
         resumePending={retrigger.isPending}
-        onResume={() => retrigger.mutate({ projectId })}
+        disabled={isResumeDisabled}
+        onResume={() => !isResumeDisabled && retrigger.mutate({ projectId })}
       />
     );
   }

@@ -142,8 +142,8 @@ const MeetingsPage = () => {
                                   toast.success("Meeting deleted");
                                   refetch();
                                 },
-                                onError: () => {
-                                  toast.error("Failed to delete meeting");
+                                onError: (error) => {
+                                  toast.error(error.message);
                                 },
                               },
                             )

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -177,13 +178,13 @@ export default function DocumentationPage() {
   }, [activeId]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#0a0a0a] text-zinc-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 px-4 lg:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 lg:px-6">
         <div className="flex items-center gap-4">
           {/* Mobile menu trigger */}
           <button
-            className="lg:hidden text-zinc-400 hover:text-white"
+            className="lg:hidden text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen((v) => !v)}
             aria-label="Toggle menu"
           >
@@ -191,28 +192,29 @@ export default function DocumentationPage() {
           </button>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-white text-zinc-950 shadow transition-transform group-hover:-rotate-6">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-foreground text-background shadow transition-transform group-hover:-rotate-6">
               <Logo width={18} height={18} />
             </span>
-            <span className="text-sm font-semibold text-white">OwnYourCode</span>
-            <span className="hidden text-zinc-600 sm:inline">/</span>
-            <span className="hidden text-sm text-zinc-400 sm:inline">docs</span>
+            <span className="text-sm font-semibold text-foreground">OwnYourCode</span>
+            <span className="hidden text-muted-foreground sm:inline">/</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">docs</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <a
             href="https://github.com/agrim08/ownyourcode-ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden text-zinc-500 transition-colors hover:text-white sm:block"
+            className="hidden text-muted-foreground transition-colors hover:text-foreground sm:block"
             aria-label="GitHub"
           >
             <Github className="h-4 w-4" />
           </a>
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-950 transition-opacity hover:opacity-90"
+            className="flex items-center gap-1.5 rounded-full bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background transition-opacity hover:opacity-90"
           >
             Dashboard <ArrowRight className="h-3 w-3" />
           </Link>
@@ -230,26 +232,26 @@ export default function DocumentationPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 z-20 bg-black/60 lg:hidden"
+              className="fixed inset-0 z-20 bg-foreground/20 lg:hidden"
             />
           )}
         </AnimatePresence>
 
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-zinc-800/60 bg-[#0a0a0a] pt-14 transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:pt-0",
+            "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-border bg-background pt-14 transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:pt-0",
             sidebarOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
           {/* Search */}
-          <div className="shrink-0 border-b border-zinc-800/60 px-4 py-3">
+          <div className="shrink-0 border-b border-border px-4 py-3">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-600" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search docs…"
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-8 pr-3 text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-zinc-600"
+                className="w-full rounded-md border border-border bg-muted py-2 pl-8 pr-3 text-xs text-foreground placeholder-zinc-600 outline-none transition-colors focus:border-zinc-600"
               />
             </div>
           </div>
@@ -257,11 +259,11 @@ export default function DocumentationPage() {
           {/* Nav tree */}
           <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Documentation navigation">
             {filtered.length === 0 && (
-              <p className="px-2 text-xs text-zinc-600">No results</p>
+              <p className="px-2 text-xs text-muted-foreground">No results</p>
             )}
             {groups.map((group) => (
               <div key={group} className="mb-5">
-                <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {group}
                 </p>
                 <ul className="space-y-0.5">
@@ -276,14 +278,14 @@ export default function DocumentationPage() {
                             className={[
                               "relative w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors",
                               isActive
-                                ? "bg-zinc-800/70 font-medium text-white"
-                                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200",
+                                ? "bg-muted font-medium text-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground",
                             ].join(" ")}
                           >
                             {isActive && (
                               <motion.span
                                 layoutId="activeNavBar"
-                                className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-white"
+                                className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-foreground"
                                 transition={{ type: "spring", stiffness: 380, damping: 36 }}
                               />
                             )}
@@ -298,12 +300,12 @@ export default function DocumentationPage() {
           </nav>
 
           {/* Footer links in sidebar */}
-          <div className="shrink-0 border-t border-zinc-800/60 px-4 py-3">
+          <div className="shrink-0 border-t border-border px-4 py-3">
             <a
               href="https://github.com/agrim08/ownyourcode-ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+              className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <Github className="h-3.5 w-3.5" /> View on GitHub
               <ExternalLink className="ml-auto h-3 w-3" />
@@ -326,18 +328,18 @@ export default function DocumentationPage() {
               className="mx-auto max-w-3xl px-6 py-12 lg:px-12"
             >
               {/* Breadcrumb */}
-              <nav className="mb-8 flex items-center gap-1.5 text-xs text-zinc-600">
+              <nav className="mb-8 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span>Docs</span>
                 <ChevronRight className="h-3 w-3" />
-                <span className="text-zinc-400">{activeItem.group}</span>
+                <span className="text-muted-foreground">{activeItem.group}</span>
                 <ChevronRight className="h-3 w-3" />
-                <span className="text-zinc-300">{activeItem.label}</span>
+                <span className="text-foreground">{activeItem.label}</span>
               </nav>
 
               {PAGE_CONTENT[activeId]}
 
               {/* Next / Prev */}
-              <div className="mt-16 flex gap-4 border-t border-zinc-800/60 pt-8">
+              <div className="mt-16 flex gap-4 border-t border-border pt-8">
                 {NAV_ITEMS.findIndex((n) => n.id === activeId) > 0 && (
                   <button
                     onClick={() =>
@@ -347,10 +349,10 @@ export default function DocumentationPage() {
                         ]!.id
                       )
                     }
-                    className="flex flex-col gap-1 rounded-lg border border-zinc-800 px-4 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+                    className="flex flex-col gap-1 rounded-lg border border-border px-4 py-3 text-left transition-colors hover:border-border hover:bg-muted"
                   >
-                    <span className="text-[10px] text-zinc-600">← Previous</span>
-                    <span className="text-sm font-medium text-zinc-300">
+                    <span className="text-[10px] text-muted-foreground">← Previous</span>
+                    <span className="text-sm font-medium text-foreground">
                       {
                         NAV_ITEMS[
                           NAV_ITEMS.findIndex((n) => n.id === activeId) - 1
@@ -369,10 +371,10 @@ export default function DocumentationPage() {
                         ]!.id
                       )
                     }
-                    className="ml-auto flex flex-col gap-1 rounded-lg border border-zinc-800 px-4 py-3 text-right transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+                    className="ml-auto flex flex-col gap-1 rounded-lg border border-border px-4 py-3 text-right transition-colors hover:border-border hover:bg-muted"
                   >
-                    <span className="text-[10px] text-zinc-600">Next →</span>
-                    <span className="text-sm font-medium text-zinc-300">
+                    <span className="text-[10px] text-muted-foreground">Next →</span>
+                    <span className="text-sm font-medium text-foreground">
                       {
                         NAV_ITEMS[
                           NAV_ITEMS.findIndex((n) => n.id === activeId) + 1
@@ -389,7 +391,7 @@ export default function DocumentationPage() {
         {/* ── Right in-page TOC ─────────────────────────────────────────── */}
         <aside className="hidden w-56 shrink-0 xl:block">
           <div className="sticky top-0 px-4 py-12">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               On this page
             </p>
             <ul className="space-y-1.5">
@@ -406,8 +408,8 @@ export default function DocumentationPage() {
                     className={[
                       "block text-xs leading-relaxed transition-colors",
                       activeSectionId === s.id
-                        ? "font-medium text-white"
-                        : "text-zinc-600 hover:text-zinc-300",
+                        ? "font-medium text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
                     ].join(" ")}
                   >
                     {s.label}
@@ -428,7 +430,7 @@ function DocHeading1({ children, id }: { children: React.ReactNode; id?: string 
   return (
     <h1
       id={id}
-      className="mb-4 scroll-mt-8 text-3xl font-semibold tracking-tight text-white"
+      className="mb-4 scroll-mt-8 text-3xl font-semibold tracking-tight text-foreground"
     >
       {children}
     </h1>
@@ -439,7 +441,7 @@ function DocHeading2({ children, id }: { children: React.ReactNode; id: string }
   return (
     <h2
       id={id}
-      className="mb-3 mt-12 scroll-mt-8 text-lg font-semibold text-white"
+      className="mb-3 mt-12 scroll-mt-8 text-lg font-semibold text-foreground"
     >
       {children}
     </h2>
@@ -450,7 +452,7 @@ function DocHeading3({ children, id }: { children: React.ReactNode; id?: string 
   return (
     <h3
       id={id}
-      className="mb-2 mt-8 scroll-mt-8 text-base font-semibold text-zinc-200"
+      className="mb-2 mt-8 scroll-mt-8 text-base font-semibold text-foreground"
     >
       {children}
     </h3>
@@ -459,7 +461,7 @@ function DocHeading3({ children, id }: { children: React.ReactNode; id?: string 
 
 function DocPara({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-4 text-[15px] leading-7 text-zinc-400">{children}</p>
+    <p className="mb-4 text-[15px] leading-7 text-muted-foreground">{children}</p>
   );
 }
 
@@ -467,8 +469,8 @@ function DocList({ items }: { items: (string | React.ReactNode)[] }) {
   return (
     <ul className="mb-4 space-y-2 pl-1">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-3 text-[15px] leading-7 text-zinc-400">
-          <Circle className="mt-2 h-1.5 w-1.5 shrink-0 fill-zinc-600 text-zinc-600" />
+        <li key={i} className="flex gap-3 text-[15px] leading-7 text-muted-foreground">
+          <Circle className="mt-2 h-1.5 w-1.5 shrink-0 fill-zinc-600 text-muted-foreground" />
           <span>{item}</span>
         </li>
       ))}
@@ -484,7 +486,7 @@ function DocCallout({
   children: React.ReactNode;
 }) {
   const styles = {
-    note: "border-zinc-700 bg-zinc-900/60 text-zinc-400",
+    note: "border-border bg-muted/60 text-muted-foreground",
     tip: "border-emerald-800/60 bg-emerald-950/40 text-emerald-300/80",
     warning: "border-amber-800/60 bg-amber-950/30 text-amber-300/80",
   };
@@ -507,17 +509,17 @@ function CodeBlock({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="group relative my-5 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+    <div className="group relative my-5 overflow-hidden rounded-xl border border-border bg-muted">
       {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <span className="text-[11px] font-medium text-zinc-600">{lang}</span>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <span className="text-[11px] font-medium text-muted-foreground">{lang}</span>
         <button
           onClick={() => {
             navigator.clipboard.writeText(code);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
-          className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Copy code"
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -545,7 +547,7 @@ function CodeBlock({
           </AnimatePresence>
         </button>
       </div>
-      <pre className="overflow-x-auto px-5 py-4 text-[13px] leading-relaxed text-zinc-300">
+      <pre className="overflow-x-auto px-5 py-4 text-[13px] leading-relaxed text-foreground">
         <code>{code}</code>
       </pre>
     </div>
@@ -561,12 +563,12 @@ function StepList({
     <ol className="my-6 space-y-6">
       {steps.map((step, i) => (
         <li key={i} className="flex gap-4">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-[11px] font-bold text-zinc-400">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-[11px] font-bold text-muted-foreground">
             {i + 1}
           </div>
           <div className="flex-1 pt-0.5">
-            <p className="mb-1.5 text-sm font-semibold text-zinc-200">{step.title}</p>
-            <div className="text-[14px] leading-relaxed text-zinc-400">{step.body}</div>
+            <p className="mb-1.5 text-sm font-semibold text-foreground">{step.title}</p>
+            <div className="text-[14px] leading-relaxed text-muted-foreground">{step.body}</div>
           </div>
         </li>
       ))}
@@ -580,24 +582,24 @@ function PropTable({
   rows: { name: string; type: string; desc: string }[];
 }) {
   return (
-    <div className="my-6 overflow-hidden rounded-xl border border-zinc-800">
+    <div className="my-6 overflow-hidden rounded-xl border border-border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-800 bg-zinc-900/60">
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Field</th>
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Type</th>
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-zinc-500">Description</th>
+          <tr className="border-b border-border bg-muted/60">
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Field</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Type</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Description</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr
               key={i}
-              className={`border-b border-zinc-800/50 ${i % 2 === 0 ? "" : "bg-zinc-900/20"}`}
+              className={`border-b border-border ${i % 2 === 0 ? "" : "bg-muted/20"}`}
             >
-              <td className="px-4 py-3 font-mono text-[12px] text-zinc-300">{r.name}</td>
-              <td className="px-4 py-3 font-mono text-[12px] text-zinc-500">{r.type}</td>
-              <td className="px-4 py-3 text-[13px] text-zinc-400">{r.desc}</td>
+              <td className="px-4 py-3 font-mono text-[12px] text-foreground">{r.name}</td>
+              <td className="px-4 py-3 font-mono text-[12px] text-muted-foreground">{r.type}</td>
+              <td className="px-4 py-3 text-[13px] text-muted-foreground">{r.desc}</td>
             </tr>
           ))}
         </tbody>
@@ -667,11 +669,11 @@ function GettingStartedPage() {
       <DocPara>
         You can optionally enable <strong>Skip UI Components</strong> in project
         settings to ignore asset-heavy directories like{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           /public
         </code>{" "}
         or{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           /assets
         </code>
         , reducing cost significantly.
@@ -702,7 +704,7 @@ npm run dev`} />
         Open{" "}
         <a
           href="http://localhost:3000"
-          className="text-white underline underline-offset-2 hover:text-zinc-300"
+          className="text-foreground underline underline-offset-2 hover:text-foreground"
         >
           http://localhost:3000
         </a>{" "}
@@ -741,12 +743,12 @@ function CodeIndexingPage() {
       <DocHeading2 id="embeddings">Vector Embeddings</DocHeading2>
       <DocPara>
         Each chunk is sent to the{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           gemini-embedding-004
         </code>{" "}
         model to produce a 768-dimensional float vector. These vectors are
         stored in a PostgreSQL database using the{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           pgvector
         </code>{" "}
         extension.
@@ -773,7 +775,7 @@ function CodeIndexingPage() {
       </DocPara>
       <DocPara>
         The last indexed commit SHA is stored in{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           lastIndexedCommitSha
         </code>{" "}
         on the project record. A sync operation re-checks this SHA against the
@@ -925,7 +927,7 @@ function CommitIntelPage() {
       </DocPara>
       <DocPara>
         Webhooks are processed asynchronously via{" "}
-        <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[12px] text-zinc-300">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] text-foreground">
           QStash
         </code>{" "}
         to avoid blocking the GitHub callback and to handle bursts of rapid

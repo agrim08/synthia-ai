@@ -34,7 +34,7 @@ const PROJECT_COLORS = [
 
 function getProjectColor(name: string) {
   const idx = name.charCodeAt(0) % PROJECT_COLORS.length;
-  return PROJECT_COLORS[idx];
+  return PROJECT_COLORS[idx] ?? { bg: "bg-coral/20", text: "text-coral" };
 }
 
 function ProjectAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
@@ -231,7 +231,7 @@ export const AppSidebar = () => {
           <Button
             variant="ghost"
             className={cn(
-              "w-full rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20 transition-all shadow-pop-sm border border-sidebar-border",
+              "w-full rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground hover:!bg-sidebar-foreground/20 hover:!text-sidebar-foreground transition-all shadow-pop-sm border border-sidebar-border",
               !open ? "size-10 p-0" : "h-9 px-3"
             )}
             size={!open ? "icon" : "default"}

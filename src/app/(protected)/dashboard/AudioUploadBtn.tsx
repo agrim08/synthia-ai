@@ -43,6 +43,8 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
       });
       return response.data;
     },
+    onSuccess: () => toast.success("Meeting processed successfully"),
+    onError: (error) => toast.error(error.message),
   });
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -77,8 +79,8 @@ const AudioUploadBtn = ({ children }: { children?: React.ReactNode }) => {
                 meetingId: meeting!.id,
               });
             },
-            onError: () => {
-              toast.error("Failed to upload recording");
+            onError: (error) => {
+              toast.error(error.message);
             },
           }
         );

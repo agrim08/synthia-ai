@@ -286,11 +286,32 @@ const getFileCount = async (
 };
 
 export const checkCredits = async (githubUrl: string, githubToken?: string, skipUi = false) => {
-  const octokit = new Octokit({ auth: githubToken });
-  const githubOwner = githubUrl.split("/")[3];
-  const githubRepo = githubUrl.split("/")[4];
-  if (!githubOwner || !githubRepo) return 0;
-  return getFileCount("", octokit, githubOwner, githubRepo, 0, skipUi);
+  const parsed = parseGithubRepoUrl(githubUrl);
+  if (!parsed) return 0;
+  const token = githubToken || process.env.GITHUB_TOKEN;
+  const octokit = new Octokit({ auth: token });
+  try {
+    const { sha } = await getDefaultBranchHeadSha(octokit, parsed.owner, parsed.repo);
+    const { data: treeData } = await octokit.rest.git.getTree({
+      owner: parsed.owner,
+      repo: parsed.repo,
+      tree_sha: sha,
+      recursive: "true",
+    });
+    
+    let count = 0;
+    for (const item of treeData.tree) {
+      if (item.type === "blob" && item.path) {
+        if (!shouldIgnoreFile(item.path, skipUi)) {
+          count++;
+        }
+      }
+    }
+    return count;
+  } catch (err: any) {
+    console.error(`[checkCredits] Error counting files recursively:`, err);
+    throw err;
+  }
 };
 
 
