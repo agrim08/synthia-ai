@@ -9,7 +9,10 @@ const CommitLogs = () => {
   const { projectId, project } = useProject();
   const { data: commits } = api.project.getCommits.useQuery(
     { projectId: projectId },
-    { enabled: !!projectId }
+    { 
+      enabled: !!projectId,
+      refetchInterval: (project?.indexingStatus === "INDEXING" || project?.indexingStatus === "SYNCING") ? 3000 : false 
+    }
   );
 
   return (
