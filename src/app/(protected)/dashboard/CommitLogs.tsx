@@ -98,7 +98,9 @@ const CommitLogs = () => {
           </div>
           <h3 className="font-display text-2xl text-ink">No commits yet</h3>
           <p className="text-sm text-ink-soft mt-1 max-w-xs">
-            Link your first project to see an AI-summarized timeline appear here.
+            {project 
+              ? "We are pulling the latest commits from your repository. They will appear here shortly once processed." 
+              : "Link your first project to see an AI-summarized timeline appear here."}
           </p>
         </div>
       )}

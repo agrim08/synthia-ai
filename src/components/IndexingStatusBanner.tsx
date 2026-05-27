@@ -240,6 +240,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         indeterminate
         showResume
         resumePending={retrigger.isPending}
+        disabled
         onResume={() => retrigger.mutate({ projectId })}
       />
     );
@@ -256,6 +257,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
           indeterminate
           showResume
           resumePending={retrigger.isPending}
+          disabled
           onResume={() => retrigger.mutate({ projectId })}
         />
       );
@@ -271,6 +273,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         total={tot}
         showResume
         resumePending={retrigger.isPending}
+        disabled
         onResume={() => retrigger.mutate({ projectId })}
       />
     );
@@ -287,6 +290,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         indeterminate
         showResume
         resumePending={retrigger.isPending}
+        disabled
         onResume={() => retrigger.mutate({ projectId })}
       />
     );
@@ -303,6 +307,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
       total={tot}
       showResume
       resumePending={retrigger.isPending}
+      disabled
       onResume={() => retrigger.mutate({ projectId })}
     />
   );

@@ -171,7 +171,7 @@ export function JobProgressBanner({
         {showResume && onResume && (
           <Button
             size="sm"
-            className="shrink-0 gap-1.5 text-xs font-semibold rounded-full bg-ink text-cream border border-ink shadow-pop-sm hover:shadow-pop hover:-translate-y-0.5 transition-all disabled:pointer-events-auto disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-pop-sm"
+            className="shrink-0 gap-1.5 text-xs font-semibold rounded-full bg-ink text-cream border border-ink shadow-pop-sm hover:shadow-pop hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-pop-sm"
             onClick={onResume}
             disabled={resumePending || disabled}
           >

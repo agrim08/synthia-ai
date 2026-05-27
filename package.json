@@ -68,6 +68,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@uiw/react-md-editor": "^4.0.5",
     "@upstash/qstash": "^2.10.1",
+    "adm-zip": "^0.5.17",
     "ai": "^4.1.34",
     "assemblyai": "^4.9.0",
     "axios": "^1.7.9",
@@ -110,6 +111,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/eslint": "^8.56.10",
     "@types/node": "^20.14.10",
     "@types/paypal__checkout-server-sdk": "^1.0.8",

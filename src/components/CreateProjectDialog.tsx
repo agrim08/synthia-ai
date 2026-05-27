@@ -133,11 +133,18 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           <div className="flex flex-1 flex-col bg-cream">
 
             {/* Desktop Header */}
-            <div className="border-b border-ink/5 px-6 py-5 hidden sm:block bg-cream-deep/20">
-              <h3 className="text-base font-bold text-ink leading-none">Connect a repository</h3>
-              <p className="mt-1.5 text-[11px] text-ink-soft leading-normal">
-                Our AI will analyze your codebase structure to build a semantic index.
-              </p>
+            <div className="border-b border-ink/5 px-6 py-5 hidden sm:flex sm:justify-between sm:items-center bg-cream-deep/20">
+              <div>
+                <h3 className="text-base font-bold text-ink leading-none">Connect a repository</h3>
+                <p className="mt-1.5 text-[11px] text-ink-soft leading-normal">
+                  Our AI will analyze your codebase structure to build a semantic index.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-ink-soft uppercase tracking-wider">
+                <span className={cn("px-2 py-1 rounded border", !hasChecked ? "bg-coral/10 text-coral border-coral/20" : "bg-ink/5 border-transparent")}>Step 1: Validate</span>
+                <span className="text-ink/20">→</span>
+                <span className={cn("px-2 py-1 rounded border", hasChecked ? "bg-coral/10 text-coral border-coral/20" : "bg-ink/5 border-transparent")}>Step 2: Link</span>
+              </div>
             </div>
 
             {/* Mobile-only header */}

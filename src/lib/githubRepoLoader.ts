@@ -7,14 +7,17 @@
  * - Exponential backoff when hitting Gemini rate limits (429)
  * - Checkpoint / resume: skips files already indexed for this project
  * - Progress tracking in DB so the UI can show a live progress bar
+ *
+ * The repo is fetched as a single ZIP archive (one HTTP request) to avoid
+ * per-file GitHub Contents API rate limits.
  */
 
-import { GithubRepoLoader } from "@langchain/community/document_loaders/web/github";
 import { Document } from "@langchain/core/documents";
 import { loadEmbedding, summariseCode } from "./gemini";
 import { db } from "@/server/db";
 import { Octokit } from "octokit";
 import Bottleneck from "bottleneck";
+import AdmZip from "adm-zip";
 
 // ---------------------------------------------------------------------------
 // File-extension / filename filter
@@ -324,32 +327,77 @@ export const loadGithubRepo = async (
   githubToken?: string,
   skipUi = false,
 ) => {
-  const loader = new GithubRepoLoader(githubUrl, {
-    accessToken: githubToken || "",
-    branch: "main",
-    ignoreFiles: [
-      // pass a coarse list; the shouldIgnoreFile fn handles the rest
-      "package.json",
-      "package-lock.json",
-      "*.lock",
-      "yarn.lock",
-      "pnpm-lock.yaml",
-      "bun.lockb",
-    ],
-    recursive: true,
-    unknown: "warn",
-    maxConcurrency: 3,
-  });
+  const parsed = parseGithubRepoUrl(githubUrl);
+  if (!parsed) throw new Error(`Invalid GitHub URL: ${githubUrl}`);
 
-  const allDocs = await loader.load();
-  // Apply our fine-grained filter
-  const filtered = allDocs.filter(
-    (doc) => !shouldIgnoreFile(doc.metadata.source as string),
+  const token = githubToken || process.env.GITHUB_TOKEN;
+  const octokit = new Octokit({ auth: token });
+
+  // Resolve the default branch so we download the right ref
+  const { branch } = await getDefaultBranchHeadSha(
+    octokit,
+    parsed.owner,
+    parsed.repo,
   );
+
+  // Single HTTP request — download the entire repo as a ZIP archive
   console.log(
-    `[loadGithubRepo] Loaded ${allDocs.length} docs, kept ${filtered.length} after filtering`,
+    `[loadGithubRepo] Downloading ZIP for ${parsed.owner}/${parsed.repo}@${branch}`,
   );
-  return filtered;
+  const response = await octokit.request(
+    "GET /repos/{owner}/{repo}/zipball/{ref}",
+    {
+      owner: parsed.owner,
+      repo: parsed.repo,
+      ref: branch,
+      headers: { accept: "application/vnd.github+json" },
+    },
+  );
+
+  // Octokit returns the body as an ArrayBuffer for binary media types
+  const zipBuffer = Buffer.from(response.data as ArrayBuffer);
+  const zip = new AdmZip(zipBuffer);
+  const entries = zip.getEntries();
+
+  const docs: Document[] = [];
+
+  for (const entry of entries) {
+    // Skip directories
+    if (entry.isDirectory) continue;
+
+    // GitHub ZIP archives have a top-level directory like "owner-repo-sha/"
+    // Strip it to get the actual repo-relative path.
+    const fullPath = entry.entryName;
+    const slashIdx = fullPath.indexOf("/");
+    const relativePath =
+      slashIdx >= 0 ? fullPath.slice(slashIdx + 1) : fullPath;
+
+    if (!relativePath) continue;
+
+    // Apply the existing filter
+    if (shouldIgnoreFile(relativePath, skipUi)) continue;
+
+    // Read file content — skip binary/unreadable files gracefully
+    try {
+      const content = entry.getData().toString("utf-8");
+      docs.push(
+        new Document({
+          pageContent: content,
+          metadata: { source: relativePath },
+        }),
+      );
+    } catch {
+      // Binary or corrupted entry — skip silently
+      console.warn(
+        `[loadGithubRepo] Could not decode entry as UTF-8, skipping: ${relativePath}`,
+      );
+    }
+  }
+
+  console.log(
+    `[loadGithubRepo] Extracted ${entries.length} entries from ZIP, kept ${docs.length} after filtering`,
+  );
+  return docs;
 };
 
 // ---------------------------------------------------------------------------
