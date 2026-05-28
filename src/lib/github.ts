@@ -233,3 +233,70 @@ const filterUnprocessedCommits = async (
       ),
   );
 };
+
+/**
+ * Backfill AI summaries for commits that were saved with empty summaries
+ * (e.g., due to Gemini rate limits during initial polling).
+ * Processes sequentially to avoid hitting rate limits again.
+ */
+export const backfillCommitSummaries = async (projectId: string) => {
+  try {
+    const { githubUrl } = await fetchProjectGithubUrl(projectId);
+
+    const emptyCommits = await db.gitCommit.findMany({
+      where: { projectId, commitSummary: "" },
+      orderBy: { commitDate: "desc" },
+    });
+
+    if (emptyCommits.length === 0) {
+      return { backfilled: 0, total: 0 };
+    }
+
+    console.log(
+      `[backfillCommitSummaries] Found ${emptyCommits.length} commits without summaries for project=${projectId}`,
+    );
+
+    let backfilled = 0;
+
+    for (const commit of emptyCommits) {
+      try {
+        const summary = await summarizeCommitFunc(githubUrl, commit.commitHash);
+        if (summary && summary.trim().length > 0) {
+          await db.gitCommit.update({
+            where: { id: commit.id },
+            data: { commitSummary: summary },
+          });
+          backfilled++;
+          console.log(
+            `[backfillCommitSummaries] ✓ Backfilled commit ${commit.commitHash.slice(0, 7)}`,
+          );
+        }
+      } catch (err: any) {
+        const is429 =
+          err?.status === 429 ||
+          (err?.message ?? "").includes("429") ||
+          (err?.message ?? "").toLowerCase().includes("quota");
+
+        if (is429) {
+          console.warn(
+            `[backfillCommitSummaries] Rate limit hit after backfilling ${backfilled}/${emptyCommits.length}. Stopping.`,
+          );
+          break; // Stop gracefully, don't throw
+        }
+        console.error(
+          `[backfillCommitSummaries] Failed for ${commit.commitHash.slice(0, 7)}, skipping:`,
+          err?.message,
+        );
+      }
+    }
+
+    console.log(
+      `[backfillCommitSummaries] Done — backfilled ${backfilled}/${emptyCommits.length}`,
+    );
+    return { backfilled, total: emptyCommits.length };
+  } catch (err) {
+    console.error(`[backfillCommitSummaries] Fatal error:`, err);
+    Sentry.captureException(err, { extra: { projectId } });
+    return { backfilled: 0, total: 0 };
+  }
+};

@@ -10,6 +10,7 @@ import {
   parseGithubRepoUrl,
 } from "@/lib/githubRepoLoader";
 import { enqueueJob } from "@/lib/qstash";
+import { backfillCommitSummaries } from "@/lib/github";
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "ownyourcode-internal";
 const APP_URL =
@@ -389,9 +390,19 @@ export const projectRouter = createTRPCRouter({
       }
 
       try {
-        return await ctx.db.gitCommit.findMany({
+        const commits = await ctx.db.gitCommit.findMany({
           where: { projectId: input.projectId },
         });
+
+        // Fire-and-forget: backfill any commits that have empty AI summaries
+        const hasEmpty = commits.some((c) => c.commitSummary === "");
+        if (hasEmpty) {
+          backfillCommitSummaries(input.projectId).catch((err) =>
+            console.warn(`[getCommits] backfill error (non-fatal):`, err),
+          );
+        }
+
+        return commits;
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
