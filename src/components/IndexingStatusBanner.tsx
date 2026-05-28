@@ -154,6 +154,22 @@ export default function IndexingStatusBanner({ projectId }: Props) {
     updatedAt &&
     Date.now() - new Date(updatedAt).getTime() > 5 * 60 * 1000;
 
+  /** Sanitize raw backend errors into short, user-friendly messages. */
+  const friendlyError = (raw: string | null | undefined): string => {
+    if (!raw) return "An unknown error occurred.";
+    const lower = raw.toLowerCase();
+    if (lower.includes("can't reach database") || lower.includes("connect etimedout") || lower.includes("connection refused"))
+      return "Temporary database connection issue. Click Resume to retry.";
+    if (lower.includes("rate limit") || lower.includes("429") || lower.includes("quota"))
+      return `Rate limit reached after processing some files. Click Resume to continue from where we left off.`;
+    if (lower.includes("unauthorized") || lower.includes("401"))
+      return "GitHub authentication failed. Check your token and try again.";
+    if (lower.includes("not found") || lower.includes("404"))
+      return "Repository not found. Verify the URL and your access permissions.";
+    if (raw.length > 120) return raw.slice(0, 117) + "…";
+    return raw;
+  };
+
   if (indexingStatus === "COMPLETED" && !syncWatch) return null;
 
   const pg = Number(indexingProgress) || 0;
@@ -190,7 +206,7 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         tone="red"
         iconMode="error"
         title={hasSyncCheckpoint ? "Sync failed" : "Indexing failed"}
-        description={indexingError ?? "An unknown error occurred."}
+        description={friendlyError(indexingError)}
         timerLine={
           isRateLimitError && rateLimitTimeLeft
             ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
