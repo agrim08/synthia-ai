@@ -79,6 +79,7 @@ export type JobProgressBannerProps = {
   total?: number;
   showResume?: boolean;
   resumePending?: boolean;
+  resumeText?: string;
   onResume?: () => void;
   disabled?: boolean;
 };
@@ -98,6 +99,7 @@ export function JobProgressBanner({
   total = 0,
   showResume,
   resumePending,
+  resumeText = "Resume",
   onResume,
   disabled,
 }: JobProgressBannerProps) {
@@ -180,7 +182,7 @@ export function JobProgressBanner({
             ) : (
               <RefreshCw className="size-3.5" />
             )}
-            Resume
+            {resumeText}
           </Button>
         )}
       </div>

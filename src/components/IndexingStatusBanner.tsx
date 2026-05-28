@@ -149,6 +149,11 @@ export default function IndexingStatusBanner({ projectId }: Props) {
     hasSyncCheckpoint,
   } = d;
 
+  const isStalled =
+    (indexingStatus === "INDEXING" || indexingStatus === "SYNCING") &&
+    updatedAt &&
+    Date.now() - new Date(updatedAt).getTime() > 5 * 60 * 1000;
+
   if (indexingStatus === "COMPLETED" && !syncWatch) return null;
 
   const pg = Number(indexingProgress) || 0;
@@ -250,30 +255,32 @@ export default function IndexingStatusBanner({ projectId }: Props) {
     if (discoveringSync) {
       return (
         <JobProgressBanner
-          tone="sky"
-          iconMode="spinner-sky"
-          title="Syncing new changes from GitHub"
-          description="Fetching commit comparison and file list from GitHub…"
-          indeterminate
+          tone={isStalled ? "amber" : "sky"}
+          iconMode={isStalled ? "warn" : "spinner-sky"}
+          title={isStalled ? "Sync stalled" : "Syncing new changes from GitHub"}
+          description={isStalled ? "The background worker timed out. Force resume to retry." : "Fetching commit comparison and file list from GitHub…"}
+          indeterminate={!isStalled}
           showResume
           resumePending={retrigger.isPending}
-          disabled
+          disabled={!isStalled}
+          resumeText={isStalled ? "Force Resume" : "Resume"}
           onResume={() => retrigger.mutate({ projectId })}
         />
       );
     }
     return (
       <JobProgressBanner
-        tone="sky"
-        iconMode="spinner-sky"
-        title="Syncing new changes from GitHub"
-        description={`Applying updates… ${pg} of ${tot} file(s). You can keep working — this runs in the background.`}
+        tone={isStalled ? "amber" : "sky"}
+        iconMode={isStalled ? "warn" : "spinner-sky"}
+        title={isStalled ? "Sync stalled" : "Syncing new changes from GitHub"}
+        description={isStalled ? "The background worker timed out. Force resume to continue." : `Applying updates… ${pg} of ${tot} file(s). You can keep working — this runs in the background.`}
         pct={pct}
         progress={pg}
         total={tot}
         showResume
         resumePending={retrigger.isPending}
-        disabled
+        disabled={!isStalled}
+        resumeText={isStalled ? "Force Resume" : "Resume"}
         onResume={() => retrigger.mutate({ projectId })}
       />
     );
@@ -283,14 +290,15 @@ export default function IndexingStatusBanner({ projectId }: Props) {
   if (discoveringIndex) {
     return (
       <JobProgressBanner
-        tone="indigo"
-        iconMode="spinner-indigo"
-        title="Indexing repository in the background"
-        description="Fetching and listing files from GitHub (this step can take 1–3 minutes on serverless). File counts appear once scanning finishes."
-        indeterminate
+        tone={isStalled ? "amber" : "indigo"}
+        iconMode={isStalled ? "warn" : "spinner-indigo"}
+        title={isStalled ? "Indexing stalled" : "Indexing repository in the background"}
+        description={isStalled ? "The background worker may have timed out. Force resume to retry." : "Fetching and listing files from GitHub (this step can take 1–3 minutes on serverless). File counts appear once scanning finishes."}
+        indeterminate={!isStalled}
         showResume
         resumePending={retrigger.isPending}
-        disabled
+        disabled={!isStalled}
+        resumeText={isStalled ? "Force Resume" : "Resume"}
         onResume={() => retrigger.mutate({ projectId })}
       />
     );
@@ -298,16 +306,17 @@ export default function IndexingStatusBanner({ projectId }: Props) {
 
   return (
     <JobProgressBanner
-      tone="indigo"
-      iconMode="spinner-indigo"
-      title="Indexing repository in the background"
-      description={`Processing files… ${pg} of ${tot} done. You can keep using the app — we'll notify you when ready.`}
+      tone={isStalled ? "amber" : "indigo"}
+      iconMode={isStalled ? "warn" : "spinner-indigo"}
+      title={isStalled ? "Indexing stalled" : "Indexing repository in the background"}
+      description={isStalled ? "The background worker may have timed out. Force resume to continue." : `Processing files… ${pg} of ${tot} done. You can keep using the app — we'll notify you when ready.`}
       pct={pct}
       progress={pg}
       total={tot}
       showResume
       resumePending={retrigger.isPending}
-      disabled
+      disabled={!isStalled}
+      resumeText={isStalled ? "Force Resume" : "Resume"}
       onResume={() => retrigger.mutate({ projectId })}
     />
   );
