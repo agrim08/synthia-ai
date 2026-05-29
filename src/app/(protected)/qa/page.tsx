@@ -329,6 +329,9 @@ export default function QandA() {
   const saveAnswer = api.project.saveAnswer.useMutation();
   const updateQuestion = api.project.updateQuestion.useMutation();
 
+  // Abort controller for stopping streaming responses
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number; isConversational?: boolean }[]>([]);
   const [pendingConversational, setPendingConversational] = useState(false);
@@ -446,6 +449,9 @@ export default function QandA() {
 
     const newMessages = [...messages, { role: "user", content: userMessage }];
     setMessages(newMessages);
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
     setLoading(true);
 
     try {
@@ -455,7 +461,7 @@ export default function QandA() {
       setMessages((prev) => [...prev, { role: "bot", content: "", isConversational: looksConversational }]);
 
       const startTime = Date.now();
-      const { output, filesReferences, isConversational: actuallyConversational } = await askChatBot(userMessage, projectId, messages, chatMode);
+      const { output, filesReferences, isConversational: actuallyConversational } = await askChatBot(userMessage, projectId, messages, chatMode, controller.signal);
       const thinkingTime = (Date.now() - startTime) / 1000;
 
       let fullAnswer = "";
@@ -511,12 +517,18 @@ export default function QandA() {
           }
         );
       }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        // User cancelled the request – silently stop loading
+        toast.info("Response cancelled by user.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
       setMessages((prev) => prev.slice(0, -1));
       setPendingConversational(false);
     } finally {
       setLoading(false);
+      setAbortController(null);
     }
   };
 
@@ -898,19 +910,14 @@ export default function QandA() {
                   </div>
 
                   <button
-                    onClick={() => handleSubmit()}
-                    disabled={loading || !input.trim() || !projectId}
-                    className={cn(
-                      "size-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ml-1",
-                      input.trim() && !loading && projectId
-                        ? "bg-coral hover:bg-coral/90 text-white shadow-sm hover:scale-105 active:scale-95"
-                        : "bg-cream-deep text-ink-soft cursor-not-allowed"
-                    )}
+                    onClick={handleSubmit}
+                    disabled={!input.trim() || loading || !projectId}
+                    className="shrink-0 flex items-center justify-center h-9 w-9 rounded-xl bg-coral hover:bg-coral/90 transition-all text-cream shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <Loader2 className="size-3.5 animate-spin" />
+                      <div className="size-4 rounded-full border-2 border-cream/30 border-t-cream animate-spin" />
                     ) : (
-                      <ArrowUp className="size-3.5" />
+                      <ArrowUp className="size-4 ml-0.5" />
                     )}
                   </button>
                 </div>

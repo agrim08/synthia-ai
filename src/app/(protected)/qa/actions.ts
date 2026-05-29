@@ -77,6 +77,7 @@ Never over-explain. Match the user's energy.
 
 ${conversationHistory ? `CONVERSATION SO FAR:\n${conversationHistory}\n\n` : ""}USER: ${question}
 ASSISTANT:`,
+    signal: abortSignal,
   });
 
   (async () => {
@@ -101,6 +102,7 @@ export async function askChatBot(
   projectId: string,
   prevMessages: { role: string; content: string }[] = [],
   mode: "learn" | "interview" = "learn",
+  abortSignal?: AbortSignal,
 ) {
   // Fast path — skip embeddings, vector search, and smart filtering entirely
   if (isConversationalMessage(question)) {
@@ -232,6 +234,7 @@ BEHAVIOR:
       If the context does not provide an answer, use your best software engineering knowledge, but don't invent code that definitively isn't there if asked about specific internal logic.
       Answers should be provided in Markdown syntax, with code snippets if needed. Responses should be as detailed as possible, ensuring clarity and accuracy while avoiding unnecessary or misleading information.
       `,
+      signal: abortSignal,
     });
 
     (async () => {
