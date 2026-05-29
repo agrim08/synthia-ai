@@ -19,16 +19,16 @@ const google = createGoogleGenerativeAI({
 // Returns true if the message is simple chit-chat that doesn't need RAG.
 
 const CONVERSATIONAL_PATTERNS = [
-  // greetings
-  /^(hi|hey|hello|howdy|sup|what'?s up|yo)\b/i,
+  // greetings — allow repeated chars: hi, hii, hiii, hey, heyy, hello
+  /^(hi+|he+y+|hello+|howdy|sup|what'?s up|yo+)(!|\.|,|\s|$)/i,
   // acknowledgements
-  /^(ok|okay|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)\b/i,
+  /^(ok+a?y?|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)(\b|!|\.|$)/i,
   // yes/no
-  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)\b/i,
+  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)(\b|!|\.|$)/i,
   // farewells
-  /^(bye|goodbye|see you|see ya|later|cya|take care|good night|gn)\b/i,
+  /^(bye+|goodbye|see you|see ya|later|cya|take care|good night|gn)(\b|!|\.|$)/i,
   // filler / affirmation
-  /^(wow|hmm|interesting|i see|i understand|got it|fair enough|lol|haha|hehe)\b/i,
+  /^(wow|hmm+|interesting|i see|i understand|got it|fair enough|lol|ha(ha)+|hehe)(\b|!|\.|$)/i,
 ];
 
 // Words that strongly indicate a technical code question — always use RAG

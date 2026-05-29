@@ -240,11 +240,12 @@ function CodeViewerPanel({
 // Client-side mirror of the server classifier — zero latency, used to
 // predict the loader variant before the server action resolves.
 const CONVERSATIONAL_RE = [
-  /^(hi|hey|hello|howdy|sup|what'?s up|yo)\b/i,
-  /^(ok|okay|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)\b/i,
-  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)\b/i,
-  /^(bye|goodbye|see you|see ya|later|cya|take care|good night|gn)\b/i,
-  /^(wow|hmm|interesting|i see|i understand|got it|fair enough|lol|haha|hehe)\b/i,
+  // greetings — allow repeated chars: hi, hii, hiii, hey, heyy, hello
+  /^(hi+|he+y+|hello+|howdy|sup|what'?s up|yo+)(!|\.|\s|$)/i,
+  /^(ok+a?y?|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)(\b|!|\.|$)/i,
+  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)(\b|!|\.|$)/i,
+  /^(bye+|goodbye|see you|see ya|later|cya|take care|good night|gn)(\b|!|\.|$)/i,
+  /^(wow|hmm+|interesting|i see|i understand|got it|fair enough|lol|ha(ha)+|hehe)(\b|!|\.|$)/i,
 ];
 const TECH_SIGNALS = [
   "function","class","method","variable","import","export","component",
@@ -909,17 +910,24 @@ export default function QandA() {
                     </button>
                   </div>
 
-                  <button
-                    onClick={handleSubmit}
-                    disabled={!input.trim() || loading || !projectId}
-                    className="shrink-0 flex items-center justify-center h-9 w-9 rounded-xl bg-coral hover:bg-coral/90 transition-all text-cream shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <div className="size-4 rounded-full border-2 border-cream/30 border-t-cream animate-spin" />
-                    ) : (
+                  {loading ? (
+                    <button
+                      type="button"
+                      onClick={() => abortController?.abort()}
+                      title="Stop generation"
+                      className="shrink-0 flex items-center justify-center h-9 w-9 rounded-xl bg-ink/10 hover:bg-red-500/20 border border-ink/15 hover:border-red-400/40 transition-all text-ink-soft hover:text-red-400 shadow-sm"
+                    >
+                      <div className="size-3.5 rounded-sm bg-current" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={!input.trim() || !projectId}
+                      className="shrink-0 flex items-center justify-center h-9 w-9 rounded-xl bg-coral hover:bg-coral/90 transition-all text-cream shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <ArrowUp className="size-4 ml-0.5" />
-                    )}
-                  </button>
+                    </button>
+                  )}
                 </div>
                 <p className="text-center text-[11px] text-ink-soft/60 mt-2">
                   {chatMode === "interview"
