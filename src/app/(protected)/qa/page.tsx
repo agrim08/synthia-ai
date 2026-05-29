@@ -815,7 +815,7 @@ export default function QandA() {
               <div className="max-w-4xl mx-auto w-full">
                 <div
                   className={cn(
-                    "relative flex items-end gap-2 bg-cream border rounded-2xl px-4 py-3 shadow-sm transition-all duration-200",
+                    "relative flex items-center gap-2 bg-cream border rounded-2xl px-4 py-3 shadow-sm transition-all duration-200",
                     "border-ink/12 focus-within:border-coral focus-within:shadow-md focus-within:shadow-coral/10"
                   )}
                 >
