@@ -487,8 +487,8 @@ function DocCallout({
 }) {
   const styles = {
     note: "border-border bg-muted/60 text-muted-foreground",
-    tip: "border-emerald-800/60 bg-emerald-950/40 text-emerald-300/80",
-    warning: "border-amber-800/60 bg-amber-950/30 text-amber-300/80",
+    tip: "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300/80",
+    warning: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300/80",
   };
   const labels = { note: "Note", tip: "Tip", warning: "Warning" };
   return (
