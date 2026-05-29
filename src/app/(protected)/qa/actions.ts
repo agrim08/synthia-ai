@@ -62,6 +62,7 @@ function isConversationalMessage(question: string): boolean {
 async function askConversational(
   question: string,
   prevMessages: { role: string; content: string }[],
+  abortSignal?: AbortSignal,
 ) {
   const stream = createStreamableValue();
 
@@ -77,7 +78,7 @@ Never over-explain. Match the user's energy.
 
 ${conversationHistory ? `CONVERSATION SO FAR:\n${conversationHistory}\n\n` : ""}USER: ${question}
 ASSISTANT:`,
-    signal: abortSignal,
+    abortSignal,
   });
 
   (async () => {
@@ -86,7 +87,7 @@ ASSISTANT:`,
         stream.update(delta);
       }
     } catch {
-      stream.update("Sorry, something went wrong.");
+      // silently stop on abort or error
     } finally {
       stream.done();
     }
@@ -106,7 +107,7 @@ export async function askChatBot(
 ) {
   // Fast path — skip embeddings, vector search, and smart filtering entirely
   if (isConversationalMessage(question)) {
-    return askConversational(question, prevMessages);
+    return askConversational(question, prevMessages, abortSignal);
   }
 
   const stream = createStreamableValue();
