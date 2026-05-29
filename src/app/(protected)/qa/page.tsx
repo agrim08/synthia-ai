@@ -242,12 +242,13 @@ function ThinkingState() {
 
   useEffect(() => {
     const phases = [
-      "Analyzing request",
-      "Searching codebase",
-      "Filtering relevant files",
-      "Reading source code",
-      "Formulating response",
-      "Almost there"
+      "Parsing question and context...",
+      "Generating vector embeddings for search...",
+      "Scanning repository for matching semantic concepts...",
+      "Ranking relevant files by similarity...",
+      "Reading source code from identified files...",
+      "Synthesizing codebase context...",
+      "Formatting final response..."
     ];
     let idx = 0;
 
