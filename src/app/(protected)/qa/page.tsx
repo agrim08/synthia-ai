@@ -237,10 +237,51 @@ function CodeViewerPanel({
 
 
 
-function ThinkingState() {
-  const [phase, setPhase] = useState("Analyzing request...");
+// Client-side mirror of the server classifier — zero latency, used to
+// predict the loader variant before the server action resolves.
+const CONVERSATIONAL_RE = [
+  /^(hi|hey|hello|howdy|sup|what'?s up|yo)\b/i,
+  /^(ok|okay|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)\b/i,
+  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)\b/i,
+  /^(bye|goodbye|see you|see ya|later|cya|take care|good night|gn)\b/i,
+  /^(wow|hmm|interesting|i see|i understand|got it|fair enough|lol|haha|hehe)\b/i,
+];
+const TECH_SIGNALS = [
+  "function","class","method","variable","import","export","component",
+  "hook","api","route","endpoint","database","schema","prisma","query",
+  "mutation","state","context","auth","middleware","error","bug","fix",
+  "why","how","what does","explain","show me","where is","where does",
+  "how does","can you","what is the","tell me","which file","how to",
+  "implement","architecture","flow","logic","code","type","interface",
+  "props","return","async","await","fetch","deploy","build","test",
+  "env","config","setup",
+];
+function isConversationalHint(q: string): boolean {
+  const t = q.trim();
+  if (t.split(/\s+/).length > 12) return false;
+  const lower = t.toLowerCase();
+  if (TECH_SIGNALS.some((s) => lower.includes(s))) return false;
+  return CONVERSATIONAL_RE.some((p) => p.test(t));
+}
+
+function ThinkingState({ conversational = false }: { conversational?: boolean }) {
+  const [phase, setPhase] = useState(
+    conversational ? "Thinking..." : "Parsing question and context..."
+  );
 
   useEffect(() => {
+    if (conversational) {
+      // Conversational messages resolve fast — just a simple pulse
+      const variants = ["Thinking...", "Composing reply..."];
+      let idx = 0;
+      const interval = setInterval(() => {
+        idx = (idx + 1) % variants.length;
+        setPhase(variants[idx]!);
+      }, 700);
+      return () => clearInterval(interval);
+    }
+
+    // Full RAG pipeline steps
     const phases = [
       "Parsing question and context...",
       "Generating vector embeddings for search...",
@@ -255,15 +296,15 @@ function ThinkingState() {
     const interval = setInterval(() => {
       idx++;
       if (idx >= phases.length - 1) {
-        setPhase(phases[phases.length - 1]);
+        setPhase(phases[phases.length - 1]!);
         clearInterval(interval);
       } else {
-        setPhase(phases[idx]);
+        setPhase(phases[idx]!);
       }
     }, 1500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [conversational]);
 
   return (
     <div className="flex items-center gap-2 py-1 text-ink-soft">
@@ -289,7 +330,8 @@ export default function QandA() {
   const updateQuestion = api.project.updateQuestion.useMutation();
 
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string; filesReferences?: any[]; thinkingTime?: number; isConversational?: boolean }[]>([]);
+  const [pendingConversational, setPendingConversational] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -407,10 +449,13 @@ export default function QandA() {
     setLoading(true);
 
     try {
-      setMessages((prev) => [...prev, { role: "bot", content: "" }]);
+      // Peek if this will be a conversational reply so we can show the right loader immediately
+      const looksConversational = isConversationalHint(userMessage);
+      setPendingConversational(looksConversational);
+      setMessages((prev) => [...prev, { role: "bot", content: "", isConversational: looksConversational }]);
 
       const startTime = Date.now();
-      const { output, filesReferences } = await askChatBot(userMessage, projectId, messages, chatMode);
+      const { output, filesReferences, isConversational: actuallyConversational } = await askChatBot(userMessage, projectId, messages, chatMode);
       const thinkingTime = (Date.now() - startTime) / 1000;
 
       let fullAnswer = "";
@@ -423,16 +468,17 @@ export default function QandA() {
             updated[updated.length - 1] = { 
               role: "bot", 
               content: fullAnswer, 
-              filesReferences,
+              filesReferences: actuallyConversational ? [] : filesReferences,
               thinkingTime,
               mode: chatMode,
+              isConversational: actuallyConversational,
             };
             return updated;
           });
         }
       }
 
-      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences, thinkingTime, mode: chatMode }];
+      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences: actuallyConversational ? [] : filesReferences, thinkingTime, mode: chatMode, isConversational: actuallyConversational }];
 
       if (!currentQuestionId) {
         saveAnswer.mutate(
@@ -468,6 +514,7 @@ export default function QandA() {
     } catch {
       toast.error("Something went wrong. Please try again.");
       setMessages((prev) => prev.slice(0, -1));
+      setPendingConversational(false);
     } finally {
       setLoading(false);
     }
@@ -690,7 +737,7 @@ export default function QandA() {
                             ) : (
                               <div>
                                 {msg.content === "" ? (
-                                  <ThinkingState />
+                                  <ThinkingState conversational={!!msg.isConversational} />
                                 ) : (
                                   <StreamingMarkdown 
                                     content={msg.content} 

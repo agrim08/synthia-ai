@@ -14,18 +14,107 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+// ─── Conversational Classifier ──────────────────────────────────────────────
+// Zero API calls, pure heuristic. Runs in <1ms.
+// Returns true if the message is simple chit-chat that doesn't need RAG.
+
+const CONVERSATIONAL_PATTERNS = [
+  // greetings
+  /^(hi|hey|hello|howdy|sup|what'?s up|yo)\b/i,
+  // acknowledgements
+  /^(ok|okay|got it|sure|alright|cool|noted|understood|thanks?|thank you|thx|ty|cheers|great|awesome|nice|perfect|sounds good|makes sense)\b/i,
+  // yes/no
+  /^(yes|no|nope|yep|yup|nah|definitely|absolutely|of course|not really)\b/i,
+  // farewells
+  /^(bye|goodbye|see you|see ya|later|cya|take care|good night|gn)\b/i,
+  // filler / affirmation
+  /^(wow|hmm|interesting|i see|i understand|got it|fair enough|lol|haha|hehe)\b/i,
+];
+
+// Words that strongly indicate a technical code question — always use RAG
+const TECHNICAL_SIGNALS = [
+  "function", "class", "method", "variable", "import", "export",
+  "component", "hook", "api", "route", "endpoint", "database", "schema",
+  "prisma", "query", "mutation", "state", "context", "auth", "middleware",
+  "error", "bug", "fix", "why", "how", "what does", "explain", "show me",
+  "where is", "where does", "how does", "can you", "what is the", "tell me",
+  "which file", "how to", "implement", "architecture", "flow", "logic",
+  "code", "type", "interface", "props", "return", "async", "await", "fetch",
+  "deploy", "build", "test", "env", "config", "setup",
+];
+
+function isConversationalMessage(question: string): boolean {
+  const trimmed = question.trim();
+
+  // If it's too long, it's probably a real question (>12 words)
+  if (trimmed.split(/\s+/).length > 12) return false;
+
+  // If it contains any technical signals, use RAG
+  const lower = trimmed.toLowerCase();
+  if (TECHNICAL_SIGNALS.some((t) => lower.includes(t))) return false;
+
+  // Check conversational patterns
+  return CONVERSATIONAL_PATTERNS.some((p) => p.test(trimmed));
+}
+
+// ─── Fast conversational path (no RAG, no embeddings) ───────────────────────
+
+async function askConversational(
+  question: string,
+  prevMessages: { role: string; content: string }[],
+) {
+  const stream = createStreamableValue();
+
+  const conversationHistory = prevMessages.length > 0
+    ? prevMessages.map((m) => `${m.role === "user" ? "USER" : "ASSISTANT"}:\n${m.content}`).join("\n\n")
+    : "";
+
+  const { textStream } = await streamText({
+    model: google("gemini-2.0-flash-lite"),
+    prompt: `You are a friendly, warm AI assistant embedded in a code intelligence tool called OwnYourCode.
+Keep replies concise, natural and conversational — 1 to 3 sentences max.
+Never over-explain. Match the user's energy.
+
+${conversationHistory ? `CONVERSATION SO FAR:\n${conversationHistory}\n\n` : ""}USER: ${question}
+ASSISTANT:`,
+  });
+
+  (async () => {
+    try {
+      for await (const delta of textStream) {
+        stream.update(delta);
+      }
+    } catch {
+      stream.update("Sorry, something went wrong.");
+    } finally {
+      stream.done();
+    }
+  })();
+
+  return { output: stream.value, filesReferences: [], isConversational: true };
+}
+
+// ─── Full RAG pipeline ───────────────────────────────────────────────────────
+
 export async function askChatBot(
   question: string,
   projectId: string,
   prevMessages: { role: string; content: string }[] = [],
   mode: "learn" | "interview" = "learn",
 ) {
+  // Fast path — skip embeddings, vector search, and smart filtering entirely
+  if (isConversationalMessage(question)) {
+    return askConversational(question, prevMessages);
+  }
+
   const stream = createStreamableValue();
 
   try {
+    // Step 1: embed question for vector search
     const queryVector = await loadEmbedding(question);
     const vectorQuery = `[${queryVector.join(",")}]`;
 
+    // Step 2: semantic similarity search
     const result = (await db.$queryRaw`
       SELECT "fileName","sourceCode","summary",
       1 - ("summaryEmbeddings" <=> ${vectorQuery} :: vector)  AS similarity
@@ -36,6 +125,7 @@ export async function askChatBot(
         LIMIT 10
     `) as { fileName: string; sourceCode: string; summary: string }[];
 
+    // Step 3: LLM-based relevance filtering
     let finalResult = result.slice(0, 3);
     try {
       const { object: filteredIndices } = await generateObject({
@@ -66,6 +156,7 @@ export async function askChatBot(
       console.error("Smart filtering failed in askChatBot", err);
     }
 
+    // Step 4: build context block
     let context = "";
     for (const doc of finalResult) {
       context += `source: ${doc?.fileName}\ncodeContent:\n${doc?.sourceCode}\nsummary of file: ${doc?.summary}\n\n`;
@@ -117,6 +208,7 @@ BEHAVIOR:
 --- END INTERVIEW MODE ---
 ` : "";
 
+    // Step 5: stream the answer
     const { textStream } = await streamText({
       model: google("gemini-2.5-flash"),
       prompt: `
@@ -157,14 +249,13 @@ BEHAVIOR:
       }
     })();
 
-    return { output: stream.value, filesReferences: finalResult };
+    return { output: stream.value, filesReferences: finalResult, isConversational: false };
   } catch (error) {
     console.error("Critical error in askChatBot:", error);
-    // Even if it fails early, we can return the stream value so the frontend can read the error message we inject
     stream.update(
       "An internal error occurred while processing your request. Please check the server logs.",
     );
     stream.done();
-    return { output: stream.value, filesReferences: [] };
+    return { output: stream.value, filesReferences: [], isConversational: false };
   }
 }
