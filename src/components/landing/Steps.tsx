@@ -33,8 +33,8 @@ export function Steps() {
             <span className="h-1.5 w-1.5 rounded-full bg-coral" />
             How it works
           </span>
-          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-            Ship faster in <span className="font-display italic text-coral">three</span> simple steps.
+          <h2 className="mt-4 text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
+            How <span className="font-display italic text-coral">OwnYourCode</span> works
           </h2>
         </div>
 

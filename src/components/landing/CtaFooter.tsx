@@ -12,9 +12,9 @@ export function CtaFooter() {
             <div className="absolute -right-10 bottom-0 h-40 w-40 animate-float rounded-full bg-sky/40 blur-2xl [animation-delay:-3s]" />
           </div>
           <div className="relative">
-            <h2 className="text-balance font-semibold tracking-tight text-ink text-4xl md:text-6xl">
-              Your codebase, but{" "}
-              <span className="font-display italic text-coral">finally understood</span>.
+            <h2 className="text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
+              Ready to stop guessing and start{" "}
+              <span className="font-display italic text-coral">shipping?</span>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-ink-soft">
               Free to start. Pay-as-you-go after that. Connect a repo in 30 seconds.

@@ -38,8 +38,10 @@ export function Pricing() {
             <CreditCard className="h-3 w-3 text-coral" />
             Pricing
           </span>
-          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-            Simple, <span className="font-display italic text-coral">transparent</span> pricing.
+          <h2 className="mt-4 text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
+            Simple, transparent pricing.
+            <br />
+            <span className="font-display italic text-coral">No surprises.</span>
           </h2>
           <p className="mt-4 text-ink-soft">
             Pay only for what you index. No subscriptions. No surprises.

@@ -9,14 +9,10 @@ export function Bento() {
             <Sparkles className="h-3 w-3 text-coral" />
             Features
           </span>
-          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
+          <h2 className="mt-4 text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
             Everything your team needs to{" "}
             <span className="font-display italic text-coral">ship faster</span>.
           </h2>
-          <p className="mt-4 text-balance text-ink-soft">
-            One platform. Zero context-switching. From understanding to documentation
-            to review — OwnYourCode handles it all.
-          </p>
         </div>
 
         <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-6 md:grid-rows-2">
@@ -115,8 +111,11 @@ export function Bento() {
               {Array.from({ length: 28 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-full rounded-sm bg-ink/80 transition-all duration-500 group-hover:bg-coral"
-                  style={{ height: `${30 + ((i * 23) % 70)}%` }}
+                  className="w-full rounded-sm bg-coral animate-pulse"
+                  style={{ 
+                    height: `${30 + ((i * 23) % 70)}%`,
+                    animationDelay: `${(i % 7) * 150}ms`
+                  }}
                 />
               ))}
             </div>

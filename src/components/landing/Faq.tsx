@@ -33,8 +33,8 @@ export function Faq() {
           <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-card px-3 py-1 text-xs font-semibold text-ink">
             FAQ
           </span>
-          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-            Common <span className="font-display italic text-coral">questions</span>.
+          <h2 className="mt-4 text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
+            Frequently asked questions
           </h2>
         </div>
         <div className="mt-12 space-y-3">

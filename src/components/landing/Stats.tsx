@@ -10,9 +10,8 @@ export function Stats() {
     <section className="px-6 py-24">
       <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-ink/10 bg-ink p-10 text-cream shadow-pop md:p-16">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-            Numbers that{" "}
-            <span className="font-display italic text-coral">speak</span> for themselves.
+          <h2 className="text-[52px] font-semibold leading-[1.1] tracking-[-0.04em]">
+            Built for velocity.
           </h2>
           <p className="mt-4 text-cream/70">
             Real outcomes from teams shipping with OwnYourCode every day.

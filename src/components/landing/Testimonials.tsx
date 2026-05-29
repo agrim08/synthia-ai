@@ -36,9 +36,9 @@ export function Testimonials() {
             <Star className="h-3 w-3 fill-coral text-coral" />
             Loved by builders
           </span>
-          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-            Engineering teams are{" "}
-            <span className="font-display italic text-coral">obsessed</span>.
+          <h2 className="mt-4 text-[52px] font-semibold leading-[1.1] tracking-[-0.04em] text-ink">
+            Loved by engineers at{" "}
+            <span className="font-display italic text-coral">top companies</span>.
           </h2>
         </div>
 

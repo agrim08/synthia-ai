@@ -3,10 +3,10 @@ import { Sparkles, Star, Check, GitBranch, MessagesSquare, FileText, CreditCard 
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 const screens = [
-  { label: "Commit Intelligence", icon: GitBranch, accent: "bg-coral-soft", desc: "Every commit, decoded." },
-  { label: "Chat Your Codebase", icon: MessagesSquare, accent: "bg-sky", desc: "Full context, every time." },
-  { label: "Meeting Synthesis", icon: FileText, accent: "bg-sage", desc: "Audio → linked insights." },
-  { label: "Transparent Billing", icon: CreditCard, accent: "bg-butter", desc: "1 credit = 1 file." },
+  { label: "Commit Intelligence", icon: GitBranch, accent: "bg-coral-soft", desc: "Every commit, decoded.", image: "/commits.png" },
+  { label: "Chat Your Codebase", icon: MessagesSquare, accent: "bg-sky", desc: "Full context, every time.", image: "/conversation.png" },
+  { label: "Instant Indexing", icon: FileText, accent: "bg-sage", desc: "Analyze repos instantly.", image: "/dashboard.png" },
+  { label: "Transparent Billing", icon: CreditCard, accent: "bg-butter", desc: "1 credit = 1 file.", image: "/billing.png" },
 ];
 
 export function Hero() {
@@ -27,7 +27,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden pb-24 pt-36 md:pt-44">
+    <section className="relative overflow-hidden pb-24 pt-24 md:pt-28">
       {/* Floating decorative blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-[6%] top-32 h-72 w-72 animate-blob rounded-full bg-coral-soft/60 blur-3xl" />
@@ -50,24 +50,20 @@ export function Hero() {
 
         {/* Headline */}
         <h1
-          className="mt-7 animate-fade-up text-balance text-5xl font-semibold tracking-[-0.04em] text-ink md:text-7xl"
+          className="mt-7 animate-fade-up text-[52px] font-semibold tracking-[-0.04em] text-ink leading-[1.1]"
           style={{ animationDelay: "80ms" }}
         >
-          Understand any codebase in{" "}
-          <span className="font-display italic text-coral">minutes</span>,
-          <br className="hidden md:block" /> not{" "}
-          <span className="relative inline-block">
-            <span className="marker-highlight">months.</span>
-          </span>
+          Understand any codebase
+          <br />
+          in <span className="font-display italic font-bold text-coral text-[64px]">minutes</span>, not{" "}
+          <span className="font-display italic font-bold text-coral text-[64px]">months.</span>
         </h1>
 
         <p
-          className="mx-auto mt-6 max-w-2xl animate-fade-up text-balance text-lg text-ink-soft md:text-xl"
+          className="mx-auto mt-10 max-w-2xl animate-fade-up text-base text-ink-soft"
           style={{ animationDelay: "160ms" }}
         >
-          OwnYourCode lets you connect to GitHub for instant answers,
-          automated documentation, and deep code intelligence — all in one warm,
-          surprisingly fun platform.
+          Connect to GitHub for instant answers, automated documentation, and deep code intelligence.
         </p>
 
         {/* CTAs */}
@@ -78,10 +74,10 @@ export function Hero() {
           <SignedOut>
             <a
               href="/sign-in"
-              className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-[15px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
+              className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
             >
               Start for free
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
                 →
               </span>
             </a>
@@ -89,10 +85,10 @@ export function Hero() {
           <SignedIn>
             <a
               href="/dashboard"
-              className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-[15px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
+              className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
             >
               Go to Dashboard
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
                 →
               </span>
             </a>
@@ -101,9 +97,9 @@ export function Hero() {
             href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-card px-6 py-3.5 text-[15px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-ink/40"
+            className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-card px-5 py-2.5 text-[14px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-ink/40"
           >
-            <span className="font-display text-lg leading-none">▶</span>
+            <span className="font-display text-base leading-none">▶</span>
             Watch the 60s demo
           </a>
         </div>
@@ -133,7 +129,7 @@ export function Hero() {
 
         {/* Browser screenshot */}
         <div
-          className="mx-auto mt-16 max-w-5xl animate-fade-up"
+          className="mx-auto mt-12 max-w-4xl animate-fade-up"
           style={{ animationDelay: "420ms" }}
         >
           <div className="relative">
@@ -199,7 +195,7 @@ export function Hero() {
                             : "scale(0.97) translateY(12px)",
                       }}
                     >
-                      <MockScreen accent={screen.accent} title={screen.label} desc={screen.desc} Icon={Icon} />
+                      <MockScreen image={screen.image} />
                     </div>
                   );
                 })}
@@ -234,97 +230,10 @@ export function Hero() {
   );
 }
 
-function MockScreen({
-  accent,
-  title,
-  desc,
-  Icon,
-}: {
-  accent: string;
-  title: string;
-  desc: string;
-  Icon: React.ComponentType<{ className?: string }>;
-}) {
+function MockScreen({ image }: { image: string }) {
   return (
-    <div className="grid h-full grid-cols-12 gap-3 p-4">
-      {/* Sidebar */}
-      <aside className="col-span-3 hidden flex-col gap-2 rounded-xl bg-card p-3 md:flex">
-        <div className="flex items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-lg bg-ink text-[10px] font-bold text-cream">
-            O
-          </span>
-          <span className="text-xs font-semibold">OwnYourCode</span>
-        </div>
-        <div className="mt-2 space-y-1">
-          {["Overview", title, "Repos", "Settings"].map((t) => (
-            <div
-              key={t}
-              className={[
-                "rounded-md px-2 py-1.5 text-[11px]",
-                t === title ? "bg-cream-deep font-semibold text-ink" : "text-ink-soft",
-              ].join(" ")}
-            >
-              {t}
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* Main panel */}
-      <main className="col-span-12 flex flex-col gap-3 rounded-xl bg-card p-4 md:col-span-9">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`grid h-9 w-9 place-items-center rounded-xl ${accent} text-ink`}>
-              <Icon className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="text-sm font-semibold text-ink">{title}</div>
-              <div className="text-[10px] text-ink-soft">{desc}</div>
-            </div>
-          </div>
-          <div className="flex gap-1.5">
-            <span className="rounded-full bg-cream-deep px-2 py-0.5 text-[10px] font-semibold text-ink-soft">
-              Live
-            </span>
-          </div>
-        </div>
-
-        <div className="grid flex-1 grid-cols-3 gap-3">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="flex flex-col gap-2 rounded-lg border border-ink/5 bg-cream/40 p-3"
-              style={{ animation: "fade-up 0.5s ease-out both", animationDelay: `${n * 80}ms` }}
-            >
-              <div className="h-2 w-12 rounded-full bg-ink/15" />
-              <div className="h-1.5 w-16 rounded-full bg-ink/8" />
-              <div className="mt-auto flex items-center justify-between">
-                <div className={`h-7 w-7 rounded-md ${accent}`} />
-                <span className="text-[10px] font-semibold text-ink-soft">+12%</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-lg border border-ink/5 bg-cream/40 p-3">
-          <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold text-ink-soft">
-            <span className="h-1.5 w-1.5 rounded-full bg-coral" />
-            Activity
-          </div>
-          <div className="flex items-end gap-1">
-            {Array.from({ length: 24 }).map((_, i) => (
-              <div
-                key={i}
-                className={`w-full rounded-sm ${accent}`}
-                style={{
-                  height: `${20 + ((i * 17) % 60)}%`,
-                  opacity: 0.4 + ((i * 7) % 60) / 100,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </main>
+    <div className="h-full w-full bg-cream-deep/30">
+      <img src={image} alt="Feature preview" className="h-full w-full object-cover object-left-top" />
     </div>
   );
 }

@@ -490,7 +490,8 @@ export async function embedOneSourceFile(
   fileName: string,
   code: string,
 ): Promise<EmbedFileResult> {
-  await db.sourceCodeEmbeddings.deleteMany({ where: { projectId, fileName } });
+  // Don't delete existing embeddings upfront — only delete after a
+  // successful re-embed so we never lose data on transient failures.
 
   if (code.length > SKIP_EMBEDDING_ABOVE_CHARS) {
     console.warn(
@@ -522,6 +523,9 @@ export async function embedOneSourceFile(
         `loadEmbedding:${fileName}`,
       ),
     );
+
+    // Summary + embedding succeeded — now safe to replace old records
+    await db.sourceCodeEmbeddings.deleteMany({ where: { projectId, fileName } });
 
     const record = await db.sourceCodeEmbeddings.create({
       data: {
@@ -594,8 +598,11 @@ export const indexGithubRepo = async (
       (doc) => !alreadyIndexedSet.has(doc.metadata.source as string),
     );
 
-    const totalFiles = alreadyIndexed.length + pendingDocs.length;
-    let processed = alreadyIndexed.length;
+    // Use the deduplicated Set size (not raw array length) so that
+    // progress exactly matches the number of unique files with embeddings.
+    const alreadyDone = alreadyIndexedSet.size;
+    const totalFiles = alreadyDone + pendingDocs.length;
+    let processed = alreadyDone;
 
     console.log(
       `[indexGithubRepo] ${alreadyIndexed.length} already done, ${pendingDocs.length} pending, ${totalFiles} total`,
@@ -657,15 +664,21 @@ export const indexGithubRepo = async (
         return;
       }
 
-      processed++;
-      await (db.project as any).update({
-        where: { id: projectId },
-        data: { indexingProgress: processed },
-      });
-
+      // Only count files that actually produced an embedding — oversized
+      // and errored files stay in the pending list so the counter matches
+      // the real DB state on the next resume.
       if (result.kind === "embedded") {
+        processed++;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingProgress: processed },
+        });
         console.log(
           `[indexGithubRepo] [${processed}/${totalFiles}] Indexed: ${source}`,
+        );
+      } else {
+        console.warn(
+          `[indexGithubRepo] [${processed}/${totalFiles}] Skipped (${result.kind}): ${source}`,
         );
       }
     }
