@@ -295,7 +295,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           <div className="relative flex rounded-xl bg-ink/[0.06] border border-ink/[0.07] p-1 gap-1">
             {/* Sliding pill — CSS transition only, no Framer dep */}
             <div
-              className="absolute top-1 bottom-1 rounded-lg bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)] border border-ink/[0.08] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              className="absolute top-1 bottom-1 rounded-lg bg-cream shadow-[0_1px_4px_rgba(0,0,0,0.12)] border border-ink/[0.08] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{
                 left: tab === "github" ? "4px" : "50%",
                 right: tab === "github" ? "50%" : "4px",
