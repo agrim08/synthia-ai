@@ -19,7 +19,7 @@ export function Nav() {
     <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
       <nav
         className={[
-          "flex w-full max-w-6xl items-center justify-between rounded-full border border-border/60 px-3 py-2 transition-all duration-500",
+          "flex w-full max-w-6xl items-center justify-between rounded-full border border-border/60 dark:border-white/[0.08] px-3 py-2 transition-all duration-500",
           scrolled
             ? "bg-cream/80 shadow-soft backdrop-blur-xl"
             : "bg-cream/40 backdrop-blur-md",

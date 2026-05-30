@@ -33,6 +33,7 @@ export function Hero() {
         <div className="absolute left-[6%] top-32 h-72 w-72 animate-blob rounded-full bg-coral-soft/60 blur-3xl" />
         <div className="absolute right-[4%] top-20 h-80 w-80 animate-blob rounded-full bg-sky/50 blur-3xl [animation-delay:-4s]" />
         <div className="absolute bottom-0 left-1/3 h-72 w-72 animate-blob rounded-full bg-butter/60 blur-3xl [animation-delay:-8s]" />
+        <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full hidden dark:block bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04),transparent)] blur-3xl pointer-events-none" />
       </div>
 
       <div className="mx-auto max-w-5xl px-6 text-center">
@@ -50,7 +51,7 @@ export function Hero() {
 
         {/* Headline */}
         <h1
-          className="mt-7 animate-fade-up text-[52px] font-semibold tracking-[-0.04em] text-ink leading-[1.1]"
+          className="mt-7 animate-fade-up text-[52px] font-semibold tracking-[-0.04em] text-ink leading-[1.1] text-balance"
           style={{ animationDelay: "80ms" }}
         >
           Understand any codebase
@@ -60,7 +61,7 @@ export function Hero() {
         </h1>
 
         <p
-          className="mx-auto mt-10 max-w-2xl animate-fade-up text-base text-ink-soft"
+          className="mx-auto mt-10 max-w-2xl animate-fade-up text-base text-slate-500 dark:text-slate-400 text-balance"
           style={{ animationDelay: "160ms" }}
         >
           Connect to GitHub for instant answers, automated documentation, and deep code intelligence.
@@ -74,30 +75,26 @@ export function Hero() {
           <SignedOut>
             <a
               href="/sign-in"
-              className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
             >
               Start for free
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
-                →
-              </span>
+              <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
             </a>
           </SignedOut>
           <SignedIn>
             <a
               href="/dashboard"
-              className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream shadow-pop-sm transition-all hover:-translate-y-0.5 hover:shadow-pop"
             >
-              Go to Dashboard
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-coral text-white transition-transform group-hover:rotate-12">
-                →
-              </span>
+              Dashboard
+              <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
             </a>
           </SignedIn>
           <a
             href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-card px-5 py-2.5 text-[14px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-ink/40"
+            className="inline-flex items-center gap-2 rounded-full border border-transparent bg-transparent px-4 py-2 text-sm font-medium text-ink-soft transition-all hover:-translate-y-0.5 hover:border-ink/10 hover:bg-ink/5 hover:text-ink"
           >
             <span className="font-display text-base leading-none">▶</span>
             Watch the 60s demo
@@ -106,7 +103,7 @@ export function Hero() {
 
         {/* Social proof */}
         <div
-          className="mt-7 flex animate-fade-up flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-ink-soft"
+          className="mt-6 flex animate-fade-up flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-ink-soft"
           style={{ animationDelay: "320ms" }}
         >
           <div className="flex items-center gap-1.5">
@@ -134,7 +131,7 @@ export function Hero() {
         >
           <div className="relative">
             {/* Floating sticker decorations */}
-            <div className="pointer-events-none absolute -left-10 -top-8 hidden -rotate-12 animate-float rounded-2xl border border-ink/10 bg-card px-3 py-2 text-xs font-semibold shadow-pop-sm md:block">
+            <div className="pointer-events-none absolute -left-6 top-6 z-10 hidden -rotate-12 animate-float rounded-2xl border border-ink/10 bg-card px-3 py-2 text-xs font-semibold shadow-pop-sm md:block">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-sage" />
                 Indexing 14,302 files
@@ -151,7 +148,7 @@ export function Hero() {
             </div>
 
             {/* Browser chrome */}
-            <div className="rounded-3xl border border-ink/10 bg-card p-2 shadow-pop">
+            <div className="rounded-3xl border border-ink/10 dark:border-white/[0.08] bg-card p-2 shadow-pop relative z-0">
               <div className="flex items-center gap-2 border-b border-ink/5 px-3 py-2">
                 <div className="flex gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-coral/80" />
