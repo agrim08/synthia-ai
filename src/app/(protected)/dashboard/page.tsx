@@ -6,7 +6,7 @@ import {
   Github,
   MoreHorizontal,
   Settings,
-  FolderArchive,
+  Trash2,
   Activity,
   GitBranch,
   Sparkles,
@@ -16,7 +16,7 @@ import React from "react";
 import CommitLogs from "./CommitLogs";
 import AskOwnYourCodeHero from "./AskOwnYourCodeHero";
 import AudioUploadBtn from "./AudioUploadBtn";
-import ArchiveProject from "./ArchiveProject";
+import DeleteProject from "./DeleteProject";
 import InviteTeam from "./InviteTeam";
 import TeamMembers from "./TeamMembers";
 import IndexingStatusBanner from "@/components/IndexingStatusBanner";
@@ -109,18 +109,18 @@ const DashboardPage = () => {
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
-                    document.getElementById("archive-trigger")?.click();
+                    document.getElementById("delete-trigger")?.click();
                   }}
                   className="rounded-lg cursor-pointer text-coral focus:text-coral focus:bg-coral-soft/30"
                 >
-                  <FolderArchive className="mr-2 h-4 w-4" />
-                  Archive Project
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Project
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <div className="hidden">
-              <ArchiveProject />
+              <DeleteProject id="delete-trigger" />
             </div>
           </div>
         </div>

@@ -244,6 +244,7 @@ export const projectRouter = createTRPCRouter({
           githubUrl: "",
           skipUiComponents: !!input.skipUiComponents,
           indexingStatus: "PENDING",
+          indexingTotal: input.fileCount,
         } as any,
       });
       console.log(`[createZipProject] Project created — id: ${project.id}`);
@@ -664,7 +665,7 @@ export const projectRouter = createTRPCRouter({
       return meeting;
     }),
 
-  archiveProject: protectedProcedure
+  deleteProject: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const link = await ctx.db.userToProject.findUnique({
@@ -679,10 +680,32 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
       }
 
-      return await ctx.db.project.update({
-        where: { id: input.projectId },
-        data: { deletedAt: new Date() },
-      });
+      // Cascade delete everything related to the project in a transaction
+      await ctx.db.$transaction([
+        ctx.db.issue.deleteMany({
+          where: { meeting: { projectId: input.projectId } },
+        }),
+        ctx.db.meeting.deleteMany({
+          where: { projectId: input.projectId },
+        }),
+        ctx.db.question.deleteMany({
+          where: { projectId: input.projectId },
+        }),
+        ctx.db.gitCommit.deleteMany({
+          where: { projectId: input.projectId },
+        }),
+        ctx.db.sourceCodeEmbeddings.deleteMany({
+          where: { projectId: input.projectId },
+        }),
+        ctx.db.userToProject.deleteMany({
+          where: { projectId: input.projectId },
+        }),
+        ctx.db.project.delete({
+          where: { id: input.projectId },
+        }),
+      ]);
+
+      return { success: true };
     }),
 
   getTeamMembers: protectedProcedure

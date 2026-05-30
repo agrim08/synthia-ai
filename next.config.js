@@ -15,6 +15,9 @@ const config = {
   typescript: {
     ignoreBuildErrors: true, // Ignore TypeScript errors during Next.js build
   },
+  experimental: {
+    after: true,
+  },
 };
 
 export default config;

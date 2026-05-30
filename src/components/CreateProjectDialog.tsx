@@ -224,7 +224,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
         toast.error(err.error ?? "Upload failed");
         return;
       }
-      toast.success("Project indexed successfully!");
+      toast.success("ZIP uploaded! Indexing started in the background.");
       setProjectId(project.id);
       refetch();
       setOpen(false);
