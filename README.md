@@ -11,19 +11,23 @@
 
 ---
 
-Connect your GitHub repository and start asking questions about your code. Our AI indexes your codebase, answers questions about any file or function, and reviews every pull request automatically — grounded entirely in your actual code, not a generic model's assumptions. It works across any repo size, supports private repositories, and stores none of your code after indexing.
+Connect your GitHub repository and start asking questions about your code. Our AI indexes your codebase, answers questions about any file or function, and reviews every pull request automatically — [...]
 
 ---
 
 ## Architecture
 
 ```mermaid
-graph LR
+graph TD
     A[GitHub Repo] -->|webhook + REST| B[Indexing Pipeline]
     B -->|chunk + embed| C[Vector Store]
     C -->|semantic retrieval| D[RAG Query Engine]
     D -->|Gemini API| E[AI Review Output]
-    E -->|PR comment / Q&A| F[Developer]
+    
+    A -->|webhook + REST| F[PR Monitor]
+    F -->|fetch PR diff| G[Review Queue]
+    G -->|process| D
+    E -->|comment| H[Developer]
 ```
 
 ---
