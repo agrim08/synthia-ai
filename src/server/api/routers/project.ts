@@ -195,6 +195,74 @@ export const projectRouter = createTRPCRouter({
     }),
 
   // ------------------------------------------------------------------
+  // Create a project from a ZIP upload (no GitHub URL needed)
+  // ------------------------------------------------------------------
+  createZipProject: protectedProcedure
+    .input(
+      z.object({
+        name: z.string(),
+        fileCount: z.number().int().positive(),
+        skipUiComponents: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      console.log(`[createZipProject] START — name: "${input.name}", fileCount: ${input.fileCount}`);
+
+      let existingUser = await ctx.db.user.findUnique({
+        where: { id: ctx.user.userId! },
+        select: { credits: true },
+      });
+
+      if (!existingUser) {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(ctx.user.userId!);
+        const userEmail = clerkUser.emailAddresses[0]?.emailAddress;
+        if (!userEmail) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        const newUser = await ctx.db.user.upsert({
+          where: { emailAddress: userEmail },
+          update: { imageUrl: clerkUser.imageUrl, firstName: clerkUser.firstName, lastName: clerkUser.lastName },
+          create: {
+            id: ctx.user.userId!,
+            emailAddress: userEmail,
+            imageUrl: clerkUser.imageUrl,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+            credits: 150,
+          },
+        });
+        existingUser = { credits: newUser.credits };
+      }
+
+      const currentCredits = existingUser.credits ?? 0;
+      if (input.fileCount > currentCredits) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient credits" });
+      }
+
+      const project = await ctx.db.project.create({
+        data: {
+          name: input.name,
+          githubUrl: null,
+          skipUiComponents: !!input.skipUiComponents,
+          indexingStatus: "PENDING",
+        } as any,
+      });
+      console.log(`[createZipProject] Project created — id: ${project.id}`);
+
+      await ctx.db.userToProject.create({
+        data: { userId: ctx.user.userId!, projectId: project.id },
+      });
+
+      // Deduct credits immediately to prevent exploit window
+      await ctx.db.user.update({
+        where: { id: ctx.user.userId! },
+        data: { credits: { decrement: input.fileCount } },
+      });
+      console.log(`[createZipProject] Credits decremented by ${input.fileCount}`);
+
+      return project;
+    }),
+
+  // ------------------------------------------------------------------
   // Status polling – used by the UI to show the indexing progress bar
   // ------------------------------------------------------------------
   getProjectStatus: protectedProcedure
@@ -265,8 +333,9 @@ export const projectRouter = createTRPCRouter({
         where: { id: input.projectId },
       })) as any;
 
+      // ZIP-uploaded projects have no githubUrl — skip sync gracefully
       if (!project?.githubUrl) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        return { action: "skipped" as const, reason: "zip_project" };
       }
 
       if (
@@ -346,6 +415,12 @@ export const projectRouter = createTRPCRouter({
       const proj = link.project as any;
       const { githubUrl } = proj;
       const origin = resolvePublicOrigin(ctx.headers);
+
+      // ZIP-uploaded projects cannot be re-indexed via the GitHub pipeline
+      if (!githubUrl) {
+        return { scheduled: false, reason: "zip_project" };
+      }
+
       if (proj.syncState != null) {
         await triggerBackgroundSync(input.projectId, githubUrl, undefined, origin);
       } else {

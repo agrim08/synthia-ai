@@ -718,3 +718,184 @@ export const indexGithubRepo = async (
     throw err;
   }
 };
+
+// ---------------------------------------------------------------------------
+// ZIP upload path — shares all filtering + embedding logic with GitHub path
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a raw ZIP Buffer into Documents, applying the same shouldIgnoreFile
+ * filters used by loadGithubRepo. No GitHub API calls needed.
+ *
+ * The ZIP may or may not have a top-level directory wrapper (GitHub ZIPs do,
+ * user-uploaded ZIPs typically don't). We detect the wrapper automatically.
+ */
+export function loadZipBuffer(
+  zipBuffer: Buffer,
+  skipUi = false,
+): { docs: Document[]; fileCount: number } {
+  const zip = new AdmZip(zipBuffer);
+  const entries = zip.getEntries();
+
+  // Detect optional top-level directory wrapper (GitHub style: "owner-repo-sha/")
+  const topLevelDirs = new Set<string>();
+  for (const e of entries) {
+    const first = e.entryName.split("/")[0];
+    if (first) topLevelDirs.add(first);
+  }
+  const hasSingleTopDir =
+    topLevelDirs.size === 1 &&
+    entries.some((e) => e.isDirectory && e.entryName.indexOf("/") === e.entryName.length - 1);
+  const stripPrefix = hasSingleTopDir ? `${[...topLevelDirs][0]}/` : "";
+
+  const docs: Document[] = [];
+  let fileCount = 0;
+
+  for (const entry of entries) {
+    if (entry.isDirectory) continue;
+
+    const relativePath = stripPrefix
+      ? entry.entryName.startsWith(stripPrefix)
+        ? entry.entryName.slice(stripPrefix.length)
+        : entry.entryName
+      : entry.entryName;
+
+    if (!relativePath) continue;
+    if (shouldIgnoreFile(relativePath, skipUi)) continue;
+
+    fileCount++;
+
+    try {
+      const content = entry.getData().toString("utf-8");
+      docs.push(
+        new Document({
+          pageContent: content,
+          metadata: { source: relativePath },
+        }),
+      );
+    } catch {
+      console.warn(`[loadZipBuffer] Could not decode entry as UTF-8, skipping: ${relativePath}`);
+    }
+  }
+
+  console.log(`[loadZipBuffer] Kept ${docs.length}/${entries.length} entries after filtering`);
+  return { docs, fileCount };
+}
+
+/**
+ * Count indexable files in a ZIP buffer without creating Documents.
+ * Used server-side after upload to double-check the client-side count.
+ */
+export function countZipFiles(zipBuffer: Buffer, skipUi = false): number {
+  return loadZipBuffer(zipBuffer, skipUi).fileCount;
+}
+
+/**
+ * Index a ZIP buffer — identical pipeline to indexGithubRepo but uses
+ * loadZipBuffer instead of loadGithubRepo. No GitHub API calls.
+ */
+export const indexZipRepo = async (projectId: string, zipBuffer: Buffer) => {
+  const startTime = Date.now();
+  const isProd = process.env.NODE_ENV === "production";
+  const limitMs = isProd ? 50_000 : 280_000;
+
+  console.log(`[indexZipRepo] START project=${projectId}`);
+
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    select: { skipUiComponents: true },
+  });
+  const skipUi = project?.skipUiComponents ?? false;
+
+  try {
+    const { docs } = loadZipBuffer(zipBuffer, skipUi);
+
+    const alreadyIndexed = await db.sourceCodeEmbeddings.findMany({
+      where: { projectId },
+      select: { fileName: true },
+    });
+    const alreadyIndexedSet = new Set(alreadyIndexed.map((r) => r.fileName));
+
+    const pendingDocs = docs.filter(
+      (doc) => !alreadyIndexedSet.has(doc.metadata.source as string),
+    );
+
+    const alreadyDone = alreadyIndexedSet.size;
+    const totalFiles = alreadyDone + pendingDocs.length;
+    let processed = alreadyDone;
+
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: { indexingTotal: totalFiles, indexingProgress: processed },
+    });
+
+    if (pendingDocs.length === 0) {
+      await (db.project as any).update({
+        where: { id: projectId },
+        data: { indexingStatus: "COMPLETED", indexedAt: new Date() },
+      });
+      return;
+    }
+
+    let hadRateLimitError = false;
+
+    for (const doc of pendingDocs) {
+      const source = doc.metadata.source as string;
+      const code = doc.pageContent;
+
+      if (Date.now() - startTime > limitMs) {
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingStatus: "PARTIAL", indexingProgress: processed, indexingTotal: totalFiles },
+        });
+        return;
+      }
+
+      const result = await embedOneSourceFile(projectId, source, code);
+      if (result.kind === "rate_limited") {
+        hadRateLimitError = true;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: {
+            indexingStatus: "PARTIAL",
+            indexingProgress: processed,
+            indexingError: `Rate limit hit after ${processed}/${totalFiles} files. Re-run to resume.`,
+          },
+        });
+        return;
+      }
+
+      if (result.kind === "embedded") {
+        processed++;
+        await (db.project as any).update({
+          where: { id: projectId },
+          data: { indexingProgress: processed },
+        });
+        console.log(`[indexZipRepo] [${processed}/${totalFiles}] Indexed: ${source}`);
+      } else {
+        console.warn(`[indexZipRepo] [${processed}/${totalFiles}] Skipped (${result.kind}): ${source}`);
+      }
+    }
+
+    const finalStatus = hadRateLimitError ? "PARTIAL" : "COMPLETED";
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: {
+        indexingStatus: finalStatus,
+        indexingProgress: processed,
+        indexedAt: new Date(),
+        indexingError: hadRateLimitError
+          ? "Some files were skipped due to rate limits. Re-run to complete."
+          : null,
+      },
+    });
+    console.log(`[indexZipRepo] DONE — status=${finalStatus}, processed=${processed}/${totalFiles}`);
+  } catch (err: any) {
+    console.error(`[indexZipRepo] Fatal error:`, err);
+    await (db.project as any).update({
+      where: { id: projectId },
+      data: { indexingStatus: "FAILED", indexingError: err?.message ?? String(err) },
+    });
+    throw err;
+  }
+};
