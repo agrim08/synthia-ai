@@ -209,7 +209,9 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         description={friendlyError(indexingError)}
         timerLine={
           isRateLimitError && rateLimitTimeLeft
-            ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+            ? (d.githubUrl
+                ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+                : `Gemini API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`)
             : undefined
         }
         showResume
@@ -237,7 +239,9 @@ export default function IndexingStatusBanner({ projectId }: Props) {
         }
         timerLine={
           isRateLimitError && rateLimitTimeLeft
-            ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+            ? (d.githubUrl
+                ? `GitHub API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`
+                : `Gemini API Rate limit exceeded. You can resume indexing in ${rateLimitTimeLeft}.`)
             : undefined
         }
         pct={pct}

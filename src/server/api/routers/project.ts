@@ -291,6 +291,7 @@ export const projectRouter = createTRPCRouter({
           indexedAt: true,
           syncState: true,
           updatedAt: true,
+          githubUrl: true,
         } as any,
       });
       if (!project) {
@@ -308,6 +309,7 @@ export const projectRouter = createTRPCRouter({
         indexedAt: p.indexedAt,
         hasSyncCheckpoint: p.syncState != null,
         updatedAt: p.updatedAt,
+        githubUrl: p.githubUrl,
       };
     }),
 
