@@ -63,14 +63,14 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "codebase-qa",
-    label: "Codebase Q&A",
+    label: "Understand & Interview",
     group: "Features",
     icon: Brain,
     sections: [
-      { id: "rag-overview", label: "RAG Pipeline" },
-      { id: "asking-questions", label: "Asking Questions" },
+      { id: "qa-overview", label: "Overview" },
+      { id: "understand-mode", label: "Understand Mode" },
+      { id: "interview-mode", label: "Interview Mode" },
       { id: "file-references", label: "File References" },
-      { id: "conversation-history", label: "Conversation History" },
     ],
   },
   {
@@ -80,8 +80,8 @@ const NAV_ITEMS: NavItem[] = [
     icon: Code,
     sections: [
       { id: "commit-summaries", label: "AI Summaries" },
+      { id: "interview-prep", label: "Interview Prep" },
       { id: "webhooks", label: "GitHub Webhooks" },
-      { id: "author-analytics", label: "Author Analytics" },
     ],
   },
   {
@@ -806,35 +806,44 @@ function CodeIndexingPage() {
 function CodebaseQAPage() {
   return (
     <article>
-      <DocHeading1 id="rag-overview">Codebase Q&A</DocHeading1>
+      <DocHeading1 id="qa-overview">Understand & Interview Modes</DocHeading1>
       <DocPara>
-        The Q&A interface lets you ask any question about your codebase in
-        plain English. Answers are generated using a Retrieval-Augmented
-        Generation (RAG) pipeline — meaning the AI only uses your actual code
-        to respond, never generic assumptions.
+        OwnYourCode splits codebase querying into two dedicated interfaces:
+        <strong> Understand Mode</strong> for deep-dive technical explorations, and
+        <strong> Interview Mode</strong> for interactive mock-interview preparation. Both modes
+        leverage our advanced Retrieval-Augmented Generation (RAG) pipeline to query your actual codebase in real-time.
       </DocPara>
 
-      <DocHeading2 id="asking-questions">Asking Questions</DocHeading2>
+      <DocHeading2 id="understand-mode">Understand Mode</DocHeading2>
       <DocPara>
-        Navigate to the <strong>Q&A</strong> section of your project. Type a
-        question in the input box and press Enter. Some effective question
-        patterns:
+        Use Understand Mode to ask open-ended questions about how your repository works. It is designed to act as your pair-programmer. Effective prompt starters include:
       </DocPara>
-
       <DocList
         items={[
-          "Where is user authentication handled?",
-          "How does the billing credit system work?",
-          "What happens when a new commit is pushed?",
-          "Explain the meeting transcription flow.",
-          "Where are environment variables validated?",
+          "Explain the authentication and routing flow in this app.",
+          "Where is the main database schema defined, and what are the relationships?",
+          "How is client-server communication managed via tRPC?",
+          "Explain the logging and error-tracking setup.",
         ]}
       />
 
-      <DocCallout type="tip">
-        Be specific. Questions like "explain everything" yield generic answers.
-        Questions scoped to a feature or flow return precise references.
-      </DocCallout>
+      <DocHeading2 id="interview-mode">Interview Mode (Mock Prep)</DocHeading2>
+      <DocPara>
+        Interview Mode puts you in the hot seat. The AI acts as a technical interviewer, asking challenging questions about your project implementation to test your deep understanding and prepare you for real-world loops.
+      </DocPara>
+      <DocPara>
+        You can jump-start a mock interview session by choosing one of the 6 core categories from the dashboard or the Q&A empty state:
+      </DocPara>
+      <DocList
+        items={[
+          "Backend: Focuses on backend endpoints, controllers, server procedures, and background services.",
+          "Frontend: Targets UI components, page layouts, reactive states, and responsive styling design.",
+          "Database: Grills you on schema models, Prisma relationships, SQL migrations, and query performance.",
+          "Architecture: Explores folder hierarchies, system boundaries, and code modularization choices.",
+          "Security: Probes authentication mechanisms, middleware protection rules, and typesafe API boundaries.",
+          "System Design: Tests scalability patterns, queue integrations, caching, and external service designs.",
+        ]}
+      />
 
       <DocHeading2 id="file-references">File References</DocHeading2>
       <DocPara>
@@ -877,11 +886,11 @@ AI: Still in src/middleware.ts — the redirect target is…`}
 function CommitIntelPage() {
   return (
     <article>
-      <DocHeading1 id="commit-summaries">Commit Intelligence</DocHeading1>
+      <DocHeading1 id="commit-summaries">Commit Intelligence & Prep</DocHeading1>
       <DocPara>
         OwnYourCode automatically processes every commit pushed to your
-        repository and generates a plain-English AI summary explaining what
-        changed and why it matters.
+        repository, generates a plain-English AI summary explaining what
+        changed, and extracts potential interview prep questions to test you on the implementation details.
       </DocPara>
 
       <DocHeading2 id="commit-summaries">AI Summaries</DocHeading2>
@@ -897,11 +906,11 @@ function CommitIntelPage() {
           },
           {
             title: "Generates a summary",
-            body: "The diff is sent to the Gemini API with a structured prompt that extracts the intent, affected areas, and potential impact of the change.",
+            body: "The diff is sent to the Gemini API with a structured prompt that extracts the intent, affected files, and potential impact of the change.",
           },
           {
             title: "Stores the commit record",
-            body: "The summary, author, timestamp, and SHA are saved to the GitCommit table and displayed in your project's commit feed.",
+            body: "The summary, author, timestamp, and SHA are saved to the GitCommit table and displayed in your project's commit timeline.",
           },
         ]}
       />
@@ -919,6 +928,25 @@ function CommitIntelPage() {
 }`}
       />
 
+      <DocHeading2 id="interview-prep">Interview Prep & Cross-Questions</DocHeading2>
+      <DocPara>
+        Along with each commit summary, OwnYourCode runs evaluation heuristics to generate targeted interview cross-questions based on the file categories and concepts touched in the diff (e.g. database schema migrations, API design, layout updates, state managers, etc.).
+      </DocPara>
+      <DocPara>
+        For instance, when changes touch the database or API layer, you will receive expected questions like:
+      </DocPara>
+      <DocList
+        items={[
+          "How is database schema typesafety maintained between Prisma and the client application?",
+          "Why was tRPC chosen over traditional REST or GraphQL APIs in this system design?",
+          "How do you handle database migrations in production?",
+          "How is data consistency guaranteed in database transactions?",
+        ]}
+      />
+      <DocPara>
+        From the dashboard, you can click the <strong>Practice this Change</strong> button or any individual question bullet next to a commit log on the dashboard to immediately open a targeted mock interview session prefilled with that topic in the Q&A panel.
+      </DocPara>
+
       <DocHeading2 id="webhooks">GitHub Webhooks</DocHeading2>
       <DocPara>
         Commit summaries are driven by push webhooks from GitHub. When you
@@ -932,13 +960,6 @@ function CommitIntelPage() {
         </code>{" "}
         to avoid blocking the GitHub callback and to handle bursts of rapid
         pushes gracefully.
-      </DocPara>
-
-      <DocHeading2 id="author-analytics">Author Analytics</DocHeading2>
-      <DocPara>
-        The commit feed groups summaries by author and date, giving team leads
-        a clear view of who changed what. Filter by date range or author name
-        from the dashboard controls.
       </DocPara>
     </article>
   );

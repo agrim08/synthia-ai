@@ -16,11 +16,12 @@ import { cn } from "@/lib/utils";
 import { 
   Plus, 
   Home, 
-  MessageSquare, 
+  BookOpen,
+  GraduationCap,
   CreditCard
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
 // Dark mode friendly project colors
@@ -54,8 +55,9 @@ function ProjectAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
 }
 
 const MAIN_NAV = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Q&A", url: "/qa", icon: MessageSquare },
+  { title: "Overview", url: "/dashboard", icon: Home },
+  { title: "Understand", url: "/qa?mode=learn", icon: BookOpen },
+  { title: "Interview", url: "/qa?mode=interview", icon: GraduationCap },
 ];
 
 const BOTTOM_NAV = [
@@ -66,6 +68,8 @@ export const AppSidebar = () => {
   const { open } = useSidebar();
   const { projects, projectId, setProjectId, recentProjects } = useProject();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
 
   const sortedProjects = projects
     ? [...projects].sort((a, b) => {
@@ -115,7 +119,7 @@ export const AppSidebar = () => {
           )}
         </Link>
       </SidebarHeader>
-
+ 
       {/* Content */}
       <SidebarContent className={cn("py-4", open ? "px-3" : "px-2")}>
         
@@ -123,7 +127,14 @@ export const AppSidebar = () => {
         <SidebarGroup>
           <div className={cn("space-y-0.5", !open && "flex flex-col items-center gap-1")}>
             {MAIN_NAV.map((item) => {
-              const isActive = pathname === item.url;
+              let isActive = false;
+              if (item.url === "/dashboard") {
+                isActive = pathname === "/dashboard";
+              } else if (item.url.startsWith("/qa")) {
+                const isQaPath = pathname === "/qa";
+                const itemMode = item.url.includes("mode=interview") ? "interview" : "learn";
+                isActive = isQaPath && (mode === itemMode || (!mode && itemMode === "learn"));
+              }
               return (
                 <Link
                   key={item.url}

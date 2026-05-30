@@ -10,6 +10,7 @@ import useProject from "@/hooks/useProject";
 import { api } from "@/trpc/react";
 import React, { useState, useRef, useEffect } from "react";
 import { useLocalStorage } from "usehooks-ts";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import MDEditor from "@uiw/react-md-editor";
 import { Logo } from "@/components/Logo";
@@ -28,6 +29,14 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Cpu,
+  Database,
+  Layers,
+  Lock,
+  Zap,
+  Sparkles,
+  Terminal,
+  GraduationCap,
 } from "lucide-react";
 import {
   Dialog,
@@ -315,6 +324,15 @@ function ThinkingState({ conversational = false }: { conversational?: boolean })
   );
 }
 
+const INTERVIEW_CATEGORIES = [
+  { name: "Backend", icon: Cpu, prompt: "Start a mock interview focusing on the backend logic and services." },
+  { name: "Frontend", icon: Terminal, prompt: "Start a mock interview focusing on the frontend UI and components." },
+  { name: "Database", icon: Database, prompt: "Start a mock interview focusing on the database models and queries." },
+  { name: "Architecture", icon: Layers, prompt: "Start a mock interview focusing on the file structure and module architecture." },
+  { name: "Security", icon: Lock, prompt: "Start a mock interview focusing on authentication and security practices." },
+  { name: "System Design", icon: Zap, prompt: "Start a mock interview focusing on scaling, performance, and infrastructure." },
+];
+
 // ─── Main Component ─────────────────────────────────────────────────
 export default function QandA() {
   const { projectId } = useProject();
@@ -342,6 +360,25 @@ export default function QandA() {
   const [viewerFile, setViewerFile] = useState<{ fileName: string; sourceCode: string } | null>(null);
   const [chatMode, setChatMode] = useLocalStorage<"learn" | "interview">("synthia-chat-mode", "learn");
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const modeParam = searchParams.get("mode");
+  const promptParam = searchParams.get("prompt");
+
+  useEffect(() => {
+    if (modeParam === "learn" || modeParam === "interview") {
+      setChatMode(modeParam);
+    }
+  }, [modeParam, setChatMode]);
+
+  useEffect(() => {
+    if (promptParam) {
+      setInput(promptParam);
+      const nextUrl = window.location.pathname + (modeParam ? `?mode=${modeParam}` : "");
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [promptParam, modeParam]);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -668,33 +705,70 @@ export default function QandA() {
             >
               {messages.length === 0 ? (
                 /* Empty state */
-                <div className="h-full flex flex-col items-center justify-center text-center py-20">
-                  <div className="p-3 rounded-2xl bg-cream-deep border border-ink/6 mb-4">
-                    <Logo width={40} height={40} />
-                  </div>
-                  <h2 className="text-base font-semibold text-ink mb-1.5">
-                    Ask anything about your codebase
-                  </h2>
-                  <p className="text-sm text-ink-soft max-w-xs leading-relaxed">
-                    Our AI understands your entire repo — files, architecture, dependencies, and logic.
-                  </p>
+                <div className="h-full flex flex-col items-center justify-center text-center py-10 md:py-20 max-w-2xl mx-auto">
+                  {chatMode === "interview" ? (
+                    <>
+                      <div className="p-2 rounded-xl bg-coral/10 border border-coral/20 mb-3 text-coral animate-pulse-soft">
+                        <GraduationCap className="size-6" />
+                      </div>
+                      <h2 className="text-base md:text-lg font-display font-bold text-ink mb-1">
+                        Practice Technical Interviews
+                      </h2>
+                      <p className="text-xs text-ink-soft max-w-sm leading-normal">
+                        Test your knowledge of this repository's internals. Choose a category below to prefill a targeted mock interview topic.
+                      </p>
 
-                  {/* Suggestion chips */}
-                  <div className="mt-8 flex flex-col gap-2 w-full max-w-sm">
-                    {[
-                      "How is authentication handled?",
-                      "Explain the folder structure",
-                      "Where is the API layer defined?",
-                    ].map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => setInput(suggestion)}
-                        className="text-left text-sm text-ink-soft px-4 py-2.5 rounded-xl border border-ink/10 hover:border-coral/30 hover:bg-coral/10 hover:text-coral transition-all"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
+                      {/* Interview Category Cards */}
+                      <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 gap-2.5 w-full max-w-2xl">
+                        {INTERVIEW_CATEGORIES.map((category) => (
+                          <button
+                            key={category.name}
+                            onClick={() => {
+                              setInput(category.prompt);
+                              setTimeout(() => textareaRef.current?.focus(), 0);
+                            }}
+                            className="flex flex-col items-center justify-center text-center p-2.5 rounded-xl border border-ink/8 hover:border-coral/40 bg-card hover:bg-coral/[0.03] transition-all hover-lift min-h-[76px]"
+                          >
+                            <category.icon className="size-4 text-coral mb-1.5" />
+                            <span className="text-xs font-bold text-ink leading-tight">{category.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-2 rounded-xl bg-cream-deep border border-ink/6 mb-3">
+                        <Logo width={32} height={32} />
+                      </div>
+                      <h2 className="text-base md:text-lg font-display font-bold text-ink mb-1">
+                        Understand your codebase
+                      </h2>
+                      <p className="text-xs text-ink-soft max-w-sm leading-normal">
+                        Ask questions to explore this repository's flow, code logic, patterns, and modules.
+                      </p>
+
+                      {/* Suggestion prompts */}
+                      <div className="mt-5 flex flex-col gap-2.5 w-full max-w-md">
+                        {[
+                          "Explain authentication flow",
+                          "Explain API architecture",
+                          "Explain database design",
+                          "Explain deployment strategy",
+                        ].map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            onClick={() => {
+                              setInput(suggestion);
+                              setTimeout(() => textareaRef.current?.focus(), 0);
+                            }}
+                            className="text-left text-xs text-ink-soft px-4 py-2.5 rounded-xl border border-ink/8 hover:border-coral/30 bg-card hover:bg-coral/5 hover:text-coral transition-all"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <AnimatePresence initial={false}>
@@ -860,7 +934,7 @@ export default function QandA() {
                               <div className="flex items-center gap-2 mb-1">
                                 <span className={cn("size-2 rounded-full", chatMode === "learn" ? "bg-coral" : "bg-ink-soft/40")} />
                                 <span className={cn("text-[13px] font-semibold", chatMode === "learn" ? "text-coral" : "text-ink")}>
-                                  Learn Mode
+                                  Understand Mode
                                 </span>
                               </div>
                               <span className="text-[11px] text-ink-soft leading-relaxed pl-4">
@@ -893,7 +967,7 @@ export default function QandA() {
                         </>
                       )}
                     </AnimatePresence>
-
+ 
                     <button
                       type="button"
                       onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
@@ -904,11 +978,11 @@ export default function QandA() {
                         chatMode === "interview" ? "text-coral" : "text-ink-soft hover:text-ink"
                       )}
                     >
-                      {chatMode === "interview" ? "Interview" : "Learn"}
+                      {chatMode === "interview" ? "Interview" : "Understand"}
                       <ChevronDown className="size-3.5 opacity-50" />
                     </button>
                   </div>
-
+ 
                   {loading ? (
                     <button
                       type="button"
@@ -931,7 +1005,7 @@ export default function QandA() {
                 <p className="text-center text-[11px] text-ink-soft/60 mt-2">
                   {chatMode === "interview"
                     ? "Interview Mode · AI will guide you like a technical interviewer"
-                    : "Learn Mode · AI answers from your connected codebase"}{" "}
+                    : "Understand Mode · AI answers from your connected codebase"}{" "}
                   <kbd className="text-[10px] bg-cream-deep px-1.5 py-0.5 rounded font-mono border border-ink/8">
                     ↵
                   </kbd>{" "}

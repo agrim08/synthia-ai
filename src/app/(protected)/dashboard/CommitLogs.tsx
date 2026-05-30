@@ -81,7 +81,7 @@ const CommitLogs = () => {
                             className="flex gap-2 text-sm text-ink-soft leading-relaxed"
                           >
                             <span className="text-coral mt-1.5 h-1 w-1 rounded-full bg-coral shrink-0" />
-                            <span>{point.trim()}</span>
+                            <span className="flex-1 break-words">{point.trim()}</span>
                           </li>
                         ))}
                     </ul>
