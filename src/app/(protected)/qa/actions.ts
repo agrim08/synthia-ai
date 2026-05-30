@@ -235,7 +235,7 @@ BEHAVIOR:
       If the context does not provide an answer, use your best software engineering knowledge, but don't invent code that definitively isn't there if asked about specific internal logic.
       Answers should be provided in Markdown syntax, with code snippets if needed. Responses should be as detailed as possible, ensuring clarity and accuracy while avoiding unnecessary or misleading information.
       `,
-      signal: abortSignal,
+      abortSignal,
     });
 
     (async () => {

@@ -75,7 +75,7 @@ const QuestionCard = () => {
                   onClick={() => {
                     saveAnswer.mutate(
                       {
-                        projectId,
+                        projectId: projectId as string,
                         answer,
                         filesReferences: filesReferences,
                         question,

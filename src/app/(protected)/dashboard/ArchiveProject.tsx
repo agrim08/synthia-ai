@@ -23,7 +23,7 @@ const ArchiveProject = ({ id }: { id?: string }) => {
         );
         if (confirm) {
           archive.mutate(
-            { projectId },
+            { projectId: projectId as string },
             {
               onSuccess: () => {
                 toast.success("Project archived successfully");

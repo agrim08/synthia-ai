@@ -65,7 +65,7 @@ const DashboardPage = () => {
               <p className="text-[11px] uppercase tracking-[0.14em] text-ink-soft/70 font-medium">
                 Repository
               </p>
-              {project ? (
+              {project?.githubUrl ? (
                 <Link
                   href={project.githubUrl}
                   target="_blank"
@@ -73,6 +73,8 @@ const DashboardPage = () => {
                 >
                   {project.githubUrl.split("/").pop()}
                 </Link>
+              ) : project ? (
+                <span className="text-sm font-semibold truncate text-ink">{project.name}</span>
               ) : (
                 <span className="text-sm text-ink-soft">No project selected</span>
               )}

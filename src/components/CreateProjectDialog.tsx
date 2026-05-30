@@ -184,6 +184,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     setZipFile(file);
     setZipFileCount(null);
     setZipCountLoading(true);
+    setZipProjectName((prev) => prev.trim() ? prev : file.name.replace(/\.zip$/i, ""));
     try {
       const count = await countZipFilesClient(file, zipSkipUi);
       setZipFileCount(count);
@@ -273,7 +274,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent className="max-w-lg w-full rounded-[24px] border border-ink/[0.07] p-0 overflow-hidden bg-cream shadow-[0_32px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] gap-0">
+      <DialogContent className="max-w-lg w-full rounded-[24px] border border-ink/[0.07] p-0 overflow-y-auto max-h-[90dvh] bg-cream shadow-[0_32px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Add a project</DialogTitle>
           <DialogDescription>Connect a GitHub repo or upload a ZIP.</DialogDescription>
@@ -292,10 +293,10 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           </div>
 
           {/* ── Segmented tab control ───────────────────────────────────── */}
-          <div className="relative flex rounded-xl bg-ink/[0.06] border border-ink/[0.07] p-1 gap-1">
+          <div className="relative flex rounded-xl bg-black/[0.05] dark:bg-black/30 border border-border p-1 gap-1">
             {/* Sliding pill — CSS transition only, no Framer dep */}
             <div
-              className="absolute top-1 bottom-1 rounded-lg bg-white dark:bg-ink/[0.15] shadow-[0_1px_4px_rgba(0,0,0,0.12)] border border-ink/[0.08] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              className="absolute top-1 bottom-1 rounded-lg bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] border border-border transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{
                 left: tab === "github" ? "4px" : "50%",
                 right: tab === "github" ? "50%" : "4px",
@@ -305,8 +306,8 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
               type="button"
               onClick={() => setTab("github")}
               className={cn(
-                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200",
-                tab === "github" ? "text-ink" : "text-ink/40 hover:text-ink/70"
+                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200 cursor-pointer",
+                tab === "github" ? "text-ink" : "text-ink-soft hover:text-ink"
               )}
             >
               <GitBranch className="h-3.5 w-3.5" />
@@ -316,8 +317,8 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
               type="button"
               onClick={() => setTab("zip")}
               className={cn(
-                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200",
-                tab === "zip" ? "text-ink" : "text-ink/40 hover:text-ink/70"
+                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200 cursor-pointer",
+                tab === "zip" ? "text-ink" : "text-ink-soft hover:text-ink"
               )}
             >
               <FileArchive className="h-3.5 w-3.5" />
@@ -441,7 +442,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onClick={() => fileInputRef.current?.click()}
-                    onClear={() => { setZipFile(null); setZipFileCount(null); }}
+                    onClear={() => { setZipFile(null); setZipFileCount(null); setZipProjectName(""); }}
                   />
                   <input
                     ref={fileInputRef}
@@ -675,7 +676,8 @@ function DropZone({
       onDragLeave={onDragLeave}
       onClick={onClick}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 px-5 py-7",
+        "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 px-5",
+        zipFile ? "py-4 gap-2" : "py-7 gap-3",
         isDragging
           ? "border-coral bg-coral/[0.04] scale-[1.01]"
           : zipFile

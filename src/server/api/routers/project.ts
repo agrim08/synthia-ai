@@ -241,7 +241,7 @@ export const projectRouter = createTRPCRouter({
       const project = await ctx.db.project.create({
         data: {
           name: input.name,
-          githubUrl: null,
+          githubUrl: "",
           skipUiComponents: !!input.skipUiComponents,
           indexingStatus: "PENDING",
         } as any,

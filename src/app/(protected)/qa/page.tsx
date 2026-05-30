@@ -477,7 +477,6 @@ export default function QandA() {
               content: fullAnswer, 
               filesReferences: actuallyConversational ? [] : filesReferences,
               thinkingTime,
-              mode: chatMode,
               isConversational: actuallyConversational,
             };
             return updated;
@@ -485,12 +484,12 @@ export default function QandA() {
         }
       }
 
-      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences: actuallyConversational ? [] : filesReferences, thinkingTime, mode: chatMode, isConversational: actuallyConversational }];
+      const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences: actuallyConversational ? [] : filesReferences, thinkingTime, isConversational: actuallyConversational }];
 
       if (!currentQuestionId) {
         saveAnswer.mutate(
           {
-            projectId,
+            projectId: projectId as string,
             question: userMessage,
             answer: fullAnswer,
             filesReferences: filesReferences,

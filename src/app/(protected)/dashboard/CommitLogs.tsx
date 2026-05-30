@@ -8,7 +8,7 @@ import React from "react";
 const CommitLogs = () => {
   const { projectId, project } = useProject();
   const { data: commits } = api.project.getCommits.useQuery(
-    { projectId: projectId },
+    { projectId: projectId as string },
     { 
       enabled: !!projectId,
       refetchInterval: (project?.indexingStatus === "INDEXING" || project?.indexingStatus === "SYNCING") ? 3000 : false 
@@ -50,7 +50,7 @@ const CommitLogs = () => {
                   </span>
                   <span className="text-ink/20">·</span>
                   <Link
-                    href={`${project?.githubUrl}/commit/${commit.commitHash}`}
+                    href={`${project?.githubUrl ?? ""}/commit/${commit.commitHash}`}
                     target="_blank"
                     className="inline-flex items-center gap-1.5 text-[11px] font-mono px-2 py-0.5 rounded-md bg-ink/5 text-ink-soft hover:bg-ink hover:text-cream transition-colors"
                   >

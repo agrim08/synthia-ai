@@ -2,23 +2,27 @@
 
 import { SignIn } from "@clerk/nextjs";
 import { 
-  ArrowRight, 
-  Sparkles, 
   Code2, 
   Cpu, 
-  Zap,
-  CheckCircle2,
   Lock
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
+import { dark } from "@clerk/themes";
+import { useEffect, useState } from "react";
 
 export default function Page() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && resolvedTheme === "dark";
+
   return (
     <div className="flex min-h-screen bg-cream">
       {/* ── Left Side: Brand & Visuals (Desktop) ── */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-ink">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-[#0a0a0a]">
         {/* Animated Mesh Gradient Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-coral/20 blur-[120px]" />
@@ -47,7 +51,7 @@ export default function Page() {
               Engineering intelligence, <br />
               <span className="font-display italic text-coral">delivered at scale.</span>
             </h2>
-            <p className="text-lg text-cream/70 mb-10 leading-relaxed font-medium">
+            <p className="text-lg text-white/70 mb-10 leading-relaxed font-medium">
               Join 10k+ developers building faster with our AI&apos;s semantic understanding of your codebase.
             </p>
 
@@ -63,7 +67,7 @@ export default function Page() {
                   </div>
                   <div>
                     <h4 className="text-white font-semibold text-sm mb-0.5">{item.title}</h4>
-                    <p className="text-cream/60 text-xs leading-relaxed">{item.desc}</p>
+                    <p className="text-white/60 text-xs leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -72,7 +76,7 @@ export default function Page() {
         </div>
 
         <div className="relative z-10 flex items-center gap-6">
-          <p className="text-cream/50 text-xs font-medium">© 2026 OwnYourCode AI Inc.</p>
+          <p className="text-white/50 text-xs font-medium">© 2026 OwnYourCode AI Inc.</p>
           <div className="h-px flex-1 bg-white/5" />
           <div className="flex gap-4">
              <div className="size-2 rounded-full bg-white/10" />
@@ -82,7 +86,7 @@ export default function Page() {
       </div>
 
       {/* ── Right Side: Sign In Form ── */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 bg-cream">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 bg-cream relative z-10">
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex flex-col items-center mb-8 text-center">
              <div className="bg-ink p-3 rounded-2xl mb-4 shadow-xl">
@@ -97,39 +101,37 @@ export default function Page() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="w-full">
-              <SignIn
-                appearance={{
-                  variables: {
-                    colorPrimary: "#e2614a", // approximation of coral
-                    colorText: "#22252a", // ink
-                    colorTextSecondary: "#525760", // ink-soft
-                    colorBackground: "#f9f8f6", // cream
-                    colorInputBackground: "#f1f0ec", // cream-deep
-                    colorInputText: "#22252a",
-                    borderRadius: "1rem",
-                  },
-                  elements: {
-                    rootBox: "w-full",
-                    card: "w-full shadow-soft bg-white border border-ink/10 rounded-3xl p-4",
-                    headerTitle: "text-2xl font-bold tracking-tight text-ink",
-                    headerSubtitle: "text-ink-soft font-medium",
-                    socialButtonsBlockButton: "bg-white border-ink/10 shadow-sm hover:bg-cream text-ink transition-all font-medium",
-                    dividerLine: "bg-ink/10",
-                    dividerText: "text-ink-soft text-xs",
-                    formFieldLabel: "text-ink font-semibold mb-1.5",
-                    formFieldInput: "bg-cream-deep border-ink/10 focus:border-coral focus:ring-4 focus:ring-coral/10 transition-all",
-                    formButtonPrimary: "bg-ink hover:bg-ink-soft text-cream font-bold h-11 shadow-pop-sm transition-all active:scale-[0.98]",
-                    footer: "hidden",
-                    identityPreviewText: "text-ink font-medium",
-                    identityPreviewEditButton: "text-coral hover:text-coral-soft font-bold",
-                  },
-                }}
-                path="/sign-in"
-                routing="path"
-                signUpUrl="/sign-up"
-                afterSignInUrl="/sync-user"
-              />
+            <div className="w-full relative min-h-[400px]">
+              {mounted && (
+                <SignIn
+                  appearance={{
+                    baseTheme: isDark ? dark : undefined,
+                    variables: {
+                      colorPrimary: "#e2614a",
+                      borderRadius: "1rem",
+                    },
+                    elements: {
+                      rootBox: "w-full",
+                      card: "w-full shadow-soft bg-card border border-ink/10 rounded-3xl p-4",
+                      headerTitle: "text-2xl font-bold tracking-tight text-ink",
+                      headerSubtitle: "text-ink-soft font-medium",
+                      socialButtonsBlockButton: "bg-card border-ink/10 shadow-sm hover:bg-cream-deep text-ink transition-all font-medium",
+                      dividerLine: "bg-ink/10",
+                      dividerText: "text-ink-soft text-xs",
+                      formFieldLabel: "text-ink font-semibold mb-1.5",
+                      formFieldInput: "bg-cream-deep border-ink/10 focus:border-coral focus:ring-4 focus:ring-coral/10 transition-all text-ink",
+                      formButtonPrimary: "bg-ink hover:bg-ink-soft text-cream font-bold h-11 shadow-pop-sm transition-all active:scale-[0.98]",
+                      footer: "hidden",
+                      identityPreviewText: "text-ink font-medium",
+                      identityPreviewEditButton: "text-coral hover:text-coral-soft font-bold",
+                    },
+                  }}
+                  path="/sign-in"
+                  routing="path"
+                  signUpUrl="/sign-up"
+                  afterSignInUrl="/sync-user"
+                />
+              )}
             </div>
           </motion.div>
 

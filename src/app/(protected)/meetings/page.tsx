@@ -88,11 +88,11 @@ const MeetingsPage = () => {
                     {meeting.name}
                   </p>
                   <p className="text-[12px] text-slate-400">
-                    {new Date(meeting.createdAt).toLocaleDateString("en-US", {
+                    {meeting.createdAt ? new Date(meeting.createdAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}
+                    }) : ""}
                   </p>
                 </Link>
 
