@@ -61,7 +61,7 @@ async function withRateLimitRetry<T>(
   }
 }
 
-const githubUrl = "https://github.com/agrim08/ownyourcode-ai";
+const githubUrl = "https://github.com/agrim08/synthia-ai";
 
 type Response = {
   commitMessage: string;

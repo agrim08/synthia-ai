@@ -56,7 +56,7 @@ export function Nav() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <a
-            href="https://github.com/agrim08/ownyourcode-ai"
+            href="https://github.com/agrim08/synthia-ai"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden rounded-full p-2 text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink sm:inline-flex"

@@ -204,7 +204,7 @@ export default function DocumentationPage() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <a
-            href="https://github.com/agrim08/ownyourcode-ai"
+            href="https://github.com/agrim08/synthia-ai"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden text-muted-foreground transition-colors hover:text-foreground sm:block"
@@ -302,7 +302,7 @@ export default function DocumentationPage() {
           {/* Footer links in sidebar */}
           <div className="shrink-0 border-t border-border px-4 py-3">
             <a
-              href="https://github.com/agrim08/ownyourcode-ai"
+              href="https://github.com/agrim08/synthia-ai"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -685,7 +685,7 @@ function GettingStartedPage() {
         dependencies:
       </DocPara>
 
-      <CodeBlock lang="bash" code={`git clone https://github.com/agrim08/ownyourcode-ai.git
+      <CodeBlock lang="bash" code={`git clone https://github.com/agrim08/synthia-ai.git
 cd ownyourcode-ai
 npm install`} />
 

@@ -46,7 +46,7 @@ graph LR
 ### 1. Clone
 
 ```bash
-git clone https://github.com/yourusername/ownyourcode-ai.git
+git clone https://github.com/agrim08/synthia-ai.git
 cd ownyourcode-ai
 ```
 
