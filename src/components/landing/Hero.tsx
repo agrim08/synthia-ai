@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Star, Check, GitBranch, MessagesSquare, FileText, CreditCard } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { InstantIndexingMockup, ChatCodebaseMockup, CommitIntelligenceMockup, TransparentBillingMockup } from "./Mockups";
 
 const screens = [
-  { label: "Commit Intelligence", icon: GitBranch, accent: "bg-coral-soft", desc: "Every commit, decoded.", image: "/commits.png" },
-  { label: "Chat Your Codebase", icon: MessagesSquare, accent: "bg-sky", desc: "Full context, every time.", image: "/conversation.png" },
-  { label: "Instant Indexing", icon: FileText, accent: "bg-sage", desc: "Analyze repos instantly.", image: "/dashboard.png" },
-  { label: "Transparent Billing", icon: CreditCard, accent: "bg-butter", desc: "1 credit = 1 file.", image: "/billing.png" },
+  { label: "Commit Intelligence", icon: GitBranch, accent: "bg-coral-soft", desc: "Every commit, decoded.", component: CommitIntelligenceMockup },
+  { label: "Chat Your Codebase", icon: MessagesSquare, accent: "bg-sky", desc: "Full context, every time.", component: ChatCodebaseMockup },
+  { label: "Instant Indexing", icon: FileText, accent: "bg-sage", desc: "Analyze repos instantly.", component: InstantIndexingMockup },
+  { label: "Transparent Billing", icon: CreditCard, accent: "bg-butter", desc: "1 credit = 1 file.", component: TransparentBillingMockup },
 ];
 
 export function Hero() {
@@ -126,7 +127,7 @@ export function Hero() {
 
         {/* Browser screenshot */}
         <div
-          className="mx-auto mt-12 max-w-4xl animate-fade-up"
+          className="mx-auto mt-12 max-w-3xl animate-fade-up"
           style={{ animationDelay: "420ms" }}
         >
           <div className="relative">
@@ -175,15 +176,17 @@ export function Hero() {
               </div>
 
               {/* Screen area */}
-              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-cream-deep">
+              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-[#0a0a0a]">
                 {screens.map((screen, i) => {
                   const Icon = screen.icon;
+                  const Component = screen.component;
                   return (
                     <div
                       key={i}
                       className="absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
                       style={{
                         opacity: i === active ? 1 : 0,
+                        pointerEvents: i === active ? "auto" : "none",
                         transform:
                           i === active
                             ? "scale(1) translateY(0)"
@@ -192,7 +195,7 @@ export function Hero() {
                             : "scale(0.97) translateY(12px)",
                       }}
                     >
-                      <MockScreen image={screen.image} />
+                      <Component />
                     </div>
                   );
                 })}
@@ -227,10 +230,3 @@ export function Hero() {
   );
 }
 
-function MockScreen({ image }: { image: string }) {
-  return (
-    <div className="h-full w-full bg-cream-deep/30">
-      <img src={image} alt="Feature preview" className="h-full w-full object-cover object-left-top" />
-    </div>
-  );
-}
