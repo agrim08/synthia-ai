@@ -378,7 +378,6 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                   {/* Skip UI */}
                   <SkipUiRow
                     id="skipUiGit"
-                    checked={skipUiGit}
                     formRegister={register("skipUiComponents")}
                   />
                 </div>
@@ -531,20 +530,28 @@ function SkipUiRow({
   onChange,
 }: {
   id: string;
-  checked: boolean;
+  checked?: boolean;
   formRegister?: object;
   onChange?: (v: boolean) => void;
 }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-ink/[0.07] bg-ink/[0.02] px-3 py-3">
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        {...(formRegister ?? {})}
-        onChange={formRegister ? undefined : (e) => onChange?.(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer shrink-0"
-      />
+      {formRegister ? (
+        <input
+          id={id}
+          type="checkbox"
+          {...formRegister}
+          className="mt-0.5 h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer shrink-0"
+        />
+      ) : (
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange?.(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer shrink-0"
+        />
+      )}
       <div>
         <label htmlFor={id} className="block text-[12px] font-semibold text-ink/70 cursor-pointer select-none hover:text-ink transition-colors">
           Exclude UI Components <span className="font-medium text-ink/40">(lowers credit cost)</span>
