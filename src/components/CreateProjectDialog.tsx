@@ -25,7 +25,6 @@ import {
   X,
   GitCommit,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import React, { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -62,7 +61,6 @@ const IGNORED_SEGMENTS = new Set([
   ".nyc_output", "vendor", "venv", ".venv", "env", "target", ".turbo",
   ".vercel", ".cache", "tmp", "temp", ".idea", ".vscode", ".DS_Store",
   "storybook-static", "public/static",
-  // Python virtual envs and caches
   "site-packages", ".eggs", "*.egg-info", "__pypackages__",
 ]);
 const UI_PATTERN = /\b(card|button|charts|sidebar|footer|header|sheet|input)\b/i;
@@ -92,19 +90,17 @@ function clientShouldIgnore(path: string, skipUi: boolean): boolean {
   return false;
 }
 
-// ─── Parse ZIP in browser using JSZip ─────────────────────────────────────
 async function countZipFilesClient(file: File, skipUi: boolean): Promise<number> {
   const JSZip = (await import("jszip")).default;
   const zip = await JSZip.loadAsync(file);
   let count = 0;
   zip.forEach((relativePath) => {
-    if (relativePath.endsWith("/")) return; // directory
+    if (relativePath.endsWith("/")) return;
     if (!clientShouldIgnore(relativePath, skipUi)) count++;
   });
   return count;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────
 type GitHubFormFields = {
   repoUrl: string;
   projectName: string;
@@ -116,13 +112,26 @@ type Tab = "github" | "zip";
 
 const INTERNAL_SECRET = process.env.NEXT_PUBLIC_INTERNAL_API_SECRET ?? "ownyourcode-internal";
 
+// ─── Input Field Component ────────────────────────────────────────────────────
+function Field({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="group relative">
+      <Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink/30 transition-colors duration-200 group-focus-within:text-coral" />
+      {children}
+    </div>
+  );
+}
+
+const INPUT_CLASS =
+  "h-10 w-full rounded-xl border border-ink/[0.08] bg-white/[0.03] dark:bg-white/[0.03] pl-9 pr-3 text-[13px] font-medium text-ink placeholder:text-ink/30 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 focus:border-coral/50 focus:bg-card focus:shadow-[0_0_0_3px_rgba(var(--coral),0.08)] focus:outline-none";
+
 export const CreateProjectDialog = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [, setProjectId] = useLocalStorage("OwnYourCode-Project-key", "");
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("github");
 
-  // ── GitHub tab state ──
+  // ── GitHub state ──
   const { register, handleSubmit, reset, watch } = useForm<GitHubFormFields>({
     defaultValues: { skipUiComponents: true },
   });
@@ -137,7 +146,6 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     },
   });
   const refetch = useRefetch();
-
   const repoUrl = watch("repoUrl");
   const skipUiGit = watch("skipUiComponents");
 
@@ -156,7 +164,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     }
   }, [open, reset]);
 
-  // ── ZIP tab state ──
+  // ── ZIP state ──
   const createZipProject = api.project.createZipProject.useMutation();
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [zipFileCount, setZipFileCount] = useState<number | null>(null);
@@ -168,19 +176,11 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
   const [userCredits, setUserCredits] = useState<number | null>(null);
   const getCredits = api.project.getMyCredits.useQuery(undefined, { enabled: open });
   React.useEffect(() => { if (getCredits.data) setUserCredits(getCredits.data.credits); }, [getCredits.data]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processZipFile = useCallback(async (file: File) => {
-    if (!file.name.endsWith(".zip")) {
-      toast.error("Only .zip files are accepted.");
-      return;
-    }
-    const MAX_MB = 4;
-    if (file.size > MAX_MB * 1024 * 1024) {
-      toast.error(`File is too large. Maximum is ${MAX_MB} MB.`);
-      return;
-    }
+    if (!file.name.endsWith(".zip")) { toast.error("Only .zip files are accepted."); return; }
+    if (file.size > 4 * 1024 * 1024) { toast.error("File is too large. Maximum is 4 MB."); return; }
     setZipFile(file);
     setZipFileCount(null);
     setZipCountLoading(true);
@@ -196,60 +196,45 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
   }, [zipSkipUi]);
 
   const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+    e.preventDefault(); setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) processZipFile(file);
   }, [processZipFile]);
 
-  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const onDragLeave = () => setIsDragging(false);
-
-  // Recount when skipUi changes
-  React.useEffect(() => {
-    if (zipFile) processZipFile(zipFile);
-  }, [zipSkipUi]);
+  React.useEffect(() => { if (zipFile) processZipFile(zipFile); }, [zipSkipUi]);
 
   const onZipSubmit = async () => {
     if (!zipFile || zipFileCount === null || !zipProjectName.trim()) return;
     setZipUploading(true);
     try {
       const project = await createZipProject.mutateAsync({
-        name: zipProjectName.trim(),
-        fileCount: zipFileCount,
-        skipUiComponents: zipSkipUi,
+        name: zipProjectName.trim(), fileCount: zipFileCount, skipUiComponents: zipSkipUi,
       });
-
-      // Upload ZIP to the index route
       const formData = new FormData();
       formData.append("file", zipFile);
       formData.append("projectId", project.id);
-
       const res = await fetch("/api/upload-zip", {
         method: "POST",
         headers: { "x-internal-secret": INTERNAL_SECRET },
         body: formData,
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Upload failed" }));
         toast.error(err.error ?? "Upload failed");
         return;
       }
-
       toast.success("Project indexed successfully!");
       setProjectId(project.id);
       refetch();
       setOpen(false);
       router.push("/dashboard");
     } catch (err: any) {
-      toast.error(err.message ?? "Something went wrong. Please try again.");
+      toast.error(err.message ?? "Something went wrong.");
     } finally {
       setZipUploading(false);
     }
   };
 
-  // ── GitHub submit ──
   const onGitSubmit = (data: GitHubFormFields) => {
     if (!!checkCredits.data) {
       createProject.mutate(
@@ -258,9 +243,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
           onSuccess: (newProject) => {
             toast.success("Project indexed successfully");
             setProjectId(newProject.id);
-            refetch();
-            reset();
-            setOpen(false);
+            refetch(); reset(); setOpen(false);
             router.push("/dashboard");
           },
           onError: (err) => toast.error(err.message ?? "Failed to create project"),
@@ -275,216 +258,192 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     return true;
   };
 
-  const hasEnoughCreditsGit = checkCredits.data?.userCredits
-    ? checkCredits.data.fileCount <= checkCredits.data.userCredits
-    : true;
-  const hasEnoughCreditsZip = zipFileCount !== null && userCredits !== null
-    ? zipFileCount <= userCredits
-    : true;
-
+  const hasEnoughCreditsGit = checkCredits.data?.userCredits ? checkCredits.data.fileCount <= checkCredits.data.userCredits : true;
+  const hasEnoughCreditsZip = zipFileCount !== null && userCredits !== null ? zipFileCount <= userCredits : true;
   const isGitLoading = createProject.isPending || checkCredits.isPending;
   const hasGitChecked = !!checkCredits.data;
   const isZipReady = zipFile !== null && zipFileCount !== null && zipProjectName.trim().length > 0;
-
   const isAnyLoading = isGitLoading || zipUploading || createZipProject.isPending;
+
+  // Shared skip-UI checkbox — unified between both tabs
+  const skipUiValue = tab === "github" ? skipUiGit : zipSkipUi;
+  const setSkipUiZip = (v: boolean) => setZipSkipUi(v);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent className="max-w-[700px] w-full rounded-[28px] border border-ink/10 p-0 overflow-hidden bg-cream gap-0 shadow-soft">
+      <DialogContent className="max-w-lg w-full rounded-[24px] border border-ink/[0.07] p-0 overflow-hidden bg-cream shadow-[0_32px_64px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] gap-0">
         <DialogHeader className="sr-only">
-          <DialogTitle>Connect a repository</DialogTitle>
-          <DialogDescription>Link a repo or upload a ZIP to OwnYourCode.</DialogDescription>
+          <DialogTitle>Add a project</DialogTitle>
+          <DialogDescription>Connect a GitHub repo or upload a ZIP.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col">
-          {/* ── Header ── */}
-          <div className="border-b border-ink/5 px-6 py-5 bg-cream-deep/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-ink leading-none">Add a project</h3>
-                <p className="mt-1.5 text-[11px] text-ink-soft leading-normal">
-                  Connect a GitHub repo or upload a ZIP archive directly.
-                </p>
-              </div>
-              {/* Tab switcher */}
-              <div className="flex items-center gap-1 bg-cream-deep/60 border border-ink/8 rounded-xl p-1">
-                <button
-                  type="button"
-                  onClick={() => setTab("github")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
-                    tab === "github"
-                      ? "bg-ink text-cream shadow-sm"
-                      : "text-ink-soft hover:text-ink"
-                  )}
-                >
-                  <GitBranch className="h-3.5 w-3.5" />
-                  GitHub
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTab("zip")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
-                    tab === "zip"
-                      ? "bg-ink text-cream shadow-sm"
-                      : "text-ink-soft hover:text-ink"
-                  )}
-                >
-                  <FileArchive className="h-3.5 w-3.5" />
-                  ZIP Upload
-                </button>
-              </div>
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <div className="px-6 pt-6 pb-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ink shadow-pop-sm">
+              <Sparkles className="h-4 w-4 text-cream" />
+            </div>
+            <div>
+              <h2 className="text-[15px] font-bold text-ink leading-none tracking-tight">Add a project</h2>
+              <p className="text-[11px] text-ink/40 mt-1 leading-normal">Index a repo to unlock AI code intelligence.</p>
             </div>
           </div>
 
-          {/* ══════════════════════ GITHUB TAB ══════════════════════ */}
-          {tab === "github" && (
-            <form onSubmit={handleSubmit(onGitSubmit)} className="flex flex-col p-6 gap-5">
-              <div className="space-y-3">
-                <div className="relative group">
-                  <FolderGit2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft group-focus-within:text-coral transition-colors" />
-                  <Input
-                    {...register("projectName", { required: true })}
-                    placeholder="Project Name"
-                    required
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
-                  />
-                </div>
-                <div className="relative group">
-                  <GitBranch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft group-focus-within:text-coral transition-colors" />
-                  <Input
-                    {...register("repoUrl", { required: true })}
-                    placeholder="https://github.com/owner/repo"
-                    required
-                    type="url"
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
-                  />
-                </div>
-                <div className="relative group">
-                  <KeyRound className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft group-focus-within:text-coral transition-colors" />
-                  <Input
-                    {...register("githubToken")}
-                    placeholder="GitHub Token (optional — for private repos)"
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
-                  />
-                </div>
-
-                {/* Commits note */}
-                <div className="flex items-start gap-2 rounded-xl border border-ink/8 bg-cream-deep/30 px-3 py-2.5">
-                  <GitCommit className="h-3.5 w-3.5 text-ink-soft mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-ink-soft leading-relaxed">
-                    GitHub URL enables <span className="font-semibold text-ink">commit history</span> — AI summaries of each change to your repo.
-                  </p>
-                </div>
-
-                <div className="flex flex-col space-y-1 pt-2 border-t border-ink/5">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      id="skipUiGit"
-                      type="checkbox"
-                      {...register("skipUiComponents")}
-                      className="h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer"
-                    />
-                    <label htmlFor="skipUiGit" className="text-[12px] font-bold text-ink-soft cursor-pointer flex items-center gap-1.5 hover:text-ink transition-colors select-none">
-                      Exclude UI Components (Lowers credit cost)
-                    </label>
-                  </div>
-                  <p className="text-[11px] text-ink-soft/60 pl-7 leading-normal">
-                    Filters layout components, icons, and visual elements to focus indexing on core logic.
-                  </p>
-                </div>
-              </div>
-
-              {hasGitChecked && (
-                <div className={cn(
-                  "animate-in fade-in slide-in-from-top-1 duration-200 rounded-2xl border px-4 py-3.5 shadow-sm",
-                  hasEnoughCreditsGit ? "border-sage/20 bg-sage/5" : "border-coral-soft/20 bg-coral-soft/5"
-                )}>
-                  <div className="flex items-start gap-3">
-                    {hasEnoughCreditsGit ? (
-                      <div className="flex items-center justify-center size-7 rounded-lg bg-sage/20 text-sage border border-sage/10 shrink-0">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center size-7 rounded-lg bg-coral-soft/20 text-coral border border-coral-soft/10 shrink-0 animate-bounce" style={{ animationDuration: "2s" }}>
-                        <AlertCircle className="h-4 w-4" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <span className="text-[12px] font-bold text-ink leading-none">
-                        {hasEnoughCreditsGit ? "Ready to Index" : "Insufficient Credits"}
-                      </span>
-                      <div className="mt-2 flex items-center gap-4 text-[11px] text-ink-soft">
-                        <span>Cost: <span className="font-bold text-ink">{checkCredits.data?.fileCount} credits</span></span>
-                        <span className="h-3 w-px bg-ink/10" />
-                        <span>Balance: <span className={cn("font-bold", hasEnoughCreditsGit ? "text-sage" : "text-coral")}>{checkCredits.data?.userCredits} credits</span></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* ── Segmented tab control ───────────────────────────────────── */}
+          <div className="relative flex rounded-xl bg-ink/[0.06] border border-ink/[0.07] p-1 gap-1">
+            {/* Sliding pill — CSS transition only, no Framer dep */}
+            <div
+              className="absolute top-1 bottom-1 rounded-lg bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)] border border-ink/[0.08] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{
+                left: tab === "github" ? "4px" : "50%",
+                right: tab === "github" ? "50%" : "4px",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setTab("github")}
+              className={cn(
+                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200",
+                tab === "github" ? "text-ink" : "text-ink/40 hover:text-ink/70"
               )}
+            >
+              <GitBranch className="h-3.5 w-3.5" />
+              GitHub URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("zip")}
+              className={cn(
+                "relative z-10 flex flex-1 items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-200",
+                tab === "zip" ? "text-ink" : "text-ink/40 hover:text-ink/70"
+              )}
+            >
+              <FileArchive className="h-3.5 w-3.5" />
+              ZIP Upload
+            </button>
+          </div>
+        </div>
 
-              <div className="space-y-3">
-                <Button
-                  type="submit"
-                  disabled={isGitLoading || (!hasEnoughCreditsGit && hasGitChecked)}
-                  className={cn(
-                    "h-11 w-full rounded-2xl text-[13px] font-bold transition-all shadow-pop-sm active:scale-[0.98] border cursor-pointer",
-                    hasGitChecked && hasEnoughCreditsGit
-                      ? "bg-coral text-cream border-coral hover:bg-coral-soft hover:shadow-pop"
-                      : "bg-ink text-cream border-ink hover:bg-ink-soft hover:shadow-pop",
-                    (!hasEnoughCreditsGit && hasGitChecked) && "opacity-50 cursor-not-allowed pointer-events-none"
-                  )}
-                >
-                  {isGitLoading ? (
-                    <span className="flex items-center gap-2 justify-center"><Loader2 className="h-4 w-4 animate-spin" />Connecting…</span>
-                  ) : hasGitChecked ? (
-                    <span className="flex items-center gap-2 justify-center"><Sparkles className="h-4 w-4" />{hasEnoughCreditsGit ? "Begin Repository Indexing" : "Not Enough Credits"}</span>
-                  ) : (
-                    <span className="flex items-center gap-2 justify-center"><GitBranch className="h-4 w-4" />Validate &amp; Check Repo</span>
-                  )}
-                </Button>
-                <p className="text-center text-[11px] text-ink-soft/80">
-                  1 credit = 1 file indexed ·{" "}
-                  <a href="/billing" className="font-bold text-coral hover:text-coral-soft underline underline-offset-2 transition-colors">Add credits</a>
-                </p>
-              </div>
-            </form>
-          )}
+        {/* ── Divider ─────────────────────────────────────────────────────── */}
+        <div className="h-px bg-ink/[0.06]" />
 
-          {/* ══════════════════════ ZIP TAB ══════════════════════ */}
-          {tab === "zip" && (
-            <div className="flex flex-col p-6 gap-5">
-              <div className="space-y-3">
-                {/* Project name */}
-                <div className="relative group">
-                  <FolderGit2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft group-focus-within:text-coral transition-colors" />
-                  <Input
-                    value={zipProjectName}
-                    onChange={(e) => setZipProjectName(e.target.value)}
-                    placeholder="Project Name"
-                    className="h-11 rounded-xl border border-ink/10 bg-cream-deep/30 pl-10 text-[13px] font-medium text-ink placeholder:text-ink-soft/60 focus:border-coral focus:bg-card focus:ring-4 focus:ring-coral/10 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all"
+        {/* ── Form body ──────────────────────────────────────────────────── */}
+        <div className="px-6 py-5">
+
+          {/* ════════ GITHUB FIELDS ════════ */}
+          <div
+            className={cn(
+              "transition-all duration-300 ease-in-out",
+              tab === "github" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 pointer-events-none absolute"
+            )}
+          >
+            {tab === "github" && (
+              <form onSubmit={handleSubmit(onGitSubmit)} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2.5">
+                  <Field icon={FolderGit2}>
+                    <input
+                      {...register("projectName", { required: true })}
+                      placeholder="Project Name"
+                      required
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field icon={GitBranch}>
+                    <input
+                      {...register("repoUrl", { required: true })}
+                      placeholder="https://github.com/owner/repo"
+                      required
+                      type="url"
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field icon={KeyRound}>
+                    <input
+                      {...register("githubToken")}
+                      placeholder="GitHub Token (optional — for private repos)"
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+
+                  {/* Commit history note */}
+                  <div className="flex items-start gap-2 rounded-xl border border-ink/[0.07] bg-ink/[0.02] px-3 py-2.5">
+                    <GitCommit className="h-3.5 w-3.5 text-ink/30 mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-ink/50 leading-relaxed">
+                      GitHub URL enables <span className="font-semibold text-ink/70">commit history</span> — AI summaries of every change to your repo.
+                    </p>
+                  </div>
+
+                  {/* Skip UI */}
+                  <SkipUiRow
+                    id="skipUiGit"
+                    checked={skipUiGit}
+                    formRegister={register("skipUiComponents")}
                   />
                 </div>
 
-                {/* D&D Zone */}
-                <div
-                  onDrop={onDrop}
-                  onDragOver={onDragOver}
-                  onDragLeave={onDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 px-6 py-8",
-                    isDragging
-                      ? "border-coral bg-coral/5 scale-[1.01]"
-                      : zipFile
-                      ? "border-sage/60 bg-sage/5"
-                      : "border-ink/15 bg-cream-deep/20 hover:border-ink/30 hover:bg-cream-deep/40"
-                  )}
-                >
+                {/* Credit check result */}
+                {hasGitChecked && (
+                  <CreditBadge
+                    hasEnough={hasEnoughCreditsGit}
+                    fileCount={checkCredits.data?.fileCount}
+                    balance={checkCredits.data?.userCredits}
+                  />
+                )}
+
+                {/* Submit */}
+                <div className="flex flex-col gap-2">
+                  <SubmitButton
+                    type="submit"
+                    loading={isGitLoading}
+                    disabled={isGitLoading || (!hasEnoughCreditsGit && hasGitChecked)}
+                    ready={hasGitChecked && hasEnoughCreditsGit}
+                  >
+                    {isGitLoading
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Connecting…</>
+                      : hasGitChecked
+                        ? <><Sparkles className="h-4 w-4" />{hasEnoughCreditsGit ? "Begin Repository Indexing" : "Not Enough Credits"}</>
+                        : <><GitBranch className="h-4 w-4" />Validate &amp; Check Repo</>
+                    }
+                  </SubmitButton>
+                  <CreditFooter />
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* ════════ ZIP FIELDS ════════ */}
+          <div
+            className={cn(
+              "transition-all duration-300 ease-in-out",
+              tab === "zip" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 pointer-events-none absolute"
+            )}
+          >
+            {tab === "zip" && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2.5">
+                  <Field icon={FolderGit2}>
+                    <input
+                      value={zipProjectName}
+                      onChange={(e) => setZipProjectName(e.target.value)}
+                      placeholder="Project Name"
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+
+                  {/* D&D Zone */}
+                  <DropZone
+                    zipFile={zipFile}
+                    zipFileCount={zipFileCount}
+                    zipCountLoading={zipCountLoading}
+                    isDragging={isDragging}
+                    onDrop={onDrop}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onClick={() => fileInputRef.current?.click()}
+                    onClear={() => { setZipFile(null); setZipFileCount(null); }}
+                  />
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -493,138 +452,55 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) processZipFile(f); }}
                   />
 
-                  {zipFile ? (
-                    <>
-                      <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-sage/15 border border-sage/20">
-                        <FileArchive className="h-6 w-6 text-sage" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[13px] font-semibold text-ink">{zipFile.name}</p>
-                        <p className="text-[11px] text-ink-soft mt-0.5">{(zipFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                      {zipCountLoading ? (
-                        <div className="flex items-center gap-1.5 text-[11px] text-ink-soft animate-pulse">
-                          <Loader2 className="h-3 w-3 animate-spin" /> Counting files…
-                        </div>
-                      ) : zipFileCount !== null ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage/10 border border-sage/20">
-                          <span className="h-1.5 w-1.5 rounded-full bg-sage animate-pulse" />
-                          <span className="text-[11px] font-semibold text-sage">{zipFileCount} files to index</span>
-                        </div>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setZipFile(null); setZipFileCount(null); }}
-                        className="absolute top-3 right-3 flex items-center justify-center h-6 w-6 rounded-full bg-ink/8 hover:bg-ink/15 text-ink-soft hover:text-ink transition-all"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className={cn("flex items-center justify-center h-12 w-12 rounded-2xl border transition-all", isDragging ? "bg-coral/15 border-coral/30" : "bg-cream-deep border-ink/10")}>
-                        <Upload className={cn("h-6 w-6 transition-colors", isDragging ? "text-coral" : "text-ink-soft")} />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[13px] font-semibold text-ink">
-                          {isDragging ? "Drop it here!" : "Drop your ZIP or click to browse"}
-                        </p>
-                        <p className="text-[11px] text-ink-soft mt-0.5">Max 4 MB · .zip only</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* No commit history notice */}
-                <div className="flex items-start gap-2 rounded-xl border border-ink/8 bg-cream-deep/30 px-3 py-2.5">
-                  <GitCommit className="h-3.5 w-3.5 text-ink-soft mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-ink-soft leading-relaxed">
-                    ZIP projects don't have <span className="font-semibold text-ink">commit history</span>. All code intelligence and Q&amp;A features work normally.
-                  </p>
-                </div>
-
-                {/* Skip UI toggle */}
-                <div className="flex flex-col space-y-1 pt-2 border-t border-ink/5">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      id="skipUiZip"
-                      type="checkbox"
-                      checked={zipSkipUi}
-                      onChange={(e) => setZipSkipUi(e.target.checked)}
-                      className="h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer"
-                    />
-                    <label htmlFor="skipUiZip" className="text-[12px] font-bold text-ink-soft cursor-pointer flex items-center gap-1.5 hover:text-ink transition-colors select-none">
-                      Exclude UI Components (Lowers credit cost)
-                    </label>
+                  {/* No commit note */}
+                  <div className="flex items-start gap-2 rounded-xl border border-ink/[0.07] bg-ink/[0.02] px-3 py-2.5">
+                    <GitCommit className="h-3.5 w-3.5 text-ink/30 mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-ink/50 leading-relaxed">
+                      ZIP projects don&apos;t have <span className="font-semibold text-ink/70">commit history</span>. All Q&amp;A and intelligence features work fully.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-ink-soft/60 pl-7 leading-normal">
-                    File count above updates instantly when toggled.
-                  </p>
+
+                  {/* Skip UI */}
+                  <SkipUiRow
+                    id="skipUiZip"
+                    checked={zipSkipUi}
+                    onChange={setSkipUiZip}
+                  />
+                </div>
+
+                {/* Credit check for ZIP */}
+                {zipFileCount !== null && userCredits !== null && (
+                  <CreditBadge
+                    hasEnough={hasEnoughCreditsZip}
+                    fileCount={zipFileCount}
+                    balance={userCredits}
+                  />
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <SubmitButton
+                    type="button"
+                    onClick={onZipSubmit}
+                    loading={isAnyLoading}
+                    disabled={isAnyLoading || !isZipReady || !hasEnoughCreditsZip}
+                    ready={isZipReady && hasEnoughCreditsZip}
+                  >
+                    {isAnyLoading
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading &amp; Indexing…</>
+                      : <><Upload className="h-4 w-4" />Upload &amp; Index ZIP</>
+                    }
+                  </SubmitButton>
+                  <CreditFooter />
                 </div>
               </div>
-
-              {/* Credit check for ZIP */}
-              {zipFileCount !== null && userCredits !== null && (
-                <div className={cn(
-                  "animate-in fade-in slide-in-from-top-1 duration-200 rounded-2xl border px-4 py-3.5 shadow-sm",
-                  hasEnoughCreditsZip ? "border-sage/20 bg-sage/5" : "border-coral-soft/20 bg-coral-soft/5"
-                )}>
-                  <div className="flex items-start gap-3">
-                    {hasEnoughCreditsZip ? (
-                      <div className="flex items-center justify-center size-7 rounded-lg bg-sage/20 text-sage border border-sage/10 shrink-0">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center size-7 rounded-lg bg-coral-soft/20 text-coral border border-coral-soft/10 shrink-0 animate-bounce" style={{ animationDuration: "2s" }}>
-                        <AlertCircle className="h-4 w-4" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <span className="text-[12px] font-bold text-ink leading-none">
-                        {hasEnoughCreditsZip ? "Ready to Index" : "Insufficient Credits"}
-                      </span>
-                      <div className="mt-2 flex items-center gap-4 text-[11px] text-ink-soft">
-                        <span>Cost: <span className="font-bold text-ink">{zipFileCount} credits</span></span>
-                        <span className="h-3 w-px bg-ink/10" />
-                        <span>Balance: <span className={cn("font-bold", hasEnoughCreditsZip ? "text-sage" : "text-coral")}>{userCredits} credits</span></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <Button
-                  type="button"
-                  onClick={onZipSubmit}
-                  disabled={isAnyLoading || !isZipReady || !hasEnoughCreditsZip}
-                  className={cn(
-                    "h-11 w-full rounded-2xl text-[13px] font-bold transition-all shadow-pop-sm active:scale-[0.98] border cursor-pointer",
-                    isZipReady && hasEnoughCreditsZip
-                      ? "bg-coral text-cream border-coral hover:bg-coral-soft hover:shadow-pop"
-                      : "bg-ink text-cream border-ink hover:bg-ink-soft hover:shadow-pop",
-                    (!isZipReady || !hasEnoughCreditsZip) && "opacity-50 cursor-not-allowed pointer-events-none"
-                  )}
-                >
-                  {isAnyLoading ? (
-                    <span className="flex items-center gap-2 justify-center"><Loader2 className="h-4 w-4 animate-spin" />Uploading &amp; Indexing…</span>
-                  ) : (
-                    <span className="flex items-center gap-2 justify-center"><Sparkles className="h-4 w-4" />Begin Indexing from ZIP</span>
-                  )}
-                </Button>
-                <p className="text-center text-[11px] text-ink-soft/80">
-                  1 credit = 1 file indexed ·{" "}
-                  <a href="/billing" className="font-bold text-coral hover:text-coral-soft underline underline-offset-2 transition-colors">Add credits</a>
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
 
-      {/* Full-screen loading overlay */}
+      {/* ── Full-screen loading overlay ─────────────────────────────────── */}
       {isAnyLoading && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-cream/70 backdrop-blur-xl transition-all animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-cream/70 backdrop-blur-xl animate-in fade-in duration-500">
           <div className="flex flex-col items-center text-center gap-6 animate-pulse-soft">
             <div className="relative flex items-center justify-center">
               <div className="absolute h-24 w-24 rounded-full bg-coral/30 blur-2xl animate-spin-slow" />
@@ -635,7 +511,7 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-bold text-ink tracking-tight">Initializing Intelligence Engine</h2>
-              <p className="text-sm font-medium text-ink-soft">
+              <p className="text-sm font-medium text-ink/50">
                 {tab === "zip" ? "Uploading and preparing your ZIP archive…" : "Preparing vector embeddings for your repository…"}
               </p>
             </div>
@@ -645,3 +521,204 @@ export const CreateProjectDialog = ({ children }: { children: React.ReactNode })
     </Dialog>
   );
 };
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SkipUiRow({
+  id,
+  checked,
+  formRegister,
+  onChange,
+}: {
+  id: string;
+  checked: boolean;
+  formRegister?: object;
+  onChange?: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-ink/[0.07] bg-ink/[0.02] px-3 py-3">
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        {...(formRegister ?? {})}
+        onChange={formRegister ? undefined : (e) => onChange?.(e.target.checked)}
+        className="mt-0.5 h-4 w-4 rounded border-ink/15 text-coral focus:ring-coral accent-coral cursor-pointer shrink-0"
+      />
+      <div>
+        <label htmlFor={id} className="block text-[12px] font-semibold text-ink/70 cursor-pointer select-none hover:text-ink transition-colors">
+          Exclude UI Components <span className="font-medium text-ink/40">(lowers credit cost)</span>
+        </label>
+        <p className="mt-0.5 text-[10px] text-ink/35 leading-relaxed">
+          Filters layout components, icons, and visual elements to focus on core logic.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CreditBadge({
+  hasEnough,
+  fileCount,
+  balance,
+}: {
+  hasEnough: boolean;
+  fileCount?: number;
+  balance?: number;
+}) {
+  return (
+    <div className={cn(
+      "animate-in fade-in slide-in-from-top-1 duration-200 rounded-xl border px-3.5 py-3",
+      hasEnough ? "border-sage/25 bg-sage/[0.06]" : "border-coral-soft/25 bg-coral-soft/[0.06]"
+    )}>
+      <div className="flex items-center gap-2.5">
+        {hasEnough ? (
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-sage/20 border border-sage/15">
+            <CheckCircle2 className="h-3.5 w-3.5 text-sage" />
+          </div>
+        ) : (
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-coral-soft/20 border border-coral-soft/15 animate-bounce" style={{ animationDuration: "2s" }}>
+            <AlertCircle className="h-3.5 w-3.5 text-coral" />
+          </div>
+        )}
+        <div className="flex-1">
+          <span className="text-[12px] font-bold text-ink leading-none">
+            {hasEnough ? "Ready to Index" : "Insufficient Credits"}
+          </span>
+          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-ink/50">
+            <span>Cost: <span className="font-bold text-ink">{fileCount} credits</span></span>
+            <span className="h-3 w-px bg-ink/10" />
+            <span>Balance: <span className={cn("font-bold", hasEnough ? "text-sage" : "text-coral")}>{balance} credits</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SubmitButton({
+  type = "button",
+  onClick,
+  loading,
+  disabled,
+  ready,
+  children,
+}: {
+  type?: "button" | "submit";
+  onClick?: () => void;
+  loading: boolean;
+  disabled: boolean;
+  ready: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "relative h-10 w-full rounded-xl text-[13px] font-bold transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 border",
+        ready
+          ? "bg-coral text-white border-coral hover:brightness-110 shadow-[0_2px_8px_rgba(var(--coral),0.3)]"
+          : "bg-ink text-cream border-ink/80 hover:bg-ink/90",
+        disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CreditFooter() {
+  return (
+    <p className="text-center text-[11px] text-ink/40">
+      1 credit = 1 file indexed ·{" "}
+      <a href="/billing" className="font-semibold text-coral hover:text-coral/70 transition-colors">
+        Add credits
+      </a>
+    </p>
+  );
+}
+
+function DropZone({
+  zipFile,
+  zipFileCount,
+  zipCountLoading,
+  isDragging,
+  onDrop,
+  onDragOver,
+  onDragLeave,
+  onClick,
+  onClear,
+}: {
+  zipFile: File | null;
+  zipFileCount: number | null;
+  zipCountLoading: boolean;
+  isDragging: boolean;
+  onDrop: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onClick: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onClick={onClick}
+      className={cn(
+        "relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 px-5 py-7",
+        isDragging
+          ? "border-coral bg-coral/[0.04] scale-[1.01]"
+          : zipFile
+          ? "border-sage/50 bg-sage/[0.04]"
+          : "border-ink/[0.12] bg-ink/[0.02] hover:border-ink/25 hover:bg-ink/[0.04]"
+      )}
+    >
+      {zipFile ? (
+        <>
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sage/10 border border-sage/20">
+            <FileArchive className="h-5 w-5 text-sage" />
+          </div>
+          <div className="text-center">
+            <p className="text-[13px] font-semibold text-ink">{zipFile.name}</p>
+            <p className="text-[11px] text-ink/40 mt-0.5">{(zipFile.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+          {zipCountLoading ? (
+            <div className="flex items-center gap-1.5 text-[11px] text-ink/40">
+              <Loader2 className="h-3 w-3 animate-spin" /> Counting files…
+            </div>
+          ) : zipFileCount !== null ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sage/10 border border-sage/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-sage animate-pulse" />
+              <span className="text-[11px] font-semibold text-sage">{zipFileCount} files to index</span>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClear(); }}
+            className="absolute top-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/[0.06] hover:bg-ink/10 text-ink/40 hover:text-ink transition-all"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </>
+      ) : (
+        <>
+          <div className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-xl border transition-all",
+            isDragging ? "bg-coral/10 border-coral/25" : "bg-ink/[0.04] border-ink/[0.08]"
+          )}>
+            <Upload className={cn("h-5 w-5 transition-colors", isDragging ? "text-coral" : "text-ink/30")} />
+          </div>
+          <div className="text-center">
+            <p className="text-[13px] font-semibold text-ink">
+              {isDragging ? "Drop it here!" : "Drag & drop your repository ZIP"}
+            </p>
+            <p className="text-[11px] text-ink/40 mt-0.5">or click to browse · max 4 MB · .zip only</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
