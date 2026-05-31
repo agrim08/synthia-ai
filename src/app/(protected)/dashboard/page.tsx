@@ -485,8 +485,8 @@ const DashboardPage = () => {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-4 shrink-0 border-t md:border-t-0 md:border-l border-cream/10 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
-            <span className="text-[10px] uppercase tracking-wider text-cream/50">
+          <div className="flex flex-col items-start justify-center gap-2 shrink-0 border-t md:border-t-0 md:border-l border-cream/10 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
+            <span className="text-[10px] uppercase tracking-wider text-cream/50 pl-1">
               Est. Time: {intelligence?.recommendedTopic?.estTime || 5} mins
             </span>
             <Button
