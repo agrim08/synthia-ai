@@ -37,6 +37,13 @@ import {
   Sparkles,
   Terminal,
   GraduationCap,
+  CheckCircle2,
+  Cloud,
+  AlertTriangle,
+  CreditCard,
+  Radio,
+  Search,
+  Palette,
 } from "lucide-react";
 import {
   Dialog,
@@ -324,14 +331,11 @@ function ThinkingState({ conversational = false }: { conversational?: boolean })
   );
 }
 
-const INTERVIEW_CATEGORIES = [
-  { name: "Backend", icon: Cpu, prompt: "Start a mock interview focusing on the backend logic and services." },
-  { name: "Frontend", icon: Terminal, prompt: "Start a mock interview focusing on the frontend UI and components." },
-  { name: "Database", icon: Database, prompt: "Start a mock interview focusing on the database models and queries." },
-  { name: "Architecture", icon: Layers, prompt: "Start a mock interview focusing on the file structure and module architecture." },
-  { name: "Security", icon: Lock, prompt: "Start a mock interview focusing on authentication and security practices." },
-  { name: "System Design", icon: Zap, prompt: "Start a mock interview focusing on scaling, performance, and infrastructure." },
-];
+const ICON_MAP: Record<string, any> = {
+  Lock, Database, Terminal, Layers, Cpu, Zap, Sparkles, CheckCircle: CheckCircle2,
+  Cloud: Cloud, AlertTriangle: AlertTriangle, CreditCard: CreditCard, Radio: Radio,
+  Search: Search, FileCode: FileCode2, Palette: Palette, GraduationCap,
+};
 
 // ─── Main Component ─────────────────────────────────────────────────
 export default function QandA() {
@@ -341,6 +345,11 @@ export default function QandA() {
   const refetch = useRefetch();
 
   const { data: questions } = api.project.getQuestions.useQuery(
+    { projectId: projectId as string },
+    { enabled: !!projectId }
+  );
+
+  const { data: intelligence } = api.project.getProjectIntelligence.useQuery(
     { projectId: projectId as string },
     { enabled: !!projectId }
   );
@@ -372,34 +381,66 @@ export default function QandA() {
     }
   }, [modeParam, setChatMode]);
 
-  useEffect(() => {
-    if (promptParam) {
-      setInput(promptParam);
-      const nextUrl = window.location.pathname + (modeParam ? `?mode=${modeParam}` : "");
-      window.history.replaceState(null, "", nextUrl);
-    }
-  }, [promptParam, modeParam]);
-
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const hasRestoredRef = useRef(false);
 
-  // Restore question ID from localStorage on mount / project switch
+  const hasRestoredRef = useRef(false);
+  const hasPrefilledRef = useRef(false);
+  const prevProjectIdRef = useRef<string | null>(null);
+
+  // Unified initialization effect to coordinate URL pre-filling and LocalStorage restoration
   useEffect(() => {
-    hasRestoredRef.current = false;
     if (!projectId) return;
+
+    // Reset flags if project switches
+    if (prevProjectIdRef.current !== projectId) {
+      hasRestoredRef.current = false;
+      hasPrefilledRef.current = false;
+      prevProjectIdRef.current = projectId as string;
+    }
+
+    // Check if we need to pre-fill from query parameter
+    if (promptParam && !hasPrefilledRef.current) {
+      hasPrefilledRef.current = true;
+      hasRestoredRef.current = true;
+
+      setCurrentQuestionId(null);
+      setMessages([]);
+      setInput(promptParam);
+
+      localStorage.removeItem(`synthia-qa-id-${projectId}`);
+
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 50);
+
+      // Clean up prompt parameter from URL
+      const nextUrl = window.location.pathname + (modeParam ? `?mode=${modeParam}` : "");
+      window.history.replaceState(null, "", nextUrl);
+      return;
+    }
+
+    // If we've already restored or pre-filled for this project, do nothing
+    if (hasRestoredRef.current) return;
+
+    // Otherwise, perform standard restore from localStorage
+    hasRestoredRef.current = true;
     try {
       const saved = localStorage.getItem(`synthia-qa-id-${projectId}`);
       if (saved) {
         setCurrentQuestionId(saved);
+      } else {
+        setCurrentQuestionId(null);
+        setMessages([]);
+        setInput("");
       }
-    } catch {}
-    // Mark restore as done AFTER this render cycle so the save effect doesn't
-    // clear the value before the load has set it.
-    const t = setTimeout(() => { hasRestoredRef.current = true; }, 0);
-    return () => clearTimeout(t);
-  }, [projectId]);
+    } catch {
+      setCurrentQuestionId(null);
+      setMessages([]);
+      setInput("");
+    }
+  }, [projectId, promptParam, modeParam]);
 
   // Persist question ID to localStorage — only after initial restore
   useEffect(() => {
@@ -417,7 +458,7 @@ export default function QandA() {
   );
 
   useEffect(() => {
-    if (activeQuestion) {
+    if (activeQuestion && currentQuestionId) {
       const q = activeQuestion as any;
       let parsedMessages: any[] = [];
       try {
@@ -436,7 +477,7 @@ export default function QandA() {
       }
       setMessages(parsedMessages);
     }
-  }, [activeQuestion]);
+  }, [activeQuestion, currentQuestionId]);
 
 
 
@@ -467,10 +508,7 @@ export default function QandA() {
     setViewerFile(null);
   };
 
-  // Reset chat when project changes
-  useEffect(() => {
-    startNewChat();
-  }, [projectId]);
+
 
   const loadChat = (id: string) => {
     setCurrentQuestionId(id);
@@ -720,19 +758,29 @@ export default function QandA() {
 
                       {/* Interview Category Cards */}
                       <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 gap-2.5 w-full max-w-2xl">
-                        {INTERVIEW_CATEGORIES.map((category) => (
-                          <button
-                            key={category.name}
-                            onClick={() => {
-                              setInput(category.prompt);
-                              setTimeout(() => textareaRef.current?.focus(), 0);
-                            }}
-                            className="flex flex-col items-center justify-center text-center p-2.5 rounded-xl border border-ink/8 hover:border-coral/40 bg-card hover:bg-coral/[0.03] transition-all hover-lift min-h-[76px]"
-                          >
-                            <category.icon className="size-4 text-coral mb-1.5" />
-                            <span className="text-xs font-bold text-ink leading-tight">{category.name}</span>
-                          </button>
-                        ))}
+                        {(intelligence?.interviewCategories ?? [
+                          { name: "Backend", prompt: "Start a mock interview focusing on the backend logic.", icon: "Cpu" },
+                          { name: "Frontend", prompt: "Start a mock interview focusing on the frontend.", icon: "Terminal" },
+                          { name: "Database", prompt: "Start a mock interview focusing on database models.", icon: "Database" },
+                          { name: "Architecture", prompt: "Start a mock interview focusing on architecture.", icon: "Layers" },
+                          { name: "Security", prompt: "Start a mock interview focusing on security.", icon: "Lock" },
+                          { name: "System Design", prompt: "Start a mock interview focusing on system design.", icon: "Zap" },
+                        ]).map((category) => {
+                          const IconComp = ICON_MAP[category.icon] || Cpu;
+                          return (
+                            <button
+                              key={category.name}
+                              onClick={() => {
+                                setInput(category.prompt);
+                                setTimeout(() => textareaRef.current?.focus(), 0);
+                              }}
+                              className="flex flex-col items-center justify-center text-center p-2.5 rounded-xl border border-ink/8 hover:border-coral/40 bg-card hover:bg-coral/[0.03] transition-all hover-lift min-h-[76px]"
+                            >
+                              <IconComp className="size-4 text-coral mb-1.5" />
+                              <span className="text-xs font-bold text-ink leading-tight">{category.name}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
@@ -749,12 +797,12 @@ export default function QandA() {
 
                       {/* Suggestion prompts */}
                       <div className="mt-5 flex flex-col gap-2.5 w-full max-w-md">
-                        {[
+                        {(intelligence?.learnSuggestions ?? [
                           "Explain authentication flow",
                           "Explain API architecture",
                           "Explain database design",
                           "Explain deployment strategy",
-                        ].map((suggestion) => (
+                        ]).map((suggestion) => (
                           <button
                             key={suggestion}
                             onClick={() => {
