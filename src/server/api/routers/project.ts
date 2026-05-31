@@ -452,6 +452,200 @@ export const projectRouter = createTRPCRouter({
     }
   }),
 
+  // ------------------------------------------------------------------
+  // Project Intelligence — derived from already-indexed data (zero AI calls)
+  // ------------------------------------------------------------------
+  getProjectIntelligence: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify ownership
+      const link = await ctx.db.userToProject.findUnique({
+        where: {
+          userId_projectId: {
+            userId: ctx.user.userId!,
+            projectId: input.projectId,
+          },
+        },
+      });
+      if (!link) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your project" });
+      }
+
+      // Fetch all indexed file names and summaries for this project
+      const embeddings = await ctx.db.sourceCodeEmbeddings.findMany({
+        where: { projectId: input.projectId },
+        select: { fileName: true, summary: true },
+      });
+
+      // ── 1. Languages ──────────────────────────────────────────────
+      const EXT_TO_LANG: Record<string, string> = {
+        ".ts": "TypeScript", ".tsx": "TypeScript", ".js": "JavaScript", ".jsx": "JavaScript",
+        ".py": "Python", ".rb": "Ruby", ".go": "Go", ".rs": "Rust", ".java": "Java",
+        ".kt": "Kotlin", ".swift": "Swift", ".cs": "C#", ".cpp": "C++", ".c": "C",
+        ".php": "PHP", ".dart": "Dart", ".scala": "Scala", ".r": "R",
+        ".css": "CSS", ".scss": "SCSS", ".less": "LESS", ".sass": "Sass",
+        ".html": "HTML", ".vue": "Vue", ".svelte": "Svelte",
+        ".sql": "SQL", ".prisma": "Prisma", ".graphql": "GraphQL", ".gql": "GraphQL",
+        ".sh": "Shell", ".bash": "Shell", ".zsh": "Shell",
+        ".dockerfile": "Docker", ".tf": "Terraform",
+        ".lua": "Lua", ".ex": "Elixir", ".exs": "Elixir", ".erl": "Erlang",
+        ".zig": "Zig", ".nim": "Nim", ".clj": "Clojure",
+      };
+      const SPECIAL_FILES: Record<string, string> = {
+        "dockerfile": "Docker", "makefile": "Make", "cmakelists.txt": "CMake",
+        "gemfile": "Ruby", "cargo.toml": "Rust", "go.mod": "Go",
+      };
+      const EXCLUDE_LANGS = new Set(["JSON", "YAML", "TOML", "Markdown", "MDX"]);
+
+      const langCounts = new Map<string, number>();
+      for (const emb of embeddings) {
+        const name = emb.fileName.toLowerCase();
+        const baseName = name.split("/").pop() || "";
+        const ext = "." + baseName.split(".").pop();
+
+        if (SPECIAL_FILES[baseName]) {
+          const lang = SPECIAL_FILES[baseName]!;
+          if (!EXCLUDE_LANGS.has(lang)) langCounts.set(lang, (langCounts.get(lang) || 0) + 1);
+          continue;
+        }
+        if (EXT_TO_LANG[ext]) {
+          const lang = EXT_TO_LANG[ext]!;
+          if (!EXCLUDE_LANGS.has(lang)) langCounts.set(lang, (langCounts.get(lang) || 0) + 1);
+        }
+      }
+      const languages = [...langCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([lang]) => lang)
+        .slice(0, 6);
+
+      // ── 2. Architecture ───────────────────────────────────────────
+      const allFileNamesStr = embeddings.map((e) => e.fileName.toLowerCase()).join(" ");
+      let architecture = "Software Project";
+      const ARCH_PATTERNS: [string[], string][] = [
+        [["next.config"], "Next.js App"],
+        [["nuxt.config"], "Nuxt.js App"],
+        [["vite.config"], "Vite App"],
+        [["angular.json"], "Angular App"],
+        [["svelte.config"], "SvelteKit App"],
+        [["remix.config"], "Remix App"],
+        [["gatsby-config"], "Gatsby App"],
+        [["astro.config"], "Astro App"],
+        [["cargo.toml"], "Rust Project"],
+        [["go.mod"], "Go Project"],
+        [["pubspec.yaml"], "Flutter App"],
+        [["manage.py", "settings.py"], "Django App"],
+        [["app.py", "flask"], "Flask API"],
+      ];
+      for (const [patterns, arch] of ARCH_PATTERNS) {
+        if (patterns.some((p) => allFileNamesStr.includes(p))) {
+          architecture = arch;
+          break;
+        }
+      }
+      if (architecture === "Next.js App") {
+        if (allFileNamesStr.includes("app/") && allFileNamesStr.includes("layout")) {
+          architecture = "Next.js App Router";
+        } else if (allFileNamesStr.includes("pages/")) {
+          architecture = "Next.js Pages Router";
+        }
+      }
+
+      // ── 3. Topics ─────────────────────────────────────────────────
+      const TOPIC_CLUSTERS = [
+        { name: "Authentication & Security", keywords: ["auth", "login", "signup", "session", "jwt", "token", "clerk", "passport", "oauth", "protected", "permission", "guard"], description: "User identity management, session handling, and secure access control.", promptTemplate: "Explain how authentication and security are implemented in this repository.", icon: "Lock" },
+        { name: "Database & ORM", keywords: ["database", "prisma", "schema", "model", "migration", "sql", "postgres", "mongo", "mongoose", "drizzle", "sequelize", "supabase", "neon"], description: "Data models, schema design, queries, and database layer abstractions.", promptTemplate: "Explain the database design, schema models, and relationships in this repository.", icon: "Database" },
+        { name: "API Layer", keywords: ["api", "route", "endpoint", "trpc", "rest", "graphql", "controller", "handler", "server action"], description: "Server-side endpoints, request handling, and client-server communication.", promptTemplate: "Explain the API layer design and how client-server communication is handled.", icon: "Terminal" },
+        { name: "UI Components", keywords: ["component", "button", "modal", "dialog", "form", "layout", "sidebar", "navbar", "header", "card", "dropdown", "toast", "ui"], description: "Reusable interface components, layout patterns, and design system elements.", promptTemplate: "Explain the UI component architecture and design system in this codebase.", icon: "Layers" },
+        { name: "State Management", keywords: ["state", "store", "redux", "zustand", "context", "provider", "atom", "recoil", "jotai", "mobx"], description: "Client-side state patterns, stores, and data flow management.", promptTemplate: "Explain the state management approach and data flow patterns used.", icon: "Cpu" },
+        { name: "Testing", keywords: ["test", "spec", "jest", "vitest", "cypress", "playwright", "mocha", "assert", "mock", "fixture", "e2e"], description: "Testing strategies including unit, integration, and end-to-end test coverage.", promptTemplate: "Explain the testing strategy and test coverage in this project.", icon: "CheckCircle" },
+        { name: "Background Jobs", keywords: ["queue", "worker", "cron", "job", "background", "qstash", "bull", "celery", "webhook", "poll", "async"], description: "Asynchronous processing, scheduled tasks, and event-driven workflows.", promptTemplate: "Explain how background jobs and async processing are structured.", icon: "Zap" },
+        { name: "Deployment & DevOps", keywords: ["deploy", "docker", "ci", "cd", "vercel", "aws", "terraform", "kubernetes", "nginx", "pipeline"], description: "Build pipelines, deployment workflows, and infrastructure configuration.", promptTemplate: "Explain the deployment and DevOps setup in this project.", icon: "Cloud" },
+        { name: "Error Handling", keywords: ["error", "exception", "catch", "sentry", "logging", "log", "monitor", "boundary", "fallback", "retry"], description: "Error boundaries, exception handling, logging, and monitoring setup.", promptTemplate: "Explain the error handling and monitoring strategy in this codebase.", icon: "AlertTriangle" },
+        { name: "Payments & Billing", keywords: ["payment", "stripe", "paypal", "billing", "subscription", "checkout", "credit", "transaction"], description: "Payment processing, subscription logic, and billing integrations.", promptTemplate: "Explain the payment and billing system implementation.", icon: "CreditCard" },
+        { name: "Real-time Features", keywords: ["websocket", "socket", "realtime", "sse", "push", "notification", "stream", "channel"], description: "Live data streaming, WebSocket connections, and push notifications.", promptTemplate: "Explain the real-time features and live data handling.", icon: "Radio" },
+        { name: "Search & Indexing", keywords: ["search", "index", "elastic", "algolia", "vector", "embedding", "similarity", "rank"], description: "Search functionality, indexing pipelines, and content discovery.", promptTemplate: "Explain the search and indexing implementation.", icon: "Search" },
+        { name: "File Handling", keywords: ["upload", "file", "image", "storage", "s3", "bucket", "blob", "media", "asset"], description: "File uploads, storage management, and media processing pipelines.", promptTemplate: "Explain the file handling and storage setup.", icon: "FileCode" },
+        { name: "AI & Machine Learning", keywords: ["ai", "gemini", "openai", "gpt", "llm", "embedding", "prediction", "inference", "prompt", "generate"], description: "AI integrations, model inference, and machine learning pipelines.", promptTemplate: "Explain the AI/ML integration and how models are used.", icon: "Sparkles" },
+        { name: "Styling & Theming", keywords: ["tailwind", "css", "theme", "dark mode", "style", "responsive", "animation", "design token"], description: "Styling architecture, theming system, and responsive design tokens.", promptTemplate: "Explain the styling architecture and theming approach.", icon: "Palette" },
+      ];
+
+      const allText = embeddings.map((e) => `${e.fileName} ${e.summary}`.toLowerCase());
+      const topicScores: { name: string; description: string; prompt: string; fileCount: number; icon: string; score: number }[] = [];
+
+      for (const cluster of TOPIC_CLUSTERS) {
+        let score = 0;
+        let fileCount = 0;
+        for (const text of allText) {
+          const matches = cluster.keywords.filter((kw) => text.includes(kw)).length;
+          if (matches > 0) { score += matches; fileCount++; }
+        }
+        if (fileCount >= 1) {
+          topicScores.push({ name: cluster.name, description: cluster.description, prompt: cluster.promptTemplate, fileCount, icon: cluster.icon, score });
+        }
+      }
+      topicScores.sort((a, b) => b.score - a.score);
+      const discoveredTopics = topicScores.slice(0, 8);
+
+      // ── 4. Suggested Interview Questions ──────────────────────────
+      const TOPIC_QUESTIONS: Record<string, { questions: string[]; difficulty: string }> = {
+        "Authentication & Security": { questions: ["How is user authentication implemented and what security measures protect routes?", "What happens when a user session expires mid-request?"], difficulty: "Advanced" },
+        "Database & ORM": { questions: ["How is database schema typesafety maintained between the ORM and the application?", "What migration strategy is used and how are schema changes rolled out?"], difficulty: "Intermediate" },
+        "API Layer": { questions: ["Why was this API framework chosen over alternatives and what are its trade-offs?", "How does the API layer handle validation and error responses?"], difficulty: "Intermediate" },
+        "UI Components": { questions: ["How are UI components structured for reusability and consistency?", "What design system patterns are used for styling?"], difficulty: "Beginner" },
+        "State Management": { questions: ["How is client state synchronized with server state?", "What patterns prevent stale data and unnecessary re-renders?"], difficulty: "Advanced" },
+        "Background Jobs": { questions: ["How do background jobs handle failures, retries, and idempotency?", "What prevents race conditions in the async processing pipeline?"], difficulty: "Advanced" },
+        "Testing": { questions: ["What testing strategy is used and how is coverage measured?", "How are integration tests structured across service boundaries?"], difficulty: "Intermediate" },
+        "Error Handling": { questions: ["How are errors captured and surfaced to the development team?", "What happens when an unhandled error occurs in production?"], difficulty: "Intermediate" },
+        "Payments & Billing": { questions: ["How is payment processing handled and what prevents double-charging?", "How are subscription state transitions managed?"], difficulty: "Advanced" },
+        "AI & Machine Learning": { questions: ["How are AI model calls optimized for cost and latency?", "What fallback strategies exist when the AI service is unavailable?"], difficulty: "Advanced" },
+      };
+
+      const suggestedQuestions: { question: string; difficulty: string }[] = [];
+      for (const topic of discoveredTopics.slice(0, 6)) {
+        const qSet = TOPIC_QUESTIONS[topic.name];
+        if (qSet) {
+          for (const q of qSet.questions) {
+            suggestedQuestions.push({ question: q, difficulty: qSet.difficulty });
+          }
+        }
+      }
+
+      // ── 5. Recommended Next Step ──────────────────────────────────
+      const topTopic = discoveredTopics[0];
+      const recommendedTopic = topTopic
+        ? { title: `Practice ${topTopic.name} Questions`, description: `Test your understanding of ${topTopic.name.toLowerCase()} patterns and decisions in this codebase.`, prompt: topTopic.prompt, estTime: Math.max(5, Math.min(15, topTopic.fileCount)) }
+        : { title: "Explore Your Codebase", description: "Start asking questions about your repository to understand its architecture.", prompt: "Give me an overview of this codebase architecture and key design decisions.", estTime: 5 };
+
+      // ── 6. Complexity ─────────────────────────────────────────────
+      const totalFiles = embeddings.length;
+      const uniqueDirs = new Set(embeddings.map((e) => e.fileName.split("/").slice(0, -1).join("/"))).size;
+      const complexityScore = totalFiles * 1 + uniqueDirs * 2 + languages.length * 3;
+      const complexity = complexityScore < 30 ? "Low" : complexityScore < 80 ? "Medium" : complexityScore < 200 ? "High" : "Enterprise";
+
+      // ── 7. Learn Mode Suggestions ─────────────────────────────────
+      const learnSuggestions = discoveredTopics.slice(0, 4).map((t) => `Explain the ${t.name.toLowerCase()} in this codebase`);
+      const fallbackSuggestions = ["Give me an overview of this codebase", "Explain the main architecture", "What are the key design patterns used?", "How is the project structured?"];
+      while (learnSuggestions.length < 4) learnSuggestions.push(fallbackSuggestions[learnSuggestions.length]!);
+
+      // ── 8. Interview Categories ───────────────────────────────────
+      const interviewCategories = discoveredTopics.slice(0, 6).map((t) => ({
+        name: t.name.split("&")[0]!.trim().split(" ")[0]!,
+        prompt: `Start a mock interview focusing on the ${t.name.toLowerCase()} in this project.`,
+        icon: t.icon,
+      }));
+      const fallbackCategories = [
+        { name: "Architecture", prompt: "Start a mock interview focusing on the overall architecture.", icon: "Layers" },
+        { name: "Performance", prompt: "Start a mock interview focusing on performance optimization.", icon: "Zap" },
+        { name: "Quality", prompt: "Start a mock interview focusing on code quality.", icon: "CheckCircle" },
+        { name: "Scalability", prompt: "Start a mock interview focusing on scaling.", icon: "Cloud" },
+        { name: "Testing", prompt: "Start a mock interview focusing on testing strategy.", icon: "CheckCircle" },
+        { name: "Security", prompt: "Start a mock interview focusing on security.", icon: "Lock" },
+      ];
+      while (interviewCategories.length < 6) interviewCategories.push(fallbackCategories[interviewCategories.length]!);
+
+      return { languages, architecture, topics: discoveredTopics, suggestedQuestions: suggestedQuestions.slice(0, 6), recommendedTopic, complexity, learnSuggestions, interviewCategories };
+    }),
+
   getCommits: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {

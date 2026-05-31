@@ -24,6 +24,15 @@ import {
   HelpCircle,
   Code2,
   CheckCircle2,
+  Plus,
+  ChevronDown,
+  Cloud,
+  AlertTriangle,
+  CreditCard,
+  Radio,
+  Search,
+  Palette,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -32,6 +41,7 @@ import InviteTeam from "./InviteTeam";
 import TeamMembers from "./TeamMembers";
 import IndexingStatusBanner from "@/components/IndexingStatusBanner";
 import DeleteProject from "./DeleteProject";
+import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +50,123 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardSkeleton from "./DashboardSkeleton";
+import { cn } from "@/lib/utils";
+
+const ICON_MAP: Record<string, any> = {
+  Lock, Database, Terminal, Layers, Cpu, Zap, Sparkles, CheckCircle: CheckCircle2,
+  Cloud, AlertTriangle, CreditCard, Radio, Search, FileCode: FileCode2, Palette, GraduationCap,
+};
+
+const TOPIC_SUBTEXTS: Record<string, string> = {
+  "Authentication & Security": "JWT + Session Handling",
+  "Database & ORM": "Schemas + Queries",
+  "API Layer": "Routes + Validation",
+  "UI Components": "Reusable Components",
+  "State Management": "Client & Server State",
+  "Testing": "Unit + Integration Tests",
+  "Background Jobs": "Asynchronous Workers & Queues",
+  "Deployment & DevOps": "Infrastructure + CI/CD",
+  "Error Handling": "Boundaries & Monitoring",
+  "Payments & Billing": "Stripe & Subscriptions",
+  "Real-time Features": "WebSockets & SSE",
+  "Search & Indexing": "Vector Embeddings & Queries",
+  "File Handling": "Uploads & S3 Storage",
+  "AI & Machine Learning": "LLM Inference & Prompts",
+  "Styling & Theming": "Tailwind & Themes",
+};
+
+const TOPIC_DISPLAY_NAMES: Record<string, string> = {
+  "Authentication & Security": "Authentication",
+  "Database & ORM": "Database",
+  "API Layer": "API Design",
+  "UI Components": "UI Components",
+  "State Management": "State Management",
+  "Testing": "Testing",
+  "Background Jobs": "Background Jobs",
+  "Deployment & DevOps": "Deployment",
+  "Error Handling": "Error Handling",
+  "Payments & Billing": "Payments",
+  "Real-time Features": "Real-time Features",
+  "Search & Indexing": "Search & Indexing",
+  "File Handling": "File Handling",
+  "AI & Machine Learning": "AI & ML",
+  "Styling & Theming": "Styling & Themes",
+};
+
+const getTopicPrompt = (topicName: string) => {
+  if (topicName.includes("Authentication")) return "Explain authentication flow in this repository";
+  if (topicName.includes("Database")) return "Explain database architecture in this repository";
+  if (topicName.includes("API")) return "Explain API architecture in this repository";
+  if (topicName.includes("UI")) return "Explain UI component architecture in this repository";
+  if (topicName.includes("State")) return "Explain state management in this repository";
+  if (topicName.includes("Testing")) return "Explain testing setup in this repository";
+  if (topicName.includes("Background")) return "Explain background job setup in this repository";
+  if (topicName.includes("Deployment")) return "Explain deployment setup in this repository";
+  if (topicName.includes("Error")) return "Explain error handling in this repository";
+  if (topicName.includes("Payments")) return "Explain payment and billing setup in this repository";
+  if (topicName.includes("Real-time")) return "Explain real-time features setup in this repository";
+  if (topicName.includes("Search")) return "Explain search and indexing setup in this repository";
+  if (topicName.includes("File")) return "Explain file handling in this repository";
+  if (topicName.includes("AI")) return "Explain AI and machine learning setup in this repository";
+  if (topicName.includes("Styling")) return "Explain styling and theming approach in this repository";
+  return `Explain ${topicName.toLowerCase()} in this repository`;
+};
+
+const CommitSummaryAccordion = ({ summary }: { summary: string }) => {
+  const [expanded, setExpanded] = React.useState(false);
+  const points = summary.split("*").filter((s) => s.trim());
+  if (points.length === 0) return null;
+
+  const isLong = summary.length > 200 || points.length > 2;
+
+  const formatPoint = (text: string) => {
+    const parts = text.split(/(\[[^\]]+\])/);
+    return parts.map((part, idx) => {
+      if (part.startsWith('[') && part.endsWith(']')) {
+        return (
+          <span key={idx} className="inline-block bg-ink/5 border border-ink/10 rounded px-1 py-0.5 mx-0.5 text-[9px] font-mono text-ink-soft truncate max-w-[200px] align-bottom">
+            {part.slice(1, -1)}
+          </span>
+        );
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  };
+
+  return (
+    <div className="rounded-xl bg-cream-deep/40 border border-ink/5 px-4 py-3 ml-11 transition-all duration-300">
+      <div className="flex items-center gap-1.5 mb-2.5 text-[9px] uppercase tracking-wider font-bold text-ink-soft">
+        <Sparkles className="size-3.5 text-coral" />
+        AI Commit Summary
+      </div>
+      <div className={cn(
+        "relative overflow-hidden transition-all duration-500",
+        expanded ? "max-h-[2000px]" : "max-h-[72px]"
+      )}>
+        <ul className="space-y-2.5">
+          {points.map((point, i) => (
+            <li key={i} className="flex gap-2 text-[11px] text-ink-soft leading-relaxed items-start">
+              <span className="text-coral mt-1.5 h-1 w-1 rounded-full bg-coral shrink-0" />
+              <span className="flex-1 break-words">{formatPoint(point.trim())}</span>
+            </li>
+          ))}
+        </ul>
+        {isLong && !expanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-cream to-transparent pointer-events-none" />
+        )}
+      </div>
+      {isLong && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-[10px] font-bold text-coral hover:text-coral-deep transition-colors mt-2 flex items-center gap-1"
+        >
+          {expanded ? "Show less" : "Show more"}
+          <ChevronDown className={cn("size-3 transition-transform", expanded && "rotate-180")} />
+        </button>
+      )}
+    </div>
+  );
+};
 
 // Helper function to format timestamp relative to current time
 const timeAgo = (date: Date | string | null | undefined) => {
@@ -97,6 +224,11 @@ const DashboardPage = () => {
     }
   );
 
+  const { data: intelligence } = api.project.getProjectIntelligence.useQuery(
+    { projectId: projectId as string },
+    { enabled: !!projectId }
+  );
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -113,8 +245,13 @@ const DashboardPage = () => {
           <p className="text-sm text-ink-soft mb-8 leading-relaxed">
             Link a repository to start analyzing your codebase, discovering topics, and preparing for your technical interviews.
           </p>
-          <div className="text-xs font-semibold text-ink-soft bg-cream-deep/40 rounded-xl py-3 px-4 border border-ink/6">
-            Use the <strong>New Project</strong> button in the sidebar to get started.
+          <div className="flex justify-center">
+            <CreateProjectDialog>
+              <Button className="rounded-xl bg-coral hover:bg-coral-deep text-cream h-11 px-6 font-semibold flex items-center gap-2 transition-all shadow-pop-sm hover:translate-y-[-2px]">
+                <Plus className="size-4" />
+                Create New Project
+              </Button>
+            </CreateProjectDialog>
           </div>
         </div>
       </div>
@@ -124,71 +261,10 @@ const DashboardPage = () => {
   // Repository stats
   const totalFiles = project.indexingTotal || 0;
   const isSyncing = project.indexingStatus === "INDEXING" || project.indexingStatus === "SYNCING";
-  const complexity = totalFiles < 15 ? "Low" : totalFiles < 50 ? "Medium" : "High";
+  const complexity = intelligence?.complexity || "Medium";
+  const topics = intelligence?.topics || [];
+  const suggestedQuestions = intelligence?.suggestedQuestions || [];
 
-  // Topics Discovered based on project characteristics
-  const topics = [
-    {
-      name: "Authentication & Security",
-      icon: Lock,
-      desc: "User access management, session logic, and secure routing inside protected layouts.",
-      prompt: "Explain how authentication and security are implemented in this repository.",
-    },
-    {
-      name: "Database Schema & Models",
-      icon: Database,
-      desc: "Prisma data models, entity relationships, and Neon PostgreSQL queries.",
-      prompt: "Explain the database design, schema models, and relationships in this repository.",
-    },
-    {
-      name: "API Design & Router",
-      icon: Terminal,
-      desc: "Typesafe endpoint logic, bridging server mutations and React client hooks.",
-      prompt: "Explain the API layer design and how client-server communication is handled in this codebase.",
-    },
-    {
-      name: "Background Tasks",
-      icon: Zap,
-      desc: "Event queues and background execution handlers enqueued via QStash workflows.",
-      prompt: "Explain how background indexing and syncing processes are structured in this repository.",
-    },
-    {
-      name: "Error Logging & Tracking",
-      icon: Cpu,
-      desc: "Sentry integration and custom error boundaries tracking pipeline failures.",
-      prompt: "Explain the logging, error handling, and debugging setup in this project.",
-    },
-    {
-      name: "UI Component Architecture",
-      icon: Layers,
-      desc: "Design system components, responsive navigation sidebars, and Tailwind CSS tokens.",
-      prompt: "Explain the modular structure of the UI components and how styling tokens are set up.",
-    },
-  ];
-
-  // Suggested Interview Questions
-  const suggestedQuestions = [
-    {
-      question: "How is database schema typesafety maintained between Prisma and the client application?",
-      diff: "Intermediate",
-      diffColor: "text-amber-600 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30",
-    },
-    {
-      question: "What is the background tasks architecture and how does it prevent race conditions?",
-      diff: "Advanced",
-      diffColor: "text-red-600 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30",
-    },
-    {
-      question: "Why was tRPC chosen over traditional REST or GraphQL APIs in this system design?",
-      diff: "Intermediate",
-      diffColor: "text-amber-600 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30",
-    },
-    {
-      question: "How would you optimize the indexing pipeline performance as repository size scales?",
-      diff: "Advanced",
-      diffColor: "text-red-600 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30",
-    },
-  ];
 
   return (
     <div className="relative min-h-screen bg-cream text-ink">
@@ -199,7 +275,7 @@ const DashboardPage = () => {
         <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-butter/20 blur-3xl" />
       </div>
 
-      {/* 1. Context Navigation Bar */}
+      {/* Context Navigation Bar */}
       <div className="sticky top-0 z-40 backdrop-blur-xl bg-cream/75 border-b border-ink/10">
         <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -266,170 +342,251 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Indexing status banner (kept, just showing visual status on top) */}
+      {/* Indexing status banner */}
       <IndexingStatusBanner projectId={project.id} />
 
       <div className="mx-auto max-w-6xl px-6 py-8 space-y-10">
         
-        {/* Section 1: Repository Header Card & Section 6: Recommended Starting Point */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-up">
-          {/* Header Card */}
-          <div className="lg:col-span-2 relative overflow-hidden rounded-[32px] border border-ink/10 bg-card p-6 md:p-8 shadow-soft">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/10 border border-coral/20 text-[10px] font-black uppercase tracking-widest text-coral">
+        {/* Section 1 & 2: Merged Repository Header & AI Insights Card */}
+        <div className="relative overflow-hidden rounded-3xl border border-ink/8 bg-cream-deep/35 p-5 md:p-6 shadow-soft animate-fade-up">
+          <div className="space-y-4">
+            {/* Top row: AI Insights Title & Meta */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ink/6">
+              <div className="flex items-center gap-2 text-coral">
+                <Sparkles className="size-3.5" />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] font-sans">AI Repository Insights</h2>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-[9px] uppercase font-semibold font-mono text-ink-soft/70">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-coral/10 border border-coral/20 font-black text-coral">
                   Connected
+                </span>
+                <span>•</span>
+                <span>Last Analyzed: {timeAgo(project.updatedAt)}</span>
+                <span>•</span>
+                <span>Status: <span className="text-sage font-bold">{isSyncing ? "Syncing..." : "Ready"}</span></span>
+              </div>
+            </div>
+
+            {/* AI Repository Insights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Project Type */}
+              <div className="space-y-1">
+                <span className="text-[9px] uppercase tracking-wider text-ink-soft/70 block font-bold font-sans">Project Type</span>
+                <span className="text-xs font-bold text-ink leading-snug block">
+                  {intelligence?.architecture && (intelligence.architecture.toLowerCase().includes("next") || intelligence.architecture.toLowerCase().includes("nuxt") || intelligence.architecture.toLowerCase().includes("vite") || intelligence.architecture.toLowerCase().includes("svelte"))
+                    ? "Full-Stack Next.js Application"
+                    : intelligence?.architecture || "Software Application"}
+                </span>
+              </div>
+
+              {/* Key Topics */}
+              <div className="space-y-1">
+                <span className="text-[9px] uppercase tracking-wider text-ink-soft/70 block font-bold font-sans">Key Topics</span>
+                <div className="flex flex-wrap gap-1">
+                  {topics.slice(0, 4).map((t: any) => (
+                    <span key={t.name} className="text-[9px] font-bold px-2 py-0.5 rounded bg-ink/5 border border-ink/10 text-ink-soft">
+                      {TOPIC_DISPLAY_NAMES[t.name] || t.name}
+                    </span>
+                  ))}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-display font-black text-ink tracking-tight">
-                  {project.name}
-                </h1>
-                <p className="text-sm font-mono text-ink-soft break-all select-all">
-                  {project.githubUrl || "Local ZIP Import"}
-                </p>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 pt-6 border-t border-ink/6">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Last Analyzed</span>
-                <span className="text-sm font-bold text-ink flex items-center gap-1.5 mt-0.5">
-                  <Clock className="size-3.5 text-coral" />
-                  {timeAgo(project.updatedAt)}
+              {/* Interview Focus */}
+              <div className="space-y-1">
+                <span className="text-[9px] uppercase tracking-wider text-ink-soft/70 block font-bold font-sans">Interview Focus</span>
+                <span className="text-xs font-bold text-ink leading-snug block">
+                  {topics.length > 0 && topics[0]?.name
+                    ? `${TOPIC_DISPLAY_NAMES[topics[0].name] || topics[0].name} Flow`
+                    : "System Architecture"}
                 </span>
               </div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Repository Status</span>
-                <span className="text-sm font-bold text-ink flex items-center gap-1.5 mt-0.5">
-                  <CheckCircle2 className="size-3.5 text-sage" />
-                  {isSyncing ? "Syncing..." : "Ready"}
-                </span>
+
+              {/* Recommended Next Step */}
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider text-ink-soft/70 block font-bold font-sans">Recommended Next Step</span>
+                  <span className="text-xs font-bold text-ink leading-snug block">
+                    {intelligence?.recommendedTopic?.title || "Explore Your Codebase"}
+                  </span>
+                </div>
+                <Button
+                  onClick={() => {
+                    const isPractice = intelligence?.recommendedTopic?.title.includes('Practice') || intelligence?.recommendedTopic?.title.includes('Questions');
+                    router.push(`/qa?mode=${isPractice ? 'interview' : 'learn'}&prompt=${encodeURIComponent(intelligence?.recommendedTopic?.prompt || "Give me an overview of this codebase.")}`);
+                  }}
+                  className="rounded-lg bg-coral hover:bg-coral-deep text-cream hover:scale-[1.02] transition-all font-semibold flex items-center gap-1.5 h-7 px-3 text-[11px] shadow-pop-sm"
+                  size="sm"
+                >
+                  {intelligence?.recommendedTopic?.title.includes('Practice') || intelligence?.recommendedTopic?.title.includes('Questions') ? 'Start Practice' : 'Start Learning'}
+                  <ArrowRight className="size-3" />
+                </Button>
               </div>
             </div>
-          </div>
 
-          {/* Section 6: Recommended Starting Point CTA */}
-          <div className="relative overflow-hidden rounded-[32px] bg-ink text-cream p-6 md:p-8 shadow-md flex flex-col justify-between group">
-            <div className="absolute right-[-20px] top-[-20px] scale-[1.8] opacity-5 pointer-events-none text-coral">
-              <Sparkles className="size-32" />
-            </div>
-
-            <div className="space-y-3">
-              <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-coral/80">
-                <Sparkles className="size-3 text-coral" />
-                Recommended Next Step
+            {/* Repository Snapshot Inline Section */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t border-ink/6 text-[11px] text-ink-soft">
+              <span className="font-sans uppercase tracking-[0.1em] text-[9px] font-black text-ink-soft/60 flex items-center gap-1">
+                <Code2 className="size-3 text-coral" /> Snapshot:
               </span>
-              <h3 className="text-2xl font-display font-black tracking-tight leading-tight text-cream">
-                Practice API Design Questions
-              </h3>
-              <p className="text-xs text-cream-deep/70 leading-relaxed max-w-[220px]">
-                Test your knowledge of typesafe tRPC endpoints and schema validations in mock mode.
-              </p>
-            </div>
-
-            <div className="mt-8 pt-4 border-t border-cream/10 flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-cream/50">Est. Time: 8 min</span>
-              <Button
-                onClick={() => router.push(`/qa?mode=interview&prompt=${encodeURIComponent("How is API validation and typesafety handled in this project?")}`)}
-                className="rounded-xl bg-coral hover:bg-coral-deep text-cream hover:scale-[1.03] transition-all font-semibold flex items-center gap-1 text-xs"
-                size="sm"
-              >
-                Start Practice
-                <ArrowRight className="size-3" />
-              </Button>
+              <span className="flex items-center gap-1">
+                <span className="font-bold text-ink">{totalFiles}</span> files indexed
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-bold text-ink">{intelligence?.topics?.length || 0}</span> modules
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-bold text-ink">{complexity}</span> complexity
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-bold text-ink">{commits?.length || 0}</span> commits
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="font-bold text-ink">
+                  {commits ? Array.from(new Set(commits.map((c) => c.commitAuthorName))).length : 1}
+                </span> contributors
+              </span>
+              {intelligence?.architecture && (
+                <span className="flex items-center gap-1 truncate max-w-[200px]" title={intelligence.architecture}>
+                  arch: <span className="font-bold text-ink">{intelligence.architecture}</span>
+                </span>
+              )}
+              {intelligence?.languages && intelligence.languages.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-ink-soft/60">langs:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {intelligence.languages.map((lang) => (
+                      <span key={lang} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-coral/5 text-coral border border-coral/10">
+                        {lang}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Section 2: Repository Overview Factoids */}
-        <section className="space-y-4 animate-fade-up" style={{ animationDelay: "100ms" }}>
-          <div className="flex items-center gap-2">
-            <Code2 className="size-4 text-coral" />
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Repository Intelligence</h2>
+        {/* Section 3: Recommended Next Action */}
+        <div className="relative overflow-hidden rounded-[32px] bg-ink text-cream p-6 md:p-8 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group border border-ink-soft/20 animate-fade-up">
+          <div className="absolute right-[-20px] top-[-20px] scale-[1.8] opacity-5 pointer-events-none text-coral">
+            <Sparkles className="size-32" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <div className="rounded-2xl border border-ink/8 bg-card/60 p-4">
-              <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Files Indexed</span>
-              <span className="text-2xl font-display font-black text-ink mt-1 block">{totalFiles}</span>
-            </div>
-            <div className="rounded-2xl border border-ink/8 bg-card/60 p-4">
-              <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Languages</span>
-              <div className="flex flex-wrap gap-1 mt-2">
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-sky/10 text-sky border border-sky/20">TS</span>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-coral/10 text-coral border border-coral/20">CSS</span>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-sage/10 text-sage border border-sage/20">Prisma</span>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-ink/8 bg-card/60 p-4">
-              <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Complexity</span>
-              <span className="text-2xl font-display font-black text-ink mt-1 block">{complexity}</span>
-            </div>
-            <div className="rounded-2xl border border-ink/8 bg-card/60 p-4">
-              <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Commits Logged</span>
-              <span className="text-2xl font-display font-black text-ink mt-1 block">{commits?.length || 0}</span>
-            </div>
-            <div className="col-span-2 md:col-span-4 lg:col-span-1 rounded-2xl border border-ink/8 bg-card/60 p-4">
-              <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 block">Primary Architecture</span>
-              <span className="text-[13px] font-bold text-ink mt-2 block truncate">Next.js Web App</span>
-            </div>
-          </div>
-        </section>
 
-        {/* Section 3: Topics Discovered */}
-        <section className="space-y-4 animate-fade-up" style={{ animationDelay: "150ms" }}>
-          <div className="flex items-center gap-2">
-            <BookOpen className="size-4 text-coral" />
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Codebase Topics Discovered</h2>
+          <div className="space-y-3 flex-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/10 border border-coral/20 text-[9px] font-black uppercase tracking-[0.2em] text-coral/80">
+              <Sparkles className="size-3 text-coral" />
+              Recommended Next Action
+            </div>
+            <h3 className="text-2xl font-display font-black tracking-tight leading-tight text-cream">
+              {intelligence?.recommendedTopic?.title || "Explore Your Codebase"}
+            </h3>
+            <p className="text-sm text-cream-deep/70 leading-relaxed max-w-2xl">
+              {intelligence?.recommendedTopic?.description || "Start asking questions about your repository to understand its architecture."}
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topics.map((topic) => (
-              <div key={topic.name} className="flex flex-col justify-between p-5 rounded-2xl border border-ink/8 bg-card/70 hover:border-coral/20 transition-all hover-lift">
-                <div>
-                  <div className="size-9 rounded-xl bg-coral/5 text-coral flex items-center justify-center mb-3.5 border border-coral/10">
-                    <topic.icon className="size-4" />
+
+          <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-4 shrink-0 border-t md:border-t-0 md:border-l border-cream/10 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
+            <span className="text-[10px] uppercase tracking-wider text-cream/50">
+              Est. Time: {intelligence?.recommendedTopic?.estTime || 5} mins
+            </span>
+            <Button
+              onClick={() => {
+                const isPractice = intelligence?.recommendedTopic?.title.includes('Practice') || intelligence?.recommendedTopic?.title.includes('Questions');
+                router.push(`/qa?mode=${isPractice ? 'interview' : 'learn'}&prompt=${encodeURIComponent(intelligence?.recommendedTopic?.prompt || "Give me an overview of this codebase.")}`);
+              }}
+              className="rounded-xl bg-coral hover:bg-coral-deep text-cream hover:scale-[1.03] transition-all font-semibold flex items-center gap-2 h-11 px-6 shadow-pop-sm"
+              size="default"
+            >
+              {intelligence?.recommendedTopic?.title.includes('Practice') || intelligence?.recommendedTopic?.title.includes('Questions') ? 'Start Practice' : 'Start Learning'}
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Section 4: Interview Intelligence Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 animate-fade-up">
+          {/* Left Column (70% width): Expected Interview Questions */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="size-4 text-coral" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Expected Interview Questions</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {suggestedQuestions.length > 0 ? (
+                suggestedQuestions.map((item: any, idx: number) => (
+                  <div key={idx} className="flex flex-col justify-between p-5 rounded-2xl border border-ink/8 bg-card/75 shadow-sm min-h-[140px] hover:border-ink/15 transition-all hover-lift">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <h3 className="text-[13px] font-bold text-ink leading-snug">{item.question}</h3>
+                      <span className={cn(
+                        "shrink-0 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border",
+                        item.difficulty === "Hard" || item.difficulty === "Advanced"
+                          ? "bg-coral/10 text-coral border-coral/20"
+                          : item.difficulty === "Medium" || item.difficulty === "Intermediate"
+                          ? "bg-butter/10 text-butter border-butter/20"
+                          : "bg-sage/10 text-sage border-sage/20"
+                      )}>
+                        {item.difficulty}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={() => router.push(`/qa?mode=interview&prompt=${encodeURIComponent(item.question)}`)}
+                      className="w-full text-xs font-bold bg-cream-deep hover:bg-coral border border-ink/8 hover:border-coral hover:text-cream text-ink transition-all rounded-xl h-9"
+                    >
+                      Practice Question
+                    </Button>
                   </div>
-                  <h3 className="text-sm font-bold text-ink mb-1.5">{topic.name}</h3>
-                  <p className="text-xs text-ink-soft leading-relaxed mb-4">{topic.desc}</p>
+                ))
+              ) : (
+                <div className="col-span-2 flex flex-col items-center justify-center text-center py-12 px-6 rounded-2xl border border-dashed border-ink/15 bg-card/50">
+                  <span className="text-sm font-bold text-ink">No questions generated yet.</span>
+                  <p className="text-xs text-ink-soft mt-1">Questions will appear once repository indexing processes the codebase.</p>
                 </div>
-                <Button
-                  onClick={() => router.push(`/qa?mode=learn&prompt=${encodeURIComponent(topic.prompt)}`)}
-                  variant="ghost"
-                  className="w-full text-xs font-bold text-coral border border-coral/20 hover:bg-coral hover:text-white rounded-xl h-9.5"
-                >
-                  Learn More
-                </Button>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </section>
 
-        {/* Section 4: Suggested Interview Questions */}
-        <section className="space-y-4 animate-fade-up" style={{ animationDelay: "200ms" }}>
-          <div className="flex items-center gap-2">
-            <HelpCircle className="size-4 text-coral" />
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Expected Interview Questions</h2>
+          {/* Right Column (30% width): Topics Found */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="size-4 text-coral" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Topics Found</h2>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              {topics.slice(0, 5).map((topic: any) => {
+                const Icon = ICON_MAP[topic.icon] || Sparkles;
+                const displayName = TOPIC_DISPLAY_NAMES[topic.name] || topic.name;
+                const subtext = TOPIC_SUBTEXTS[topic.name] || topic.description;
+                const learnPrompt = getTopicPrompt(topic.name);
+                
+                return (
+                  <div
+                    key={topic.name}
+                    onClick={() => router.push(`/qa?mode=learn&prompt=${encodeURIComponent(learnPrompt)}`)}
+                    className="group flex items-center justify-between p-3.5 rounded-2xl border border-ink/8 bg-card/75 hover:border-coral/30 hover:bg-coral/[0.02] cursor-pointer transition-all hover-lift"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-9 rounded-xl bg-coral/5 text-coral flex items-center justify-center border border-coral/10 group-hover:scale-105 transition-transform shrink-0">
+                        <Icon className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-ink truncate leading-snug">{displayName}</h4>
+                        <p className="text-[10px] text-ink-soft truncate mt-0.5">{subtext}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-coral group-hover:translate-x-1 transition-transform shrink-0 ml-2">
+                      [Learn]
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {suggestedQuestions.map((item, idx) => (
-              <div key={idx} className="flex flex-col justify-between p-5 rounded-2xl border border-ink/8 bg-card/70 shadow-sm min-h-[140px]">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <h3 className="text-[13px] font-bold text-ink leading-snug">{item.question}</h3>
-                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${item.diffColor}`}>
-                    {item.diff}
-                  </span>
-                </div>
-                <Button
-                  onClick={() => router.push(`/qa?mode=interview&prompt=${encodeURIComponent(item.question)}`)}
-                  className="w-full text-xs font-bold bg-cream-deep hover:bg-coral border border-ink/8 hover:border-coral hover:text-cream text-ink transition-all rounded-xl h-9.5"
-                >
-                  Practice Question
-                </Button>
-              </div>
-            ))}
-          </div>
-        </section>
+        </div>
 
         {/* Section 5: Recent Engineering Changes */}
-        <section className="space-y-4 animate-fade-up" style={{ animationDelay: "250ms" }}>
+        <section className="space-y-4 animate-fade-up">
           <div className="flex items-center gap-2">
             <Activity className="size-4 text-coral" />
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-ink-soft/80">Recent Engineering Changes</h2>
@@ -440,7 +597,7 @@ const DashboardPage = () => {
               commits.slice(0, 5).map((commit, commitIdx) => {
                 const commitQuestions = getCommitQuestions(commit.commitMessage, commit.commitSummary || "");
                 return (
-                  <div key={commit.id ?? commit.commitHash} className="p-6 rounded-2xl border border-ink/8 bg-card/70 shadow-sm flex flex-col md:flex-row gap-6 justify-between hover-lift">
+                  <div key={commit.id ?? commit.commitHash} className="p-6 rounded-3xl border border-ink/8 bg-card/75 shadow-sm flex flex-col md:flex-row gap-6 justify-between hover:border-ink/12 transition-all hover-lift">
                     {/* Left: Commit overview */}
                     <div className="flex-1 min-w-0 space-y-4">
                       <div className="flex items-center gap-3">
@@ -450,9 +607,14 @@ const DashboardPage = () => {
                           className="h-8 w-8 rounded-full object-cover border border-ink/10"
                         />
                         <div>
-                          <h4 className="text-sm font-bold text-ink leading-tight">
-                            {commit.commitMessage.charAt(0).toUpperCase() + commit.commitMessage.slice(1)}
-                          </h4>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-sm font-bold text-ink leading-tight">
+                              {commit.commitMessage.charAt(0).toUpperCase() + commit.commitMessage.slice(1)}
+                            </h4>
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-coral/5 border border-coral/10 text-[9px] font-bold text-coral">
+                              Mini Case Study
+                            </span>
+                          </div>
                           <span className="text-[11px] text-ink-soft font-medium">
                             By {commit.commitAuthorName} · {timeAgo(commit.commitDate)}
                           </span>
@@ -460,30 +622,14 @@ const DashboardPage = () => {
                       </div>
 
                       {commit.commitSummary && (
-                        <div className="rounded-xl bg-cream-deep/40 border border-ink/5 p-4">
-                          <div className="flex items-center gap-1.5 mb-2.5 text-[9px] uppercase tracking-wider font-bold text-ink-soft">
-                            <Sparkles className="size-3.5 text-coral" />
-                            AI Commit Summary
-                          </div>
-                          <ul className="space-y-1.5">
-                            {commit.commitSummary
-                              .split("*")
-                              .filter((s) => s.trim())
-                              .map((point, i) => (
-                                <li key={i} className="flex gap-2 text-xs text-ink-soft leading-relaxed">
-                                  <span className="text-coral mt-1.5 h-1 w-1 rounded-full bg-coral shrink-0" />
-                                  <span className="flex-1 break-words">{point.trim()}</span>
-                                </li>
-                              ))}
-                          </ul>
-                        </div>
+                        <CommitSummaryAccordion summary={commit.commitSummary} />
                       )}
                     </div>
 
                     {/* Right: Potential Questions */}
                     <div className="w-full md:w-80 shrink-0 flex flex-col justify-between border-t md:border-t-0 md:border-l border-ink/6 pt-4 md:pt-0 md:pl-6 space-y-4">
                       <div>
-                        <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 font-semibold block mb-2">
+                        <span className="text-[10px] uppercase tracking-wider text-ink-soft/70 font-bold block mb-2">
                           Potential Interview Questions
                         </span>
                         <div className="space-y-2">
@@ -502,7 +648,7 @@ const DashboardPage = () => {
 
                       <Button
                         onClick={() => router.push(`/qa?mode=interview&prompt=${encodeURIComponent(commitQuestions[0]!)}`)}
-                        className="w-full text-xs font-bold bg-coral hover:bg-coral-deep text-cream rounded-xl h-9 flex items-center justify-center gap-1"
+                        className="w-full text-xs font-bold bg-coral hover:bg-coral-deep text-cream rounded-xl h-9 flex items-center justify-center gap-1 transition-all shadow-pop-sm"
                       >
                         Practice this Change
                         <ArrowRight className="size-3" />
@@ -519,6 +665,8 @@ const DashboardPage = () => {
             )}
           </div>
         </section>
+
+
 
       </div>
     </div>
