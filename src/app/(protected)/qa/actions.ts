@@ -3,8 +3,7 @@
 // maxDuration is set in (protected)/layout.tsx (60s) — it cascades to
 // server actions invoked from pages under that layout segment.
 
-import { streamText, generateObject } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { generateText, generateObject } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { loadEmbedding } from "@/lib/gemini";
 import { db } from "@/server/db";
@@ -62,38 +61,27 @@ function isConversationalMessage(question: string): boolean {
 async function askConversational(
   question: string,
   prevMessages: { role: string; content: string }[],
-  abortSignal?: AbortSignal,
 ) {
-  const stream = createStreamableValue();
-
   const conversationHistory = prevMessages.length > 0
     ? prevMessages.map((m) => `${m.role === "user" ? "USER" : "ASSISTANT"}:\n${m.content}`).join("\n\n")
     : "";
 
-  const { textStream } = await streamText({
-    model: google("gemini-2.0-flash-lite"),
-    prompt: `You are a friendly, warm AI assistant embedded in a code intelligence tool called OwnYourCode.
+  try {
+    const { text } = await generateText({
+      model: google("gemini-2.5-flash"),
+      prompt: `You are a friendly, warm AI assistant embedded in a code intelligence tool called OwnYourCode.
 Keep replies concise, natural and conversational — 1 to 3 sentences max.
 Never over-explain. Match the user's energy.
 
 ${conversationHistory ? `CONVERSATION SO FAR:\n${conversationHistory}\n\n` : ""}USER: ${question}
 ASSISTANT:`,
-    abortSignal,
-  });
+    });
 
-  (async () => {
-    try {
-      for await (const delta of textStream) {
-        stream.update(delta);
-      }
-    } catch {
-      // silently stop on abort or error
-    } finally {
-      stream.done();
-    }
-  })();
-
-  return { output: stream.value, filesReferences: [], isConversational: true };
+    return { output: text, filesReferences: [], isConversational: true };
+  } catch (error) {
+    console.error("Error in askConversational:", error);
+    return { output: "An error occurred while generating the response. Please check server logs.", filesReferences: [], isConversational: true };
+  }
 }
 
 // ─── Full RAG pipeline ───────────────────────────────────────────────────────
@@ -103,14 +91,11 @@ export async function askChatBot(
   projectId: string,
   prevMessages: { role: string; content: string }[] = [],
   mode: "learn" | "interview" = "learn",
-  abortSignal?: AbortSignal,
 ) {
   // Fast path — skip embeddings, vector search, and smart filtering entirely
   if (isConversationalMessage(question)) {
-    return askConversational(question, prevMessages, abortSignal);
+    return askConversational(question, prevMessages);
   }
-
-  const stream = createStreamableValue();
 
   try {
     // Step 1: embed question for vector search
@@ -211,8 +196,8 @@ BEHAVIOR:
 --- END INTERVIEW MODE ---
 ` : "";
 
-    // Step 5: stream the answer
-    const { textStream } = await streamText({
+    // Step 5: generate the answer
+    const { text } = await generateText({
       model: google("gemini-2.5-flash"),
       prompt: `
       You are an AI code assistant who answers questions about the codebase. Your target audience is a technical user.
@@ -235,31 +220,15 @@ BEHAVIOR:
       If the context does not provide an answer, use your best software engineering knowledge, but don't invent code that definitively isn't there if asked about specific internal logic.
       Answers should be provided in Markdown syntax, with code snippets if needed. Responses should be as detailed as possible, ensuring clarity and accuracy while avoiding unnecessary or misleading information.
       `,
-      abortSignal,
     });
 
-    (async () => {
-      try {
-        for await (const delta of textStream) {
-          stream.update(delta);
-        }
-      } catch (e) {
-        console.error("Error streaming text in askChatBot:", e);
-        stream.update(
-          "\n\nI'm sorry, I ran into an error while streaming the response.",
-        );
-      } finally {
-        stream.done();
-      }
-    })();
-
-    return { output: stream.value, filesReferences: finalResult, isConversational: false };
+    return { output: text, filesReferences: finalResult, isConversational: false };
   } catch (error) {
     console.error("Critical error in askChatBot:", error);
-    stream.update(
-      "An internal error occurred while processing your request. Please check the server logs.",
-    );
-    stream.done();
-    return { output: stream.value, filesReferences: [], isConversational: false };
+    return {
+      output: "An internal error occurred while processing your request. Please check the server logs.",
+      filesReferences: [],
+      isConversational: false,
+    };
   }
 }

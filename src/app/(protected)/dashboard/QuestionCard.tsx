@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import useProject from "@/hooks/useProject";
 import React, { useState } from "react";
 import { askQuestion } from "./action";
-import { readStreamableValue } from "ai/rsc";
 import FileReference from "./FileReference";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
@@ -42,11 +41,15 @@ const QuestionCard = () => {
     setOpen(true);
     setFilesReferences(filesReferences);
 
-    for await (const delta of readStreamableValue(output)) {
-      if (delta) {
-        setAnswer((ans) => ans + delta);
-      }
+    const fullAnswer = output;
+    const totalLen = fullAnswer.length;
+    const CHUNK_DELAY = 8;
+    for (let i = 0; i < totalLen; i += Math.max(3, Math.floor(totalLen / 80))) {
+      const revealed = fullAnswer.slice(0, Math.min(i + Math.max(3, Math.floor(totalLen / 80)), totalLen));
+      setAnswer(revealed);
+      await new Promise((r) => setTimeout(r, CHUNK_DELAY));
     }
+    setAnswer(fullAnswer);
     setLoading(false);
   };
 

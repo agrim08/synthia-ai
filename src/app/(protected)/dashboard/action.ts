@@ -48,8 +48,7 @@
 // maxDuration is set in (protected)/layout.tsx (60s) — it cascades to
 // server actions invoked from pages under that layout segment.
 
-import { streamText, generateObject } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { generateText, generateObject } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { loadEmbedding } from "@/lib/gemini";
 import { db } from "@/server/db";
@@ -60,8 +59,6 @@ const google = createGoogleGenerativeAI({
 });
 
 export async function askQuestion(question: string, projectId: string) {
-  const stream = createStreamableValue();
-
   const queryVector = await loadEmbedding(question);
   const vectorQuery = `[${queryVector.join(",")}]`;
 
@@ -116,7 +113,7 @@ export async function askQuestion(question: string, projectId: string) {
   }
   // console.log("Constructed Context Block:\n", context);
 
-  const { textStream } = await streamText({
+  const { text } = await generateText({
     model: google("gemini-2.5-flash"),
     prompt: `
     You are an AI code assistant who answers questions about the codebase. Your target audience is a technical intern.
@@ -142,20 +139,5 @@ export async function askQuestion(question: string, projectId: string) {
     `,
   });
 
-  (async () => {
-    try {
-      for await (const delta of textStream) {
-        stream.update(delta);
-      }
-    } catch (e) {
-      console.error("Error streaming text in askQuestion:", e);
-      stream.update(
-        "\n\nI'm sorry, I ran into an error while streaming the response.",
-      );
-    } finally {
-      stream.done();
-    }
-  })();
-
-  return { output: stream.value, filesReferences: finalResult };
+  return { output: text, filesReferences: finalResult };
 }

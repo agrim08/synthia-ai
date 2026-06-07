@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import useProject from "@/hooks/useProject";
 import React, { useState, useRef, useEffect } from "react";
 import { askQuestion } from "./action";
-import { readStreamableValue } from "ai/rsc";
 import { Sparkles, ArrowRight, Loader2, X, History, Calendar, Lightbulb, Zap, Quote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -46,13 +45,15 @@ const AskOwnYourCodeHero = () => {
       setOpen(true);
       setFilesReferences(filesReferences);
 
-      let fullAnswer = "";
-      for await (const delta of readStreamableValue(output)) {
-        if (delta) {
-          fullAnswer += delta;
-          setAnswer(fullAnswer);
-        }
+      const fullAnswer = output;
+      const totalLen = fullAnswer.length;
+      const CHUNK_DELAY = 8;
+      for (let i = 0; i < totalLen; i += Math.max(3, Math.floor(totalLen / 80))) {
+        const revealed = fullAnswer.slice(0, Math.min(i + Math.max(3, Math.floor(totalLen / 80)), totalLen));
+        setAnswer(revealed);
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY));
       }
+      setAnswer(fullAnswer);
 
       // Auto-save the insight once streaming is complete
       saveAnswer.mutate(

@@ -59,7 +59,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { askChatBot } from "./actions";
-import { readStreamableValue } from "ai/rsc";
+
 import { useUser } from "@clerk/nextjs";
 import useRefetch from "@/hooks/useRefetch";
 import {
@@ -537,27 +537,41 @@ export default function QandA() {
       setMessages((prev) => [...prev, { role: "bot", content: "", isConversational: looksConversational }]);
 
       const startTime = Date.now();
-      const { output, filesReferences, isConversational: actuallyConversational } = await askChatBot(userMessage, projectId, messages, chatMode, controller.signal);
+      const { output, filesReferences, isConversational: actuallyConversational } = await askChatBot(userMessage, projectId, messages, chatMode);
       const thinkingTime = (Date.now() - startTime) / 1000;
 
-      let fullAnswer = "";
+      const fullAnswer = output;
 
-      for await (const delta of readStreamableValue(output)) {
-        if (delta) {
-          fullAnswer += delta;
-          setMessages((prev) => {
-            const updated = [...prev];
-            updated[updated.length - 1] = { 
-              role: "bot", 
-              content: fullAnswer, 
-              filesReferences: actuallyConversational ? [] : filesReferences,
-              thinkingTime,
-              isConversational: actuallyConversational,
-            };
-            return updated;
-          });
-        }
+      // Simulate streaming by revealing the response progressively
+      const totalLen = fullAnswer.length;
+      const CHUNK_DELAY = 8;
+      for (let i = 0; i < totalLen; i += Math.max(3, Math.floor(totalLen / 80))) {
+        const revealed = fullAnswer.slice(0, Math.min(i + Math.max(3, Math.floor(totalLen / 80)), totalLen));
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "bot",
+            content: revealed,
+            filesReferences: actuallyConversational ? [] : filesReferences,
+            thinkingTime,
+            isConversational: actuallyConversational,
+          };
+          return updated;
+        });
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY));
       }
+      // Final update with complete text
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "bot",
+          content: fullAnswer,
+          filesReferences: actuallyConversational ? [] : filesReferences,
+          thinkingTime,
+          isConversational: actuallyConversational,
+        };
+        return updated;
+      });
 
       const finalMessages = [...newMessages, { role: "bot", content: fullAnswer, filesReferences: actuallyConversational ? [] : filesReferences, thinkingTime, isConversational: actuallyConversational }];
 
